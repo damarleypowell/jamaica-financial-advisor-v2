@@ -19,6 +19,15 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// ── Yahoo Finance (optional — graceful fallback if not installed) ─────────────
+let yahooFinance = null;
+try {
+  yahooFinance = require("yahoo-finance2").default;
+  console.log("✅ yahoo-finance2 loaded — real market data enabled");
+} catch (_) {
+  console.warn("⚠️  yahoo-finance2 not installed. Run: npm install yahoo-finance2");
+}
+
 // ── Base Stock Data ──────────────────────────────────────────────────────────
 const BASE_STOCKS = [
   { symbol:"NCBFG",   name:"NCB Financial Group",        price:142.50, change:1.68,  volume:1245670, marketCap:"$142.5B", sector:"Financial",    pe:12.4, divYield:2.8,  file:"NCBFG.md"   },
@@ -56,7 +65,7 @@ const BASE_STOCKS = [
 // ── Live Price State ─────────────────────────────────────────────────────────
 let livePrices = BASE_STOCKS.map(s => ({ ...s, livePrice: s.price, liveChange: s.change }));
 
-// Generate simulated price history for a stock (last 60 ticks)
+// Generate simulated price history (last 60 ticks = ~2min each)
 const priceHistory = {};
 BASE_STOCKS.forEach(s => {
   const hist = [];
@@ -76,10 +85,8 @@ function simulatePrices() {
     const delta = drift + (Math.random() - 0.5) * vol;
     const newPrice = Math.max(+(stock.livePrice * (1 + delta)).toFixed(2), 0.01);
     const pctChange = +((newPrice - stock.price) / stock.price * 100).toFixed(2);
-
     priceHistory[stock.symbol].push(newPrice);
     if (priceHistory[stock.symbol].length > 120) priceHistory[stock.symbol].shift();
-
     return { ...stock, livePrice: newPrice, liveChange: pctChange };
   });
 }
@@ -94,6 +101,121 @@ setInterval(() => {
   })));
   sseClients.forEach(client => { try { client.write(`data: ${payload}\n\n`); } catch(_){} });
 }, 2000);
+
+// ── Yahoo Finance Research Cache ──────────────────────────────────────────────
+const researchCache = {};
+const RESEARCH_TTL = 12 * 60 * 1000; // 12 minutes
+
+// ── Research API ─────────────────────────────────────────────────────────────
+app.get("/api/research/:symbol", async (req, res) => {
+  if (!yahooFinance) {
+    return res.status(503).json({ error: "Yahoo Finance not available", fallback: true });
+  }
+
+  const sym = req.params.symbol.toUpperCase();
+  const stock = BASE_STOCKS.find(s => s.symbol === sym);
+  if (!stock) return res.status(404).json({ error: "Symbol not found" });
+
+  // Return cached
+  if (researchCache[sym] && Date.now() - researchCache[sym].ts < RESEARCH_TTL) {
+    return res.json(researchCache[sym].data);
+  }
+
+  const yfSym = `${sym}.JM`;
+  const period1 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+  try {
+    const [quoteResult, histResult] = await Promise.allSettled([
+      yahooFinance.quoteSummary(yfSym, {
+        modules: ["summaryDetail", "financialData", "defaultKeyStatistics"],
+        validateResult: false,
+      }),
+      yahooFinance.historical(yfSym, { period1, interval: "1d" }),
+    ]);
+
+    const q = quoteResult.status === "fulfilled" ? quoteResult.value : null;
+    const rawHist = histResult.status === "fulfilled" ? histResult.value : [];
+
+    if (!q && rawHist.length === 0) {
+      return res.status(404).json({ error: "No market data for this symbol on Yahoo Finance", fallback: true });
+    }
+
+    const fundamentals = q ? {
+      pe:             q.summaryDetail?.trailingPE         ?? null,
+      forwardPE:      q.summaryDetail?.forwardPE          ?? null,
+      pb:             q.defaultKeyStatistics?.priceToBook ?? null,
+      eps:            q.defaultKeyStatistics?.trailingEps ?? null,
+      dividendYield:  q.summaryDetail?.dividendYield      ?? null,
+      marketCap:      q.summaryDetail?.marketCap          ?? null,
+      revenue:        q.financialData?.totalRevenue       ?? null,
+      profitMargin:   q.financialData?.profitMargins      ?? null,
+      roe:            q.financialData?.returnOnEquity     ?? null,
+      currentRatio:   q.financialData?.currentRatio       ?? null,
+      debtToEquity:   q.financialData?.debtToEquity       ?? null,
+      targetPrice:    q.financialData?.targetMeanPrice    ?? null,
+      recommendation: q.financialData?.recommendationKey?.toUpperCase() ?? null,
+      revenueGrowth:  q.financialData?.revenueGrowth      ?? null,
+      earningsGrowth: q.financialData?.earningsGrowth     ?? null,
+      beta:           q.defaultKeyStatistics?.beta        ?? null,
+      enterpriseValue:q.defaultKeyStatistics?.enterpriseValue ?? null,
+      evToEbitda:     q.defaultKeyStatistics?.enterpriseToEbitda ?? null,
+    } : null;
+
+    const candles = rawHist
+      .filter(b => b.open > 0 && b.close > 0 && b.high > 0 && b.low > 0)
+      .map(b => ({
+        time:   Math.floor(new Date(b.date).getTime() / 1000),
+        open:   +b.open.toFixed(2),
+        high:   +b.high.toFixed(2),
+        low:    +b.low.toFixed(2),
+        close:  +b.close.toFixed(2),
+        volume: b.volume || 0,
+      }));
+
+    // Derive closes array for technical calculations
+    const closes = candles.map(c => c.close);
+
+    // RSI(14)
+    let rsi14 = null;
+    if (closes.length >= 15) {
+      let gains = 0, losses = 0;
+      for (let i = closes.length - 14; i < closes.length; i++) {
+        const d = closes[i] - closes[i - 1];
+        if (d > 0) gains += d; else losses -= d;
+      }
+      const avgG = gains / 14, avgL = losses / 14;
+      rsi14 = avgL === 0 ? 100 : +(100 - 100 / (1 + avgG / avgL)).toFixed(1);
+    }
+
+    // Annualized volatility
+    let annVol = null;
+    if (closes.length >= 20) {
+      const rets = closes.slice(1).map((p, i) => Math.log(p / closes[i]));
+      const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
+      const variance = rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length;
+      annVol = +(Math.sqrt(variance) * Math.sqrt(252) * 100).toFixed(1);
+    }
+
+    // 52-week high/low from candles
+    const allHighs  = candles.map(c => c.high);
+    const allLows   = candles.map(c => c.low);
+    const high90    = allHighs.length ? +Math.max(...allHighs).toFixed(2) : null;
+    const low90     = allLows.length  ? +Math.min(...allLows).toFixed(2)  : null;
+    const avgClose  = closes.length   ? +(closes.reduce((a, b) => a + b, 0) / closes.length).toFixed(2) : null;
+
+    const data = {
+      symbol: sym, realData: true,
+      fundamentals, candles,
+      derived: { rsi14, annVol, high90, low90, avgClose, candleCount: candles.length },
+    };
+
+    researchCache[sym] = { data, ts: Date.now() };
+    res.json(data);
+  } catch (e) {
+    console.warn(`Yahoo Finance error [${sym}]:`, e.message?.slice(0, 120));
+    res.status(502).json({ error: "Research data temporarily unavailable", fallback: true });
+  }
+});
 
 // ── API Routes ───────────────────────────────────────────────────────────────
 
@@ -197,33 +319,82 @@ app.post("/api/speak", async (req, res) => {
 });
 
 // ── AI Analysis ──────────────────────────────────────────────────────────────
-const JSON_INSTRUCTION = `
+const SYSTEM_PROMPTS = {
+  Beginner: `You are a friendly Jamaica Stock Exchange (JSE) financial advisor for beginners.
+Explain everything in simple everyday language. No jargon. Use plain analogies a first-time investor would understand.
 You MUST respond with ONLY valid JSON — no markdown, no backticks, no extra text before or after.
 Use exactly this structure:
 {
   "company": "Company name",
-  "overview": "2-3 sentence summary of what the company does",
+  "overview": "2-3 sentence plain-language summary of what the company does",
   "keyPoints": ["point 1", "point 2", "point 3", "point 4"],
   "recommendation": "BUY | HOLD | SELL",
-  "verdict": "1-2 sentence investment verdict",
+  "verdict": "1-2 sentence plain verdict",
   "risks": ["risk 1", "risk 2", "risk 3"],
-  "riskScore": 5
-}`;
-
-const SYSTEM_PROMPTS = {
-  Beginner: `You are a friendly Jamaica Stock Exchange (JSE) financial advisor for beginners.
-Explain everything in simple everyday language. No jargon. Use plain analogies a first-time investor would understand.
-${JSON_INSTRUCTION}`,
+  "riskScore": 7
+}
+riskScore: integer 1-10 (1=very low risk, 10=very high risk) derived from the actual data provided.`,
 
   Intermediate: `You are a knowledgeable Jamaica Stock Exchange (JSE) financial advisor for intermediate investors.
 Use standard financial terminology. Reference P/E ratios, dividend yield, EPS, ROI, and market cap where relevant.
 Discuss company fundamentals, sector performance, and JSE market comparisons.
-${JSON_INSTRUCTION}`,
+You MUST respond with ONLY valid JSON — no markdown, no backticks, no extra text before or after.
+Use exactly this structure:
+{
+  "company": "Company name",
+  "overview": "2-3 sentence summary referencing key fundamentals",
+  "keyPoints": ["point 1", "point 2", "point 3", "point 4"],
+  "recommendation": "BUY | HOLD | SELL",
+  "verdict": "1-2 sentence verdict referencing P/E or yield",
+  "risks": ["risk 1", "risk 2", "risk 3"],
+  "riskScore": 7,
+  "technicalSummary": {
+    "trend": "bullish | bearish | neutral",
+    "ma20Signal": "above | below | at",
+    "volumeTrend": "increasing | decreasing | stable",
+    "relativeStrength": "strong | average | weak",
+    "priceTarget": 0.00
+  },
+  "fundamentals": {
+    "peAssessment": "undervalued | fairly valued | overvalued",
+    "dividendQuality": "excellent | good | fair | poor",
+    "sectorOutlook": "positive | neutral | negative"
+  }
+}
+riskScore: integer 1-10 from actual data. priceTarget: realistic 12-month JMD price target based on the data.`,
 
   Advanced: `You are an expert Jamaica Stock Exchange (JSE) quantitative analyst for sophisticated investors.
 Provide deep technical analysis: valuation multiples (P/E, P/B, EV/EBITDA), technical indicators, DCF, beta/volatility, liquidity, risk-adjusted returns, sector correlation.
 Reference JMD/USD dynamics, BOJ policy, and macroeconomic factors.
-${JSON_INSTRUCTION}`,
+You MUST respond with ONLY valid JSON — no markdown, no backticks, no extra text before or after.
+Use exactly this structure:
+{
+  "company": "Company name",
+  "overview": "2-3 sentence quantitative summary with valuation context",
+  "keyPoints": ["point 1", "point 2", "point 3", "point 4"],
+  "recommendation": "BUY | HOLD | SELL",
+  "verdict": "1-2 sentence verdict with price target and thesis",
+  "risks": ["risk 1", "risk 2", "risk 3"],
+  "riskScore": 7,
+  "technicalIndicators": {
+    "rsiEstimate": 50,
+    "trend": "bullish | bearish | neutral",
+    "support": 0.00,
+    "resistance": 0.00,
+    "bollingerPosition": "upper | middle | lower",
+    "macdSignal": "bullish | bearish | neutral"
+  },
+  "quantMetrics": {
+    "annualizedVolatility": "0.0%",
+    "momentumScore": 5,
+    "liquidityRating": "high | moderate | low",
+    "fairValueEstimate": 0.00,
+    "marginOfSafety": "0%"
+  },
+  "catalysts": ["catalyst 1", "catalyst 2"],
+  "hedgeStrategy": "Brief hedging or position-sizing recommendation"
+}
+riskScore: integer 1-10. rsiEstimate: integer 1-100. momentumScore: integer 1-10. All numeric values derived from the real data provided. fairValueEstimate and support/resistance in JMD.`,
 };
 
 app.post("/analyze", async (req, res) => {
@@ -235,12 +406,106 @@ app.post("/analyze", async (req, res) => {
   if (!validLevels.includes(experience_level))
     return res.status(400).json({ error: `experience_level must be one of: ${validLevels.join(", ")}` });
 
+  // ── Detect stock ────────────────────────────────────────────────────────────
+  const inputUpper = user_input.toUpperCase();
+  const detectedStock = livePrices.find(s =>
+    inputUpper.includes(s.symbol) ||
+    user_input.toLowerCase().includes(s.name.toLowerCase().split(" ").slice(0, 2).join(" "))
+  );
+
+  let enrichedInput = user_input;
+
+  if (detectedStock) {
+    // ── Simulated price metrics ─────────────────────────────────────────────
+    const hist   = priceHistory[detectedStock.symbol] || [];
+    const prices = hist.slice(-30);
+    let simSection = "";
+    if (prices.length > 1) {
+      const high = Math.max(...prices).toFixed(2);
+      const low  = Math.min(...prices).toFixed(2);
+      const avg  = (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
+      const rets = prices.slice(1).map((p, i) => (p - prices[i]) / prices[i]);
+      const vol  = (Math.sqrt(rets.reduce((a, b) => a + b * b, 0) / rets.length) * Math.sqrt(252) * 100).toFixed(1);
+      const ma20 = prices.length >= 20
+        ? (prices.slice(-20).reduce((a, b) => a + b, 0) / 20).toFixed(2) : avg;
+      let rsi = 50;
+      if (prices.length >= 15) {
+        let gains = 0, losses = 0;
+        for (let i = prices.length - 14; i < prices.length; i++) {
+          const d = prices[i] - prices[i - 1];
+          if (d > 0) gains += d; else losses -= d;
+        }
+        const avgG = gains / 14, avgL = losses / 14;
+        rsi = avgL === 0 ? 100 : +(100 - 100 / (1 + avgG / avgL)).toFixed(1);
+      }
+
+      simSection = `
+--- LIVE MARKET DATA (${detectedStock.symbol}) ---
+Company:               ${detectedStock.name}
+Current Price:         $${detectedStock.livePrice.toFixed(2)} JMD
+Today's Change:        ${detectedStock.liveChange >= 0 ? "+" : ""}${detectedStock.liveChange}%
+Volume:                ${detectedStock.volume.toLocaleString()} shares
+Market Cap:            ${detectedStock.marketCap}
+Sector:                ${detectedStock.sector}
+P/E Ratio:             ${detectedStock.pe}x
+Dividend Yield:        ${detectedStock.divYield}%
+30-Day High:           $${high} JMD
+30-Day Low:            $${low} JMD
+30-Day Average:        $${avg} JMD
+20-Day MA:             $${ma20} JMD (price is ${detectedStock.livePrice > parseFloat(ma20) ? "ABOVE" : "BELOW"} MA)
+RSI (14):              ${rsi}
+Annualized Volatility: ${vol}%
+Last 15 prices:        ${hist.slice(-15).map(p => `$${p.toFixed(2)}`).join(", ")}`;
+    }
+
+    // ── Real Yahoo Finance data (if cached) ─────────────────────────────────
+    let realSection = "";
+    const cached = researchCache[detectedStock.symbol];
+    if (cached && Date.now() - cached.ts < RESEARCH_TTL && cached.data.realData) {
+      const { fundamentals: f, derived: d } = cached.data;
+      if (f) {
+        realSection = `
+
+--- REAL YAHOO FINANCE FUNDAMENTALS (${detectedStock.symbol}.JM) ---
+P/E (TTM):             ${f.pe    != null ? f.pe.toFixed(2)    + "x" : "N/A"}
+Forward P/E:           ${f.forwardPE != null ? f.forwardPE.toFixed(2) + "x" : "N/A"}
+Price/Book:            ${f.pb   != null ? f.pb.toFixed(2)    + "x" : "N/A"}
+EPS (TTM):             ${f.eps  != null ? "$" + f.eps.toFixed(2) + " JMD" : "N/A"}
+Dividend Yield:        ${f.dividendYield != null ? (f.dividendYield * 100).toFixed(2) + "%" : "N/A"}
+Market Cap:            ${f.marketCap != null ? "$" + (f.marketCap / 1e9).toFixed(2) + "B JMD" : "N/A"}
+Revenue:               ${f.revenue != null ? "$" + (f.revenue / 1e9).toFixed(2) + "B JMD" : "N/A"}
+Profit Margin:         ${f.profitMargin != null ? (f.profitMargin * 100).toFixed(2) + "%" : "N/A"}
+Return on Equity:      ${f.roe != null ? (f.roe * 100).toFixed(2) + "%" : "N/A"}
+Debt/Equity:           ${f.debtToEquity != null ? f.debtToEquity.toFixed(2) : "N/A"}
+Beta:                  ${f.beta != null ? f.beta.toFixed(2) : "N/A"}
+EV/EBITDA:             ${f.evToEbitda != null ? f.evToEbitda.toFixed(2) + "x" : "N/A"}
+Revenue Growth (YoY):  ${f.revenueGrowth != null ? (f.revenueGrowth * 100).toFixed(2) + "%" : "N/A"}
+Earnings Growth (YoY): ${f.earningsGrowth != null ? (f.earningsGrowth * 100).toFixed(2) + "%" : "N/A"}
+Analyst Target Price:  ${f.targetPrice != null ? "$" + f.targetPrice.toFixed(2) + " JMD" : "N/A"}
+Analyst Recommendation:${f.recommendation || "N/A"}`;
+      }
+      if (d) {
+        realSection += `
+
+--- REAL TECHNICAL DATA (90-Day Daily OHLCV) ---
+90-Day High:           ${d.high90 != null ? "$" + d.high90 + " JMD" : "N/A"}
+90-Day Low:            ${d.low90  != null ? "$" + d.low90  + " JMD" : "N/A"}
+90-Day Avg Close:      ${d.avgClose != null ? "$" + d.avgClose + " JMD" : "N/A"}
+RSI (14, real):        ${d.rsi14 != null ? d.rsi14 : "N/A"}
+Annualized Volatility: ${d.annVol != null ? d.annVol + "%" : "N/A"}
+Trading Days in Data:  ${d.candleCount}`;
+      }
+    }
+
+    enrichedInput += simSection + realSection + "\n--- Base your entire analysis on this data ---";
+  }
+
   try {
     const response = await client.messages.create({
       model: "claude-opus-4-6",
-      max_tokens: 1024,
+      max_tokens: 1500,
       system: SYSTEM_PROMPTS[experience_level],
-      messages: [{ role: "user", content: user_input }],
+      messages: [{ role: "user", content: enrichedInput }],
     });
 
     const raw = response.content
@@ -250,19 +515,16 @@ app.post("/analyze", async (req, res) => {
 
     let parsed;
     try {
-      // Grab the first { ... } block found anywhere in the response — handles
-      // code fences, preamble text, trailing notes, all of it
       const jsonStr = raw.match(/\{[\s\S]*\}/)?.[0];
       if (!jsonStr) throw new Error("no JSON object found");
       parsed = JSON.parse(jsonStr);
-      // Validate required fields exist
       if (!parsed.company || !parsed.recommendation) throw new Error("incomplete JSON");
     } catch (_) {
       console.warn("JSON parse failed, raw:", raw.slice(0, 200));
-      return res.json({ analysis: raw, structured: false });
+      return res.json({ analysis: raw, structured: false, symbol: detectedStock?.symbol || null, level: experience_level });
     }
 
-    res.json({ analysis: parsed, structured: true });
+    res.json({ analysis: parsed, structured: true, symbol: detectedStock?.symbol || null, level: experience_level });
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError)
       return res.status(401).json({ error: "Invalid API key. Check your ANTHROPIC_API_KEY." });
@@ -275,14 +537,132 @@ app.post("/analyze", async (req, res) => {
   }
 });
 
+// ── Portfolio AI Optimizer ────────────────────────────────────────────────────
+app.post("/api/portfolio/optimize", async (req, res) => {
+  const { holdings } = req.body;
+  if (!holdings || !Array.isArray(holdings) || holdings.length === 0)
+    return res.status(400).json({ error: "Holdings array required" });
+
+  const enriched = holdings.map(h => {
+    const stock = livePrices.find(s => s.symbol === h.symbol);
+    if (!stock) return null;
+    const hist   = priceHistory[h.symbol] || [];
+    const prices = hist.slice(-30);
+    let rsi = 50;
+    if (prices.length >= 15) {
+      let g = 0, l = 0;
+      for (let i = prices.length - 14; i < prices.length; i++) {
+        const d = prices[i] - prices[i - 1];
+        if (d > 0) g += d; else l -= d;
+      }
+      const ag = g / 14, al = l / 14;
+      rsi = al === 0 ? 100 : +(100 - 100 / (1 + ag / al)).toFixed(1);
+    }
+    const currentValue = +(stock.livePrice * h.qty).toFixed(2);
+    const costBasis    = +(h.avgPrice * h.qty).toFixed(2);
+    return {
+      symbol: h.symbol, name: stock.name, qty: h.qty,
+      avgPrice: h.avgPrice, currentPrice: stock.livePrice,
+      currentValue, costBasis,
+      gainLoss:    +(currentValue - costBasis).toFixed(2),
+      gainLossPct: +((currentValue - costBasis) / costBasis * 100).toFixed(2),
+      sector: stock.sector, pe: stock.pe, divYield: stock.divYield,
+      change: stock.liveChange, rsi, marketCap: stock.marketCap,
+    };
+  }).filter(Boolean);
+
+  if (!enriched.length) return res.status(400).json({ error: "No valid holdings found" });
+
+  const totalValue    = enriched.reduce((s, h) => s + h.currentValue, 0);
+  const totalCost     = enriched.reduce((s, h) => s + h.costBasis, 0);
+  const totalGainLoss = +(totalValue - totalCost).toFixed(2);
+  const totalReturn   = +((totalGainLoss / totalCost) * 100).toFixed(2);
+
+  const sectorMap = {};
+  enriched.forEach(h => { sectorMap[h.sector] = (sectorMap[h.sector] || 0) + h.currentValue; });
+  const sectorAlloc = Object.entries(sectorMap)
+    .map(([s, v]) => `${s}: ${((v / totalValue) * 100).toFixed(1)}%`).join(", ");
+
+  const owned = new Set(enriched.map(h => h.symbol));
+  const otherStocks = livePrices.filter(s => !owned.has(s.symbol))
+    .map(s => `${s.symbol}(${s.sector},P/E:${s.pe}x,Yield:${s.divYield}%,Today:${s.liveChange >= 0 ? "+" : ""}${s.liveChange}%)`)
+    .join(" | ");
+
+  const holdingsSummary = enriched.map(h =>
+    `${h.symbol}: ${h.qty}sh@$${h.avgPrice} avg, now $${h.currentPrice} (${h.gainLoss >= 0 ? "+" : ""}${h.gainLossPct}%), RSI:${h.rsi}, Sector:${h.sector}, P/E:${h.pe}x, Div:${h.divYield}%`
+  ).join("\n");
+
+  const userPrompt = `Optimize this JSE investment portfolio for maximum sustained growth.
+
+PORTFOLIO: Total Value $${totalValue.toFixed(2)} JMD | Cost $${totalCost.toFixed(2)} JMD | Return ${totalReturn}% ($${totalGainLoss >= 0 ? "+" : ""}${totalGainLoss} JMD)
+Sector exposure: ${sectorAlloc}
+
+HOLDINGS:
+${holdingsSummary}
+
+OTHER JSE STOCKS NOT YET HELD:
+${otherStocks}
+
+Provide specific, data-driven portfolio optimization to ensure consistent growth. Rank actions by priority.`;
+
+  const systemPrompt = `You are a top Jamaica Stock Exchange portfolio optimizer. Analyze portfolios and return precise optimization recommendations. You MUST respond with ONLY valid JSON — no markdown, no backticks, no extra text.
+Use exactly this structure:
+{
+  "portfolioScore": 7,
+  "healthSummary": "2-3 sentence overall portfolio assessment",
+  "strengths": ["strength 1", "strength 2"],
+  "weaknesses": ["weakness 1", "weakness 2"],
+  "actions": [
+    {"type":"INCREASE|DECREASE|EXIT|ADD|HOLD","symbol":"SYMBOL","name":"Company Name","priority":"HIGH|MEDIUM|LOW","reasoning":"specific data-based reason","suggestedAction":"e.g. Buy 200 more shares at market"}
+  ],
+  "riskAssessment": "Overall portfolio risk summary",
+  "targetReturn": "Expected 12-month return range e.g. +8% to +15%",
+  "diversificationScore": 6,
+  "rebalancingPlan": "Concise step-by-step rebalancing instructions"
+}
+portfolioScore and diversificationScore: integers 1-10. All recommendations MUST be based on the live data provided.`;
+
+  try {
+    const response = await client.messages.create({
+      model: "claude-opus-4-6",
+      max_tokens: 2000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    });
+    const raw = response.content.filter(b => b.type === "text").map(b => b.text).join("\n");
+    let parsed;
+    try {
+      const jsonStr = raw.match(/\{[\s\S]*\}/)?.[0];
+      if (!jsonStr) throw new Error("no JSON");
+      parsed = JSON.parse(jsonStr);
+    } catch (_) {
+      return res.json({ optimization: raw, structured: false });
+    }
+    res.json({
+      optimization: parsed, structured: true,
+      metrics: { totalValue, totalCost, totalGainLoss, totalReturn, sectorMap, holdings: enriched },
+    });
+  } catch (error) {
+    if (error instanceof Anthropic.AuthenticationError)
+      return res.status(401).json({ error: "Invalid API key" });
+    if (error instanceof Anthropic.RateLimitError)
+      return res.status(429).json({ error: "Rate limit reached. Try again shortly." });
+    if (error instanceof Anthropic.APIError)
+      return res.status(502).json({ error: `Claude API error: ${error.message}` });
+    res.status(500).json({ error: "Portfolio optimization failed" });
+  }
+});
+
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`JSE Live Dashboard running on http://localhost:${PORT}`);
-  console.log(`GET  /api/stocks              — all 30 stocks`);
+  console.log(`GET  /api/stocks              — all stocks`);
+  console.log(`GET  /api/research/:symbol    — real Yahoo Finance data + OHLCV`);
   console.log(`GET  /api/stocks/:symbol      — stock detail + markdown`);
   console.log(`GET  /api/market-overview     — market summary`);
   console.log(`GET  /api/stream/prices       — SSE real-time prices`);
   console.log(`POST /analyze                 — AI stock analysis`);
+  console.log(`POST /api/portfolio/optimize  — AI portfolio auto-tune`);
 });
