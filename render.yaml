@@ -1,0 +1,54 @@
+services:
+  # Node.js API server
+  - type: web
+    name: jse-advisor
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npx prisma generate
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jse-advisor-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: ALPACA_API_KEY
+        sync: false
+      - key: ALPACA_SECRET_KEY
+        sync: false
+      - key: PYTHON_ANALYTICS_URL
+        sync: false
+
+  # Python analytics microservice
+  - type: web
+    name: jse-analytics
+    runtime: python
+    plan: starter
+    rootDir: python-analytics
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8000"
+
+databases:
+  - name: jse-advisor-db
+    plan: starter
+    databaseName: jamaica_financial_advisor

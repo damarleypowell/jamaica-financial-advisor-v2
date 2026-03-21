@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+python-analytics/.venv/
+python-analytics/__pycache__/
+python-analytics/**/__pycache__/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+config/yahoo-api-keys.json
+
+# Git
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Dev files
+.claude/
+agents/
+README.md
+*.md
+start.bat
+server.legacy.js
+frontend-server.js
+
+# Data (should be in database, not baked into image)
+data/users.json
