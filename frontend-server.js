@@ -13,6 +13,6 @@ app.get("*", (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Jamaica Financial Advisor UI  →  http://localhost:${PORT}`);
+  console.log(`Gotham Financial UI  →  http://localhost:${PORT}`);
   console.log(`Make sure the API server is running on http://localhost:3000`);
 });

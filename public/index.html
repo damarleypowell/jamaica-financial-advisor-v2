@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>JSE Live — Jamaica Stock Exchange</title>
+  <title>Gotham Financial — Investment Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
@@ -975,6 +975,201 @@
       .us-quote-price { font-size: 22px; }
       .stat-card .stat-value { font-size: 20px; }
     }
+
+    /* ── Settings Page Styles ──────────────────────────────────── */
+    .settings-section { margin-bottom: 0; }
+    .settings-section .section-title {
+      font-size: 18px; font-weight: 700; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .settings-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px; background: var(--glass); border: 1px solid var(--border);
+      border-radius: 10px; transition: var(--transition);
+    }
+    .settings-row:hover { border-color: var(--border2); }
+    .settings-row-info { flex: 1; }
+    .settings-row-info .label { font-weight: 600; font-size: 14px; }
+    .settings-row-info .sublabel { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .settings-input {
+      width: 100%; padding: 10px 14px; background: var(--glass);
+      border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+      font-size: 13px; font-family: inherit; transition: var(--transition);
+    }
+    .settings-input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,200,83,0.1); }
+    .settings-input:read-only { opacity: 0.6; cursor: not-allowed; }
+    .settings-btn {
+      padding: 8px 20px; border-radius: 8px; font-weight: 600; font-size: 13px;
+      cursor: pointer; font-family: inherit; transition: var(--transition); border: 1px solid;
+    }
+    .settings-btn-green { border-color: var(--green); background: transparent; color: var(--green); }
+    .settings-btn-green:hover { background: rgba(0,200,83,0.1); }
+    .settings-btn-green-fill { border: none; background: linear-gradient(135deg, var(--green), var(--green2)); color: #fff; }
+    .settings-btn-green-fill:hover { box-shadow: 0 4px 15px var(--green-glow); }
+    .settings-btn-gold { border-color: var(--gold); background: transparent; color: var(--gold); }
+    .settings-btn-gold:hover { background: rgba(255,214,0,0.1); }
+    .settings-btn-red { border-color: var(--red); background: transparent; color: var(--red); }
+    .settings-btn-red:hover { background: rgba(255,23,68,0.1); }
+    .settings-btn-blue { border-color: var(--blue); background: transparent; color: var(--blue); }
+    .settings-btn-blue:hover { background: rgba(0,176,255,0.1); }
+    .badge-2fa {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;
+      background: rgba(0,200,83,0.12); color: var(--green); border: 1px solid rgba(0,200,83,0.25);
+    }
+    .toggle-switch {
+      position: relative; width: 44px; height: 24px; cursor: pointer;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--glass2);
+      border-radius: 12px; border: 1px solid var(--border); transition: var(--transition);
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 18px; height: 18px;
+      left: 2px; bottom: 2px; background: var(--muted);
+      border-radius: 50%; transition: var(--transition);
+    }
+    .toggle-switch input:checked + .toggle-slider { background: rgba(0,200,83,0.2); border-color: var(--green); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); background: var(--green); }
+    .tier-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    /* ── Wallet Modal Styles ──────────────────────────────────── */
+    .wallet-modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 1200;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center;
+    }
+    .wallet-modal-overlay.show { display: flex; }
+    .wallet-modal {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: var(--radius); max-width: 560px; width: 92%;
+      max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      animation: fadeIn 0.3s ease-out;
+    }
+    .wallet-modal-header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .wallet-modal-header h3 { font-size: 17px; font-weight: 700; }
+    .wallet-modal-body { padding: 24px; }
+    .wallet-tab-btns { display: flex; gap: 4px; margin-bottom: 20px; }
+    .wallet-tab-btn {
+      flex: 1; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      background: var(--glass); border: 1px solid var(--border); color: var(--muted);
+      cursor: pointer; font-family: inherit; transition: var(--transition); text-align: center;
+    }
+    .wallet-tab-btn:hover { color: var(--text); border-color: var(--border2); }
+    .wallet-tab-btn.active-deposit { background: rgba(0,200,83,0.12); color: var(--green); border-color: rgba(0,200,83,0.3); }
+    .wallet-tab-btn.active-withdraw { background: rgba(255,23,68,0.12); color: var(--red); border-color: rgba(255,23,68,0.3); }
+    .wallet-balance-display {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;
+    }
+    .wallet-bal-card {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; text-align: center;
+    }
+    .wallet-bal-card .cur { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .wallet-bal-card .amt {
+      font-size: 22px; font-weight: 800; margin-top: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .wallet-bal-card .held { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .wallet-form-group { margin-bottom: 16px; }
+    .wallet-form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .wallet-form-group input, .wallet-form-group select {
+      width: 100%; padding: 12px 14px; background: var(--glass);
+      border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+      font-size: 14px; font-family: inherit; transition: var(--transition);
+    }
+    .wallet-form-group input:focus, .wallet-form-group select:focus {
+      outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,200,83,0.1);
+    }
+    .wallet-form-group select option { background: var(--bg3); color: var(--text); }
+    .wallet-submit-btn {
+      width: 100%; padding: 14px; border-radius: 10px; border: none;
+      font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: var(--transition);
+    }
+    .wallet-submit-btn.deposit-btn {
+      background: linear-gradient(135deg, var(--green), var(--green2)); color: #fff;
+    }
+    .wallet-submit-btn.deposit-btn:hover { box-shadow: 0 4px 20px var(--green-glow); }
+    .wallet-submit-btn.withdraw-btn {
+      background: linear-gradient(135deg, var(--red), #c4001d); color: #fff;
+    }
+    .wallet-submit-btn.withdraw-btn:hover { box-shadow: 0 4px 20px var(--red-glow); }
+    .wallet-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .wallet-tx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .wallet-tx-table th {
+      text-align: left; padding: 10px 12px; font-size: 11px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border);
+    }
+    .wallet-tx-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .wallet-tx-table tr:hover td { background: var(--glass); }
+    .tx-type-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+    }
+    .tx-type-badge.deposit { background: rgba(0,200,83,0.12); color: var(--green); }
+    .tx-type-badge.withdrawal { background: rgba(255,23,68,0.12); color: var(--red); }
+    .tx-type-badge.trade { background: rgba(0,176,255,0.12); color: var(--blue); }
+    .tx-status-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600;
+    }
+    .tx-status-badge.completed { background: rgba(0,200,83,0.12); color: var(--green); }
+    .tx-status-badge.pending { background: rgba(255,214,0,0.12); color: var(--gold); }
+    .tx-status-badge.failed { background: rgba(255,23,68,0.12); color: var(--red); }
+
+    /* ── Enhanced Notification Bell Styles ──────────────────── */
+    .notif-count-badge {
+      position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px;
+      background: var(--red); color: #fff; font-size: 9px; font-weight: 700;
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      padding: 0 4px; line-height: 1;
+    }
+    .notif-panel-enhanced {
+      display: none; position: fixed;
+      top: calc(var(--ticker-h) + var(--header-h) + 4px); right: 16px;
+      width: 380px; max-height: 500px; z-index: 1100;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: var(--radius); box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+      backdrop-filter: blur(20px); overflow: hidden;
+      display: none;
+    }
+    .notif-panel-enhanced.show { display: block; }
+    .notif-panel-header {
+      padding: 16px 18px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .notif-panel-header h4 { font-size: 14px; font-weight: 700; }
+    .notif-panel-actions { display: flex; gap: 8px; }
+    .notif-panel-actions button {
+      background: none; border: none; color: var(--muted); font-size: 12px;
+      cursor: pointer; transition: var(--transition); font-family: inherit;
+    }
+    .notif-panel-actions button:hover { color: var(--text); }
+    .notif-list-enhanced { max-height: 420px; overflow-y: auto; }
+    .notif-item-enhanced {
+      padding: 12px 18px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.2s; display: flex; gap: 12px; align-items: flex-start;
+    }
+    .notif-item-enhanced:hover { background: var(--glass); }
+    .notif-item-enhanced.unread { background: rgba(0,200,83,0.03); }
+    .notif-item-enhanced .notif-icon-wrap {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .notif-item-enhanced .notif-body { flex: 1; min-width: 0; }
+    .notif-item-enhanced .notif-title { font-size: 13px; font-weight: 600; }
+    .notif-item-enhanced .notif-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .notif-item-enhanced .notif-time { font-size: 10px; color: var(--muted); white-space: nowrap; margin-top: 2px; }
+    .notif-unread-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; margin-top: 6px; }
   </style>
 </head>
 <body>
@@ -986,7 +1181,7 @@
 
   <!-- Sidebar -->
   <nav class="sidebar" id="sidebar">
-    <div class="sidebar-brand"><h1>JSE Live</h1><p>Jamaica Stock Exchange</p></div>
+    <div class="sidebar-brand"><h1>Gotham</h1><p>Financial Platform</p></div>
     <div class="sidebar-nav">
       <div class="nav-section">
         <div class="nav-section-title">Market</div>
@@ -1052,7 +1247,7 @@
         <button class="wallet-deposit-btn" id="walletDepositBtn"><i class="fas fa-plus" style="margin-right:4px;"></i>Deposit</button>
       </div>
       <span class="header-clock" id="headerClock">--:--:--</span>
-      <button class="header-btn" id="notifBtn" title="Notifications"><i class="fas fa-bell"></i><div class="notif-dot"></div></button>
+      <button class="header-btn" id="notifBtn" title="Notifications"><i class="fas fa-bell"></i><div class="notif-dot"></div><span class="notif-count-badge" id="notifCountBadge" style="display:none;">0</span></button>
       <div id="walletDisplay" style="display:none;margin-right:12px;background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;">
         <span style="color:var(--muted);">Balance:</span>
         <span id="headerWalletBalance" style="font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;margin-left:4px;">J$1,000,000</span>
@@ -1076,7 +1271,7 @@
       </div>
       <div id="signupForm" style="display:none;">
         <h2>Create Account</h2>
-        <p class="subtitle">Join JSE Live for AI-powered investing</p>
+        <p class="subtitle">Join Gotham Financial for AI-powered investing</p>
         <div class="form-group"><label>Full Name</label><input type="text" id="signupName" placeholder="John Smith"></div>
         <div class="form-group"><label>Email</label><input type="email" id="signupEmail" placeholder="your@email.com"></div>
         <div class="form-group"><label>Password</label><input type="password" id="signupPassword" placeholder="Min. 6 characters"></div>
@@ -1168,7 +1363,7 @@
       <div class="onboarding-step active" id="onboardingStep1">
         <div class="text-center">
           <div class="onboarding-welcome-icon"><span style="color:#000;">&#128200;</span></div>
-          <h2 style="font-size:26px;margin-bottom:6px;">Welcome to JSE Live</h2>
+          <h2 style="font-size:26px;margin-bottom:6px;">Welcome to Gotham Financial</h2>
           <p class="subtitle" style="margin-bottom:24px;">Your AI-powered gateway to the Jamaica Stock Exchange. Let's get you started - tell us about your experience.</p>
         </div>
         <div class="experience-cards">
@@ -1788,7 +1983,7 @@
       </div>
     </div>
 
-    <!-- Settings View -->
+    <!-- Settings View (Enhanced) -->
     <div class="view" id="view-settings">
       <div id="settingsContent" style="display:grid;gap:16px;"></div>
     </div>
@@ -1805,18 +2000,93 @@
 
   </main>
 
-  <!-- Notification Panel -->
-  <div class="notif-panel" id="notifPanel" style="
-    display:none;position:fixed;top:calc(var(--ticker-h) + var(--header-h) + 4px);right:16px;
-    width:360px;max-height:480px;overflow-y:auto;z-index:1100;
-    background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);
-    box-shadow:0 12px 40px rgba(0,0,0,0.6);backdrop-filter:blur(20px);
-  ">
-    <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-      <h4 style="font-size:14px;font-weight:700;">Notifications</h4>
-      <button id="clearNotifsBtn" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;">Clear all</button>
+  <!-- Notification Panel (Enhanced) -->
+  <div class="notif-panel-enhanced" id="notifPanel">
+    <div class="notif-panel-header">
+      <h4><i class="fas fa-bell" style="margin-right:6px;color:var(--gold);"></i> Notifications</h4>
+      <div class="notif-panel-actions">
+        <button id="markAllReadBtn"><i class="fas fa-check-double"></i> Mark all read</button>
+        <button id="clearNotifsBtn"><i class="fas fa-trash-alt"></i> Clear</button>
+      </div>
     </div>
-    <div id="notifList" style="padding:8px;"></div>
+    <div class="notif-list-enhanced" id="notifList"></div>
+  </div>
+
+  <!-- Wallet / Deposit-Withdrawal Modal -->
+  <div class="wallet-modal-overlay" id="walletModal">
+    <div class="wallet-modal">
+      <div class="wallet-modal-header">
+        <h3><i class="fas fa-wallet" style="color:var(--green);margin-right:8px;"></i> Wallet</h3>
+        <button onclick="document.getElementById('walletModal').classList.remove('show')" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="wallet-modal-body">
+        <!-- Balance Cards -->
+        <div class="wallet-balance-display">
+          <div class="wallet-bal-card">
+            <div class="cur">JMD</div>
+            <div class="amt" id="wmJMDBalance" style="color:var(--green);">J$0.00</div>
+            <div class="held" id="wmJMDHeld">Available: J$0.00</div>
+          </div>
+          <div class="wallet-bal-card">
+            <div class="cur">USD</div>
+            <div class="amt" id="wmUSDBalance" style="color:var(--blue);">$0.00</div>
+            <div class="held" id="wmUSDHeld">Available: $0.00</div>
+          </div>
+        </div>
+
+        <!-- Deposit / Withdraw Tabs -->
+        <div class="wallet-tab-btns">
+          <button class="wallet-tab-btn active-deposit" id="wmDepositTab" onclick="window.__switchWalletTab('deposit')"><i class="fas fa-arrow-down" style="margin-right:6px;"></i>Deposit</button>
+          <button class="wallet-tab-btn" id="wmWithdrawTab" onclick="window.__switchWalletTab('withdraw')"><i class="fas fa-arrow-up" style="margin-right:6px;"></i>Withdraw</button>
+        </div>
+
+        <!-- Deposit Form -->
+        <div id="wmDepositForm">
+          <div class="wallet-form-group">
+            <label>Amount</label>
+            <input type="number" id="wmDepositAmount" placeholder="Enter amount" min="0" step="0.01">
+          </div>
+          <div class="wallet-form-group">
+            <label>Currency</label>
+            <select id="wmDepositCurrency">
+              <option value="JMD">JMD - Jamaican Dollar</option>
+              <option value="USD">USD - US Dollar</option>
+            </select>
+          </div>
+          <button class="wallet-submit-btn deposit-btn" id="wmDepositSubmit" onclick="window.__walletDeposit()">
+            <i class="fas fa-arrow-down" style="margin-right:6px;"></i>Deposit Funds
+          </button>
+        </div>
+
+        <!-- Withdraw Form -->
+        <div id="wmWithdrawForm" style="display:none;">
+          <div class="wallet-form-group">
+            <label>Amount</label>
+            <input type="number" id="wmWithdrawAmount" placeholder="Enter amount" min="0" step="0.01">
+          </div>
+          <div class="wallet-form-group">
+            <label>Currency</label>
+            <select id="wmWithdrawCurrency">
+              <option value="JMD">JMD - Jamaican Dollar</option>
+              <option value="USD">USD - US Dollar</option>
+            </select>
+          </div>
+          <button class="wallet-submit-btn withdraw-btn" id="wmWithdrawSubmit" onclick="window.__walletWithdraw()">
+            <i class="fas fa-arrow-up" style="margin-right:6px;"></i>Withdraw Funds
+          </button>
+        </div>
+
+        <!-- Transaction History -->
+        <div style="margin-top:24px;">
+          <h4 style="font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-clock-rotate-left" style="color:var(--muted);"></i> Recent Transactions
+          </h4>
+          <div id="wmTxHistory" style="overflow-x:auto;">
+            <p style="color:var(--muted);font-size:13px;padding:20px;text-align:center;">No transactions yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Stock Detail Modal -->
@@ -1949,7 +2219,7 @@
       <!-- Step 1: Welcome -->
       <div id="onboardStep1">
         <div style="font-size:48px;margin-bottom:16px;">🇯🇲</div>
-        <h2 style="font-size:24px;font-weight:800;margin-bottom:8px;">Welcome to JSE Live</h2>
+        <h2 style="font-size:24px;font-weight:800;margin-bottom:8px;">Welcome to Gotham Financial</h2>
         <p style="color:var(--muted);margin-bottom:24px;">Your AI-powered gateway to investing in the Jamaica Stock Exchange and beyond.</p>
         <p style="font-size:14px;margin-bottom:20px;">What describes you best?</p>
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
@@ -2037,7 +2307,7 @@
       &nbsp;&bull;&nbsp;
       <a href="/terms.html#financial-disclaimers" style="color:var(--green);text-decoration:none;">Risk Disclosure</a>
     </p>
-    <p>&copy; 2026 JSE Advisor &mdash; AI-Powered Jamaica Stock Exchange Platform. All rights reserved.</p>
+    <p>&copy; 2026 Gotham Financial &mdash; AI-Powered Investment Platform. All rights reserved.</p>
   </footer>
 
   <!-- Voice Mic -->

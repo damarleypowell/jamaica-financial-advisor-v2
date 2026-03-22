@@ -9,9 +9,13 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 
 const HEADERS = {
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-  "Accept": "text/html,application/xhtml+xml",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
   "Accept-Language": "en-US,en;q=0.9",
+  "Accept-Encoding": "gzip, deflate, br",
+  "Connection": "keep-alive",
+  "Upgrade-Insecure-Requests": "1",
+  "Cache-Control": "max-age=0",
 };
 
 // ── Cache ──────────────────────────────────────────────────────────────────
@@ -35,11 +39,15 @@ async function scrapeAllStocks() {
   console.log("📊 Scraping real JSE stock prices from jseinvestor.com...");
   const stocks = [];
 
+  // Try jamstockex.com first (official JSE), then jseinvestor.com
   try {
-    const { data } = await axios.get("https://www.jseinvestor.com/", {
+    const { data } = await axios.get("https://www.jamstockex.com/trading/trade-summary/", {
       timeout: 15000,
       headers: HEADERS,
-    });
+    }).catch(() => axios.get("https://www.jseinvestor.com/", {
+      timeout: 15000,
+      headers: HEADERS,
+    }));
     const $ = cheerio.load(data);
 
     // First pass: build a name map from the full links like "BIL - BARITA INVESTMENTS LIMITED"
@@ -107,6 +115,54 @@ async function scrapeAllStocks() {
     }
   } catch (e) {
     console.error("jseinvestor.com scrape error:", e.message?.slice(0, 100));
+  }
+
+  // Fallback: if scraping failed, try Yahoo Finance for known JSE symbols
+  if (stocks.length === 0) {
+    console.log("📊 Falling back to Yahoo Finance for JSE data...");
+    try {
+      const yf = require("yahoo-finance2").default;
+      const symbols = Object.values(YAHOO_MAP);
+      const reverseMap = {};
+      Object.entries(YAHOO_MAP).forEach(([jse, yh]) => { reverseMap[yh] = jse; });
+
+      const results = await Promise.allSettled(
+        symbols.map(s => yf.quote(s).catch(() => null))
+      );
+
+      results.forEach((r) => {
+        if (r.status !== "fulfilled" || !r.value) return;
+        const q = r.value;
+        if (!q.regularMarketPrice) return;
+        const yahooSym = q.symbol;
+        const jseSym = reverseMap[yahooSym] || yahooSym.replace(".JM", "");
+        stocks.push({
+          symbol: jseSym,
+          name: (q.longName || q.shortName || jseSym)
+            .replace(/\bLimited\b/gi, "").replace(/\bLtd\b/gi, "").trim(),
+          price: q.regularMarketPrice,
+          dollarChange: q.regularMarketChange || 0,
+          pctChange: +(q.regularMarketChangePercent || 0).toFixed(2),
+          volume: q.regularMarketVolume || 0,
+          currency: q.currency === "USD" ? "USD" : "JMD",
+          dataSource: "yahoo-finance",
+        });
+      });
+
+      if (stocks.length > 0) {
+        allStocksCache = stocks;
+        lastAllStocksFetch = now;
+        console.log(`📊 Loaded ${stocks.length} JSE stocks via Yahoo Finance fallback`);
+      }
+    } catch (e2) {
+      console.error("Yahoo Finance fallback error:", e2.message?.slice(0, 100));
+    }
+  }
+
+  // Final fallback: return cached data even if stale
+  if (stocks.length === 0 && allStocksCache) {
+    console.log("📊 Using stale cached data");
+    return allStocksCache;
   }
 
   return stocks;

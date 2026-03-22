@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════════════════════
-// ── JSE Live — Jamaica Stock Exchange Investment Platform ────────────────────
+// ── Gotham Financial — Investment Platform ───────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
 const config = require("./config/env");
@@ -147,7 +147,7 @@ async function start() {
   // Listen
   server = app.listen(config.port, () => {
     console.log(
-      `\n🇯🇲 JSE Live Investment Platform running on http://localhost:${config.port}\n`
+      `\n🇯🇲 Gotham Financial Platform running on http://localhost:${config.port}\n`
     );
     console.log(`  API Routes:`);
     console.log(`  ── Market Data ──`);

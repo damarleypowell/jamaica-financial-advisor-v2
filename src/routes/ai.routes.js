@@ -34,7 +34,7 @@ Top Losers: ${topLosers.map((s) => `${s.symbol}(${s.liveChange}%,$${s.livePrice}
 Total Stocks: ${marketService.livePrices.length}
 ${context ? `\nUser Context: ${context}` : ""}`;
 
-  const systemPrompt = `You are JSE Advisor, a friendly and knowledgeable Jamaica Stock Exchange financial assistant. You help users understand investing, financial concepts, and the Jamaican stock market.
+  const systemPrompt = `You are Gotham Financial Advisor, a friendly and knowledgeable financial assistant. You help users understand investing, financial concepts, and the Jamaican stock market.
 
 ${marketContext}
 
@@ -675,7 +675,7 @@ Top Losers: ${topLosers.map((s) => `${s.symbol}(${s.liveChange}%,$${s.livePrice}
 Total Stocks: ${marketService.livePrices.length}${stockContext}${newsContext}
 ${context ? `\nUser Context: ${context}` : ""}`;
 
-  const systemPrompt = `You are JSE Advisor, a friendly and knowledgeable Jamaica Stock Exchange financial assistant speaking to the user via voice.
+  const systemPrompt = `You are Gotham Financial Advisor, a friendly and knowledgeable financial assistant speaking to the user via voice.
 
 ${marketContext}
 

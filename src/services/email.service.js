@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════════════════════
-// ── Email Service — JSE Advisor Transactional Emails ─────────────────────────
+// ── Email Service — Gotham Financial Transactional Emails ────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
 const nodemailer = require("nodemailer");
@@ -10,7 +10,7 @@ const EMAIL_HOST = process.env.EMAIL_HOST || "smtp.gmail.com";
 const EMAIL_PORT = parseInt(process.env.EMAIL_PORT, 10) || 587;
 const EMAIL_USER = process.env.EMAIL_USER || "";
 const EMAIL_PASS = process.env.EMAIL_PASS || "";
-const EMAIL_FROM = process.env.EMAIL_FROM || `"JSE Advisor" <${EMAIL_USER || "noreply@jseadvisor.com"}>`;
+const EMAIL_FROM = process.env.EMAIL_FROM || `"Gotham Financial" <${EMAIL_USER || "noreply@gothamfinancial.com"}>`;
 const APP_URL = process.env.APP_URL || "http://localhost:3000";
 
 // ── Transport ────────────────────────────────────────────────────────────────
@@ -82,8 +82,8 @@ function buildEmail({ title, preheader, greeting, body, ctaText, ctaUrl, footer 
 <div class="wrapper">
 <div class="container">
   <div class="header-bar">
-    <h1>JSE Advisor</h1>
-    <span class="tag">Jamaica Stock Exchange Platform</span>
+    <h1>Gotham Financial</h1>
+    <span class="tag">AI-Powered Investment Platform</span>
   </div>
   <div class="body-content">
     <h2>${greeting || "Hello"}</h2>
@@ -94,8 +94,8 @@ function buildEmail({ title, preheader, greeting, body, ctaText, ctaUrl, footer 
   <div class="footer">
     ${footer || ""}
     <p style="margin-top:12px;">
-      JSE Advisor &mdash; AI-Powered Jamaica Stock Exchange Platform<br/>
-      &copy; ${new Date().getFullYear()} JSE Advisor. All rights reserved.
+      Gotham Financial &mdash; AI-Powered Investment Platform<br/>
+      &copy; ${new Date().getFullYear()} Gotham Financial. All rights reserved.
     </p>
     <p style="margin-top:8px;">
       <a href="${APP_URL}/terms.html">Terms of Service</a> &nbsp;|&nbsp;
@@ -103,7 +103,7 @@ function buildEmail({ title, preheader, greeting, body, ctaText, ctaUrl, footer 
       <a href="${APP_URL}/terms.html#unsubscribe">Unsubscribe</a>
     </p>
     <p style="margin-top:6px;font-size:11px;color:#4a5568;">
-      This email was sent by JSE Advisor. If you did not request this email, please ignore it.
+      This email was sent by Gotham Financial. If you did not request this email, please ignore it.
     </p>
   </div>
 </div>
@@ -122,11 +122,11 @@ function buildEmail({ title, preheader, greeting, body, ctaText, ctaUrl, footer 
 async function sendVerificationEmail(email, token, name) {
   const verifyUrl = `${APP_URL}/api/auth/verify?token=${encodeURIComponent(token)}`;
   const html = buildEmail({
-    title: "Verify Your Email — JSE Advisor",
-    preheader: "Please verify your email address to activate your JSE Advisor account.",
+    title: "Verify Your Email — Gotham Financial",
+    preheader: "Please verify your email address to activate your Gotham Financial account.",
     greeting: `Welcome, ${name || "Investor"}!`,
     body: `
-      <p>Thank you for joining JSE Advisor. To get started, please verify your email address by clicking the button below.</p>
+      <p>Thank you for joining Gotham Financial. To get started, please verify your email address by clicking the button below.</p>
       <p>This link will expire in <strong>24 hours</strong>.</p>
     `,
     ctaText: "Verify My Email",
@@ -137,11 +137,11 @@ async function sendVerificationEmail(email, token, name) {
   return transporter.sendMail({
     from: EMAIL_FROM,
     to: email,
-    subject: "Verify Your Email — JSE Advisor",
-    text: `Welcome to JSE Advisor, ${name || "Investor"}! Verify your email: ${verifyUrl}`,
+    subject: "Verify Your Email — Gotham Financial",
+    text: `Welcome to Gotham Financial, ${name || "Investor"}! Verify your email: ${verifyUrl}`,
     html,
     headers: {
-      "X-Mailer": "JSE-Advisor/2.0",
+      "X-Mailer": "Gotham-Financial/2.0",
       "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
     },
   });
@@ -153,11 +153,11 @@ async function sendVerificationEmail(email, token, name) {
 async function sendPasswordResetEmail(email, token, name) {
   const resetUrl = `${APP_URL}/reset-password?token=${encodeURIComponent(token)}`;
   const html = buildEmail({
-    title: "Reset Your Password — JSE Advisor",
-    preheader: "You requested a password reset for your JSE Advisor account.",
+    title: "Reset Your Password — Gotham Financial",
+    preheader: "You requested a password reset for your Gotham Financial account.",
     greeting: `Hi ${name || "there"},`,
     body: `
-      <p>We received a request to reset the password for your JSE Advisor account. Click the button below to choose a new password.</p>
+      <p>We received a request to reset the password for your Gotham Financial account. Click the button below to choose a new password.</p>
       <p>This link will expire in <strong>1 hour</strong>. If you didn't request this, you can safely ignore this email.</p>
       <div class="info-box">
         <div class="label">Security Notice</div>
@@ -172,11 +172,11 @@ async function sendPasswordResetEmail(email, token, name) {
   return transporter.sendMail({
     from: EMAIL_FROM,
     to: email,
-    subject: "Reset Your Password — JSE Advisor",
+    subject: "Reset Your Password — Gotham Financial",
     text: `Hi ${name || "there"}, reset your password here: ${resetUrl} (expires in 1 hour)`,
     html,
     headers: {
-      "X-Mailer": "JSE-Advisor/2.0",
+      "X-Mailer": "Gotham-Financial/2.0",
       "X-Priority": "1",
       "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
     },
@@ -191,11 +191,11 @@ async function sendOrderConfirmation(email, order) {
   const sideColor = side === "BUY" ? "#00c853" : "#ff1744";
 
   const html = buildEmail({
-    title: "Order Confirmed — JSE Advisor",
+    title: "Order Confirmed — Gotham Financial",
     preheader: `Your ${side} order for ${order.symbol} has been placed.`,
     greeting: "Order Confirmation",
     body: `
-      <p>Your order has been successfully placed on JSE Advisor.</p>
+      <p>Your order has been successfully placed on Gotham Financial.</p>
       <div class="info-box">
         <div class="label">Order Details</div>
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
@@ -240,11 +240,11 @@ async function sendOrderConfirmation(email, order) {
   return transporter.sendMail({
     from: EMAIL_FROM,
     to: email,
-    subject: `Order Confirmed: ${side} ${order.quantity} ${order.symbol} — JSE Advisor`,
+    subject: `Order Confirmed: ${side} ${order.quantity} ${order.symbol} — Gotham Financial`,
     text: `Your ${side} order for ${order.quantity} shares of ${order.symbol} at J$${order.price} has been placed.`,
     html,
     headers: {
-      "X-Mailer": "JSE-Advisor/2.0",
+      "X-Mailer": "Gotham-Financial/2.0",
       "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
     },
   });
@@ -258,7 +258,7 @@ async function sendAlertTriggered(email, alert) {
   const dirColor = alert.direction === "above" ? "#00c853" : "#ff1744";
 
   const html = buildEmail({
-    title: `Price Alert: ${alert.symbol} — JSE Advisor`,
+    title: `Price Alert: ${alert.symbol} — Gotham Financial`,
     preheader: `${alert.symbol} has ${direction} J$${alert.targetPrice}`,
     greeting: "Price Alert Triggered",
     body: `
@@ -303,7 +303,7 @@ async function sendAlertTriggered(email, alert) {
     text: `${alert.symbol} has ${direction} your target of J$${alert.targetPrice}. Current price: J$${alert.currentPrice}.`,
     html,
     headers: {
-      "X-Mailer": "JSE-Advisor/2.0",
+      "X-Mailer": "Gotham-Financial/2.0",
       "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
     },
   });

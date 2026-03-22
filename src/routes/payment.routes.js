@@ -49,7 +49,7 @@ router.post("/api/payments/create-checkout", authMiddleware, async (req, res) =>
           price_data: {
             currency: currency.toLowerCase(),
             product_data: {
-              name: "JSE Live Wallet Deposit",
+              name: "Gotham Financial Wallet Deposit",
               description: `Deposit ${currency} ${amount} to your trading wallet`,
             },
             unit_amount: Math.round(amount * 100),
@@ -72,11 +72,13 @@ router.post("/api/payments/create-checkout", authMiddleware, async (req, res) =>
       await prisma.payment.create({
         data: {
           userId: req.user.id,
+          provider: "stripe",
+          externalId: session.id,
           type: "DEPOSIT",
           amount,
           currency,
           status: "PENDING",
-          stripeSessionId: session.id,
+          metadata: { sessionId: session.id },
         },
       });
     }
@@ -148,7 +150,7 @@ router.post("/api/payments/webhook", async (req, res) => {
           // Update payment status
           if (session.id) {
             await tx.payment.updateMany({
-              where: { stripeSessionId: session.id },
+              where: { externalId: session.id },
               data: { status: "COMPLETED" },
             });
           }
@@ -158,9 +160,8 @@ router.post("/api/payments/webhook", async (req, res) => {
             data: {
               userId,
               type: "DEPOSIT",
-              amount: parsedAmount,
+              totalAmount: parsedAmount,
               currency: walletCurrency,
-              description: `Stripe deposit - ${session.id}`,
             },
           });
         });
@@ -220,6 +221,7 @@ router.post("/api/payments/create-withdrawal", authMiddleware, async (req, res) 
         await tx.payment.create({
           data: {
             userId: req.user.id,
+            provider: "manual",
             type: "WITHDRAWAL",
             amount,
             currency: currency.toUpperCase(),
@@ -231,9 +233,8 @@ router.post("/api/payments/create-withdrawal", authMiddleware, async (req, res) 
           data: {
             userId: req.user.id,
             type: "WITHDRAWAL",
-            amount: -amount,
+            totalAmount: amount,
             currency: currency.toUpperCase(),
-            description: "Withdrawal request (pending)",
           },
         });
       });

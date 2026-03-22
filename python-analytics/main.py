@@ -1,5 +1,5 @@
 """
-Jamaica Financial Advisor — Python Analytics Engine
+Gotham Financial — Python Analytics Engine
 
 A FastAPI microservice that provides real financial analytics to the
 Node.js Express server via HTTP.  All computations use scipy, numpy,
@@ -26,13 +26,13 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup / shutdown hooks."""
-    print("[analytics] Jamaica Financial Advisor analytics engine starting ...")
+    print("[analytics] Gotham Financial analytics engine starting ...")
     yield
     print("[analytics] Shutting down.")
 
 
 app = FastAPI(
-    title="Jamaica Financial Advisor — Analytics Engine",
+    title="Gotham Financial — Analytics Engine",
     version="1.0.0",
     description="Quantitative analytics microservice for portfolio optimisation, "
                 "technical analysis, ML prediction, and stock screening.",
@@ -70,7 +70,7 @@ app.include_router(screener.router)
 async def health():
     return {
         "status": "healthy",
-        "service": "jamaica-financial-advisor-analytics",
+        "service": "gotham-financial-analytics",
         "version": "1.0.0",
     }
 

@@ -1,5 +1,5 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# JSE Advisor — Multi-stage Docker Build
+# Gotham Financial — Multi-stage Docker Build
 # Serves Node.js API + Python Analytics in a single container
 # ══════════════════════════════════════════════════════════════════════════════
 

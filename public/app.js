@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════════════════════
-// JSE Live — Complete Frontend Application (Debug Pass)
+// Gotham Financial — Complete Frontend Application (Debug Pass)
 // ══════════════════════════════════════════════════════════════════════════════
 
 (function() {
@@ -140,7 +140,7 @@
     const navItem = $(`.nav-item[data-view="${view}"]`);
     if (navItem) navItem.classList.add('active');
 
-    const [title, subtitle] = viewTitles[view] || ['JSE Live', ''];
+    const [title, subtitle] = viewTitles[view] || ['Gotham Financial', ''];
     $('#headerTitle').textContent = title;
     $('#headerSubtitle').textContent = subtitle;
 
@@ -3653,8 +3653,12 @@
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // ── Settings View ──────────────────────────────────────────────────────────
+  // ── Settings View (Enhanced) ──────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════════
+
+  // Notification preference state (persisted in localStorage)
+  const notifPrefs = JSON.parse(localStorage.getItem('jse_notif_prefs') || '{"priceTargets":true,"orderFills":true,"news":false}');
+
   function loadSettingsView() {
     const el = $('#settingsContent');
     if (!el) return;
@@ -3662,61 +3666,249 @@
       el.innerHTML = '<div class="card" style="padding:40px;text-align:center;"><p>Please sign in to access settings.</p></div>';
       return;
     }
+
+    const memberSince = state.user.createdAt ? new Date(state.user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+    const has2FA = state.user.twoFactorEnabled || false;
+    const tier = state.user.subscriptionTier || state.user.subscription?.plan || 'FREE';
+    const tierColors = { FREE: 'var(--muted)', BASIC: 'var(--blue)', PRO: 'var(--gold)', ENTERPRISE: 'var(--green)' };
+    const tierColor = tierColors[tier] || 'var(--muted)';
+
     el.innerHTML = `
-      <div class="card" style="padding:24px;">
-        <h3 style="font-size:18px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px;"><i class="fas fa-user" style="color:var(--blue);"></i> Profile</h3>
+      <!-- Profile Section -->
+      <div class="card settings-section" style="padding:24px;">
+        <div class="section-title"><i class="fas fa-user-circle" style="color:var(--blue);font-size:22px;"></i> Profile</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div><label style="font-size:11px;color:var(--muted);text-transform:uppercase;">Name</label><p style="font-size:15px;font-weight:600;">${escHtml(state.user.name)}</p></div>
-          <div><label style="font-size:11px;color:var(--muted);text-transform:uppercase;">Email</label><p style="font-size:15px;font-weight:600;">${escHtml(state.user.email)}</p></div>
+          <div class="wallet-form-group">
+            <label>Display Name</label>
+            <input type="text" class="settings-input" id="settingsName" value="${escHtml(state.user.name)}" placeholder="Your name">
+          </div>
+          <div class="wallet-form-group">
+            <label>Email</label>
+            <input type="email" class="settings-input" value="${escHtml(state.user.email)}" readonly>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+          <div style="font-size:12px;color:var(--muted);"><i class="fas fa-calendar" style="margin-right:6px;"></i>Member since ${memberSince}</div>
+          <button class="settings-btn settings-btn-green-fill" onclick="window.__saveProfile()">Save Profile</button>
         </div>
       </div>
 
-      <div class="card" style="padding:24px;">
-        <h3 style="font-size:18px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px;"><i class="fas fa-shield-halved" style="color:var(--green);"></i> Security</h3>
-        <div style="display:grid;gap:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--glass);border:1px solid var(--border);border-radius:10px;">
-            <div>
-              <div style="font-weight:600;">Two-Factor Authentication</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px;">Add an extra layer of security with TOTP</div>
-            </div>
-            <button id="btn2FA" onclick="window.__toggle2FA()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--green);background:transparent;color:var(--green);cursor:pointer;font-weight:600;">Enable 2FA</button>
+      <!-- Change Password Section -->
+      <div class="card settings-section" style="padding:24px;">
+        <div class="section-title"><i class="fas fa-key" style="color:var(--gold);font-size:20px;"></i> Change Password</div>
+        <div style="display:grid;gap:12px;" id="changePasswordForm">
+          <div class="wallet-form-group" style="margin-bottom:0;">
+            <label>Current Password</label>
+            <input type="password" class="settings-input" id="settingsCurrentPwd" placeholder="Enter current password">
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--glass);border:1px solid var(--border);border-radius:10px;">
-            <div>
-              <div style="font-weight:600;">Email Verification</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px;">Verify your email to unlock trading features</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="wallet-form-group" style="margin-bottom:0;">
+              <label>New Password</label>
+              <input type="password" class="settings-input" id="settingsNewPwd" placeholder="Min 6 characters">
             </div>
-            <button onclick="window.__verifyEmail()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--blue);background:transparent;color:var(--blue);cursor:pointer;font-weight:600;">Verify Email</button>
+            <div class="wallet-form-group" style="margin-bottom:0;">
+              <label>Confirm New Password</label>
+              <input type="password" class="settings-input" id="settingsConfirmPwd" placeholder="Re-enter new password">
+            </div>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--glass);border:1px solid var(--border);border-radius:10px;">
-            <div>
-              <div style="font-weight:600;">Change Password</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px;">Update your account password</div>
-            </div>
-            <button onclick="window.__changePassword()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--gold);background:transparent;color:var(--gold);cursor:pointer;font-weight:600;">Change</button>
+          <div style="text-align:right;margin-top:4px;">
+            <button class="settings-btn settings-btn-gold" onclick="window.__changePasswordInline()">
+              <i class="fas fa-lock" style="margin-right:6px;"></i>Update Password
+            </button>
           </div>
         </div>
       </div>
 
-      <div class="card" style="padding:24px;">
-        <h3 style="font-size:18px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px;"><i class="fas fa-sliders" style="color:var(--gold);"></i> Preferences</h3>
+      <!-- Two-Factor Authentication Section -->
+      <div class="card settings-section" style="padding:24px;">
+        <div class="section-title"><i class="fas fa-shield-halved" style="color:var(--green);font-size:20px;"></i> Two-Factor Authentication</div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="label">TOTP Authentication</div>
+            <div class="sublabel">Add an extra layer of security using an authenticator app</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            ${has2FA
+              ? `<span class="badge-2fa"><i class="fas fa-check-circle"></i> 2FA Active</span>
+                 <button class="settings-btn settings-btn-red" id="btn2FA" onclick="window.__disable2FA()">Disable 2FA</button>`
+              : `<button class="settings-btn settings-btn-green" id="btn2FA" onclick="window.__toggle2FA()">Enable 2FA</button>`
+            }
+          </div>
+        </div>
+        <div id="settings2FAResult" style="margin-top:12px;"></div>
+      </div>
+
+      <!-- Subscription Tier Section -->
+      <div class="card settings-section" style="padding:24px;">
+        <div class="section-title"><i class="fas fa-crown" style="color:${tierColor};font-size:20px;"></i> Subscription</div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="label" style="display:flex;align-items:center;gap:10px;">
+              Current Plan
+              <span class="tier-badge" style="background:${tierColor}20;color:${tierColor};">${tier}</span>
+            </div>
+            <div class="sublabel" id="settingsTierLimits">Loading feature limits...</div>
+          </div>
+          <button class="settings-btn settings-btn-green" onclick="navigateTo('subscription')">
+            <i class="fas fa-arrow-up-right-from-square" style="margin-right:6px;"></i>Manage Plan
+          </button>
+        </div>
+      </div>
+
+      <!-- Notification Preferences Section -->
+      <div class="card settings-section" style="padding:24px;">
+        <div class="section-title"><i class="fas fa-bell" style="color:var(--purple);font-size:20px;"></i> Notification Preferences</div>
         <div style="display:grid;gap:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--glass);border:1px solid var(--border);border-radius:10px;">
-            <span>Analysis Level</span>
-            <select id="settingsLevel" onchange="state.analysisLevel=this.value;localStorage.setItem('jse_level',this.value);" style="background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;">
-              <option value="Beginner" ${state.analysisLevel==='Beginner'?'selected':''}>Beginner</option>
-              <option value="Intermediate" ${state.analysisLevel==='Intermediate'?'selected':''}>Intermediate</option>
-              <option value="Advanced" ${state.analysisLevel==='Advanced'?'selected':''}>Advanced</option>
-            </select>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="label">Price Target Alerts</div>
+              <div class="sublabel">Get notified when stocks hit your target prices</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" ${notifPrefs.priceTargets ? 'checked' : ''} onchange="window.__toggleNotifPref('priceTargets', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="label">Order Fill Notifications</div>
+              <div class="sublabel">Get notified when your orders are executed</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" ${notifPrefs.orderFills ? 'checked' : ''} onchange="window.__toggleNotifPref('orderFills', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="label">News & Market Updates</div>
+              <div class="sublabel">Receive email alerts for major market news</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" ${notifPrefs.news ? 'checked' : ''} onchange="window.__toggleNotifPref('news', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
           </div>
         </div>
       </div>
-      <div id="settings2FAResult"></div>
+
+      <!-- Preferences Section -->
+      <div class="card settings-section" style="padding:24px;">
+        <div class="section-title"><i class="fas fa-sliders" style="color:var(--gold);font-size:20px;"></i> Preferences</div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="label">Analysis Level</div>
+            <div class="sublabel">Controls the depth of AI-generated analysis</div>
+          </div>
+          <select id="settingsLevel" onchange="state.analysisLevel=this.value;localStorage.setItem('jse_level',this.value);" style="background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-family:inherit;">
+            <option value="Beginner" ${state.analysisLevel==='Beginner'?'selected':''}>Beginner</option>
+            <option value="Intermediate" ${state.analysisLevel==='Intermediate'?'selected':''}>Intermediate</option>
+            <option value="Advanced" ${state.analysisLevel==='Advanced'?'selected':''}>Advanced</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Logout Button -->
+      <div style="text-align:center;padding:8px 0;">
+        <button onclick="window.__logoutUser()" style="padding:12px 40px;border-radius:10px;border:1px solid var(--red);background:rgba(255,23,68,0.08);color:var(--red);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:var(--transition);"
+          onmouseenter="this.style.background='rgba(255,23,68,0.15)'" onmouseleave="this.style.background='rgba(255,23,68,0.08)'">
+          <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>Sign Out
+        </button>
+      </div>
     `;
+
+    // Load subscription feature limits
+    loadSettingsTierLimits(tier);
   }
 
+  // ── Settings Helper Functions ────────────────────────────────────────────
+
+  async function loadSettingsTierLimits(tier) {
+    const el = $('#settingsTierLimits');
+    if (!el) return;
+    try {
+      const data = await apiFetch('/api/subscription', { headers: { 'Authorization': 'Bearer ' + state.token } });
+      const limits = data.limits || {};
+      const parts = [];
+      if (limits.maxTrades) parts.push(`${limits.maxTrades === -1 ? 'Unlimited' : limits.maxTrades} trades/mo`);
+      if (limits.aiChats) parts.push(`${limits.aiChats === -1 ? 'Unlimited' : limits.aiChats} AI chats/day`);
+      if (limits.maxAlerts) parts.push(`${limits.maxAlerts === -1 ? 'Unlimited' : limits.maxAlerts} alerts`);
+      el.textContent = parts.length ? parts.join(' | ') : `${tier} plan active`;
+    } catch (_) {
+      el.textContent = `${tier} plan active`;
+    }
+  }
+
+  window.__saveProfile = async function() {
+    const name = $('#settingsName')?.value?.trim();
+    if (!name) return showToast('Name cannot be empty', 'error');
+    try {
+      await apiFetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
+        body: JSON.stringify({ name })
+      });
+      state.user.name = name;
+      updateUserArea();
+      showToast('Profile updated', 'success');
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  };
+
+  window.__changePasswordInline = async function() {
+    const currentPwd = $('#settingsCurrentPwd')?.value;
+    const newPwd = $('#settingsNewPwd')?.value;
+    const confirmPwd = $('#settingsConfirmPwd')?.value;
+    if (!currentPwd) return showToast('Enter your current password', 'error');
+    if (!newPwd || newPwd.length < 6) return showToast('New password must be at least 6 characters', 'error');
+    if (newPwd !== confirmPwd) return showToast('Passwords do not match', 'error');
+    try {
+      const email = state.user.email;
+      // First request reset token
+      const res1 = await apiFetch('/api/auth/reset-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (res1.resetToken) {
+        const res2 = await apiFetch('/api/auth/reset-password', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: res1.resetToken, newPassword: newPwd })
+        });
+        showToast(res2.message || 'Password changed!', 'success');
+        $('#settingsCurrentPwd').value = '';
+        $('#settingsNewPwd').value = '';
+        $('#settingsConfirmPwd').value = '';
+      } else {
+        showToast('Password reset initiated. Check your email.', 'info');
+      }
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  };
+
+  window.__toggleNotifPref = function(key, value) {
+    notifPrefs[key] = value;
+    localStorage.setItem('jse_notif_prefs', JSON.stringify(notifPrefs));
+    showToast(`${key === 'priceTargets' ? 'Price target alerts' : key === 'orderFills' ? 'Order fill notifications' : 'News alerts'} ${value ? 'enabled' : 'disabled'}`, 'success');
+  };
+
+  window.__logoutUser = async function() {
+    try {
+      await apiFetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token }
+      });
+    } catch (_) { /* Logout even if API call fails */ }
+    state.user = null;
+    state.token = null;
+    state.portfolio = [];
+    localStorage.removeItem('jse_token');
+    localStorage.removeItem('jse_notif_prefs');
+    updateUserArea();
+    renderPortfolio();
+    navigateTo('dashboard');
+    showToast('Signed out successfully', 'success');
+  };
+
   window.__toggle2FA = async function() {
-    if (!state.token) return alert('Please sign in first');
+    if (!state.token) return showToast('Please sign in first', 'error');
     try {
       const data = await apiFetch('/api/auth/2fa/setup', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token }
@@ -3724,45 +3916,72 @@
       if (data.otpauthUrl) {
         const el = $('#settings2FAResult');
         el.innerHTML = `
-          <div class="card" style="padding:24px;">
-            <h4 style="margin-bottom:12px;">Scan this with your authenticator app:</h4>
-            <div style="background:#fff;padding:16px;border-radius:8px;display:inline-block;margin-bottom:16px;">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.otpauthUrl)}" alt="QR Code" style="display:block;">
-            </div>
-            <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Or enter manually: <code style="background:var(--glass2);padding:4px 8px;border-radius:4px;">${data.secret}</code></p>
-            <div style="display:flex;gap:8px;">
-              <input type="text" id="verify2FACode" placeholder="Enter 6-digit code" maxlength="6" style="flex:1;padding:10px;background:var(--glass);border:1px solid var(--border);border-radius:8px;color:var(--text);">
-              <button onclick="window.__confirm2FA()" style="padding:10px 20px;background:var(--green);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Verify</button>
+          <div class="card" style="padding:24px;margin-top:12px;">
+            <h4 style="margin-bottom:12px;font-size:15px;font-weight:700;">
+              <i class="fas fa-qrcode" style="color:var(--blue);margin-right:8px;"></i>Scan with your authenticator app
+            </h4>
+            <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+              <div style="background:#fff;padding:16px;border-radius:12px;display:inline-block;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(data.otpauthUrl)}" alt="QR Code" style="display:block;">
+              </div>
+              <div style="flex:1;min-width:200px;">
+                <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Or enter this secret manually:</p>
+                <code style="display:block;background:var(--glass2);padding:10px 14px;border-radius:8px;font-size:13px;word-break:break-all;margin-bottom:16px;">${data.secret}</code>
+                <div class="wallet-form-group" style="margin-bottom:8px;">
+                  <label>Verification Code</label>
+                  <input type="text" id="verify2FACode" class="settings-input" placeholder="Enter 6-digit code" maxlength="6" style="font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:4px;text-align:center;">
+                </div>
+                <button onclick="window.__confirm2FA()" class="settings-btn settings-btn-green-fill" style="width:100%;padding:12px;">
+                  <i class="fas fa-check-circle" style="margin-right:6px;"></i>Verify & Enable 2FA
+                </button>
+              </div>
             </div>
           </div>`;
       }
-    } catch (e) { alert('Error setting up 2FA: ' + e.message); }
+    } catch (e) { showToast('Error setting up 2FA: ' + e.message, 'error'); }
   };
 
   window.__confirm2FA = async function() {
     const code = $('#verify2FACode')?.value;
-    if (!code || code.length !== 6) return alert('Enter a 6-digit code');
+    if (!code || code.length !== 6) return showToast('Enter a 6-digit code', 'error');
     try {
       const data = await apiFetch('/api/auth/2fa/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
         body: JSON.stringify({ token: code })
       });
-      alert(data.message || '2FA enabled!');
-      $('#settings2FAResult').innerHTML = '';
-      $('#btn2FA').textContent = 'Disable 2FA';
-    } catch (e) { alert('Invalid code: ' + e.message); }
+      showToast(data.message || '2FA enabled successfully!', 'success');
+      if (state.user) state.user.twoFactorEnabled = true;
+      loadSettingsView(); // Refresh to show active state
+    } catch (e) { showToast('Invalid code: ' + e.message, 'error'); }
+  };
+
+  window.__disable2FA = async function() {
+    const pwd = prompt('Enter your password to disable 2FA:');
+    if (!pwd) return;
+    const code = prompt('Enter your current 2FA code:');
+    if (!code) return;
+    try {
+      await apiFetch('/api/auth/2fa/disable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
+        body: JSON.stringify({ password: pwd, token: code })
+      });
+      showToast('2FA disabled', 'success');
+      if (state.user) state.user.twoFactorEnabled = false;
+      loadSettingsView();
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
   };
 
   window.__verifyEmail = async function() {
-    if (!state.token || !state.user) return alert('Please sign in first');
+    if (!state.token || !state.user) return showToast('Please sign in first', 'error');
     try {
       const data = await apiFetch('/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: state.user.email })
       });
-      alert(data.message || 'Verification email sent! Check your inbox.');
+      showToast(data.message || 'Verification email sent! Check your inbox.', 'success');
       if (data.verifyToken) {
         const token = prompt('Dev mode: Enter the verification token (shown in server logs):');
         if (token) {
@@ -3771,14 +3990,14 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token })
           });
-          alert(res.message || 'Email verified!');
+          showToast(res.message || 'Email verified!', 'success');
         }
       }
-    } catch (e) { alert('Error: ' + e.message); }
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
   };
 
   window.__changePassword = async function() {
-    if (!state.user) return alert('Please sign in first');
+    if (!state.user) return showToast('Please sign in first', 'error');
     const email = state.user.email;
     try {
       const res1 = await apiFetch('/api/auth/reset-password', {
@@ -3792,12 +4011,12 @@
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: res1.resetToken, newPassword: newPass })
           });
-          alert(res2.message || 'Password changed!');
+          showToast(res2.message || 'Password changed!', 'success');
         }
       } else {
-        alert('Password reset link sent to your email.');
+        showToast('Password reset link sent to your email.', 'info');
       }
-    } catch (e) { alert('Error: ' + e.message); }
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
   };
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -3903,6 +4122,364 @@
       loadSubscriptionView();
     } catch (e) { alert('Error: ' + e.message); }
   };
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── Wallet / Deposit-Withdrawal System ─────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  let walletModalTab = 'deposit';
+
+  // Open wallet modal from header deposit button or nav
+  $('#walletDepositBtn')?.addEventListener('click', () => {
+    openWalletModal('deposit');
+  });
+
+  function openWalletModal(tab = 'deposit') {
+    walletModalTab = tab;
+    const modal = $('#walletModal');
+    if (modal) {
+      modal.classList.add('show');
+      window.__switchWalletTab(tab);
+      loadWalletModalData();
+    }
+  }
+  window.openWalletModal = openWalletModal;
+
+  // Close wallet modal on overlay click
+  $('#walletModal')?.addEventListener('click', (e) => {
+    if (e.target === $('#walletModal')) $('#walletModal').classList.remove('show');
+  });
+
+  window.__switchWalletTab = function(tab) {
+    walletModalTab = tab;
+    const depTab = $('#wmDepositTab');
+    const witTab = $('#wmWithdrawTab');
+    const depForm = $('#wmDepositForm');
+    const witForm = $('#wmWithdrawForm');
+
+    if (tab === 'deposit') {
+      depTab.className = 'wallet-tab-btn active-deposit';
+      witTab.className = 'wallet-tab-btn';
+      depForm.style.display = 'block';
+      witForm.style.display = 'none';
+    } else {
+      depTab.className = 'wallet-tab-btn';
+      witTab.className = 'wallet-tab-btn active-withdraw';
+      depForm.style.display = 'none';
+      witForm.style.display = 'block';
+    }
+  };
+
+  async function loadWalletModalData() {
+    if (!state.token) return;
+    try {
+      const data = await apiFetch('/api/wallet/balance');
+      if (data.wallets) {
+        const jmd = data.wallets.find(w => w.currency === 'JMD');
+        const usd = data.wallets.find(w => w.currency === 'USD');
+        if (jmd) {
+          $('#wmJMDBalance').textContent = `J$${fmt(jmd.balance)}`;
+          $('#wmJMDHeld').textContent = `Available: J$${fmt(jmd.available || jmd.balance)}`;
+        }
+        if (usd) {
+          $('#wmUSDBalance').textContent = `$${fmt(usd.balance)}`;
+          $('#wmUSDHeld').textContent = `Available: $${fmt(usd.available || usd.balance)}`;
+        }
+      }
+    } catch (_) {}
+
+    // Load transaction history
+    loadWalletTxHistory();
+  }
+
+  async function loadWalletTxHistory() {
+    const el = $('#wmTxHistory');
+    if (!el || !state.token) return;
+    try {
+      const data = await apiFetch('/api/portfolio/history');
+      const txns = data.history || data.transactions || data || [];
+      if (!Array.isArray(txns) || txns.length === 0) {
+        el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:20px;text-align:center;"><i class="fas fa-receipt" style="display:block;font-size:24px;margin-bottom:8px;opacity:0.3;"></i>No transactions yet</p>';
+        return;
+      }
+      el.innerHTML = `
+        <table class="wallet-tx-table">
+          <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            ${txns.slice(0, 20).map(tx => {
+              const date = tx.createdAt ? new Date(tx.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--';
+              const type = (tx.type || tx.side || 'TRADE').toUpperCase();
+              const typeClass = type === 'DEPOSIT' ? 'deposit' : type === 'WITHDRAWAL' ? 'withdrawal' : 'trade';
+              const amount = tx.amount || tx.total || (tx.quantity && tx.price ? tx.quantity * tx.price : 0);
+              const cur = tx.currency || 'JMD';
+              const prefix = cur === 'JMD' ? 'J$' : '$';
+              const sign = type === 'WITHDRAWAL' || type === 'SELL' ? '-' : '+';
+              const signColor = sign === '+' ? 'var(--green)' : 'var(--red)';
+              const status = (tx.status || 'COMPLETED').toUpperCase();
+              const statusClass = status === 'COMPLETED' || status === 'FILLED' ? 'completed' : status === 'PENDING' ? 'pending' : 'failed';
+              return `<tr>
+                <td style="color:var(--muted);font-size:12px;">${date}</td>
+                <td><span class="tx-type-badge ${typeClass}">${type}</span></td>
+                <td style="font-family:'JetBrains Mono',monospace;color:${signColor};font-weight:600;">${sign}${prefix}${fmt(Math.abs(amount))}</td>
+                <td><span class="tx-status-badge ${statusClass}">${status}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`;
+    } catch (_) {
+      el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:20px;text-align:center;">Could not load transactions</p>';
+    }
+  }
+
+  window.__walletDeposit = async function() {
+    const amount = parseFloat($('#wmDepositAmount')?.value);
+    const currency = $('#wmDepositCurrency')?.value || 'JMD';
+    if (!amount || amount <= 0) return showToast('Enter a valid amount', 'error');
+    if (!state.token) return showToast('Please sign in first', 'error');
+
+    const btn = $('#wmDepositSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    try {
+      const data = await apiFetch('/api/wallet/deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
+        body: JSON.stringify({ amount, currency })
+      });
+      showToast(data.message || `Deposited ${currency === 'JMD' ? 'J$' : '$'}${fmt(amount)} ${currency}`, 'success');
+      $('#wmDepositAmount').value = '';
+      loadWalletModalData();
+      loadWalletBalance(); // Update header
+    } catch (e) {
+      showToast('Deposit failed: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-arrow-down" style="margin-right:6px;"></i>Deposit Funds';
+    }
+  };
+
+  window.__walletWithdraw = async function() {
+    const amount = parseFloat($('#wmWithdrawAmount')?.value);
+    const currency = $('#wmWithdrawCurrency')?.value || 'JMD';
+    if (!amount || amount <= 0) return showToast('Enter a valid amount', 'error');
+    if (!state.token) return showToast('Please sign in first', 'error');
+
+    const btn = $('#wmWithdrawSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    try {
+      const data = await apiFetch('/api/wallet/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
+        body: JSON.stringify({ amount, currency })
+      });
+      showToast(data.message || `Withdrew ${currency === 'JMD' ? 'J$' : '$'}${fmt(amount)} ${currency}`, 'success');
+      $('#wmWithdrawAmount').value = '';
+      loadWalletModalData();
+      loadWalletBalance(); // Update header
+    } catch (e) {
+      showToast('Withdrawal failed: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-arrow-up" style="margin-right:6px;"></i>Withdraw Funds';
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── Enhanced Notification Bell System ──────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  let serverNotifications = [];
+  let serverNotifsLoaded = false;
+
+  async function loadServerNotifications() {
+    if (!state.token) return;
+    try {
+      const data = await apiFetch('/api/notifications');
+      serverNotifications = data.notifications || data || [];
+      serverNotifsLoaded = true;
+      mergeAndRenderNotifications();
+    } catch (_) {
+      // API may not exist yet; fall back to local-only notifications
+      serverNotifsLoaded = false;
+    }
+  }
+
+  function mergeAndRenderNotifications() {
+    // Merge server notifications with local market-move notifications
+    const allNotifs = [];
+
+    // Add server notifications first
+    if (serverNotifsLoaded && Array.isArray(serverNotifications)) {
+      serverNotifications.forEach(n => {
+        allNotifs.push({
+          id: n._id || n.id || Date.now() + Math.random(),
+          type: n.type || 'info',
+          icon: n.type === 'price_alert' ? 'fa-bullseye' : n.type === 'order_fill' ? 'fa-check-circle' : 'fa-info-circle',
+          color: n.type === 'price_alert' ? 'var(--gold)' : n.type === 'order_fill' ? 'var(--green)' : 'var(--blue)',
+          title: n.title || n.message || 'Notification',
+          detail: n.body || n.detail || '',
+          time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '',
+          symbol: n.symbol || '',
+          read: n.read || false,
+          isServer: true,
+          serverId: n._id || n.id,
+        });
+      });
+    }
+
+    // Add local market notifications
+    notifications.forEach(n => {
+      allNotifs.push({ ...n, read: true, isServer: false });
+    });
+
+    renderEnhancedNotifications(allNotifs);
+    updateNotifBadgeCount(allNotifs);
+  }
+
+  function renderEnhancedNotifications(allNotifs) {
+    const list = $('#notifList');
+    if (!list) return;
+
+    if (!allNotifs.length) {
+      list.innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted);font-size:13px;"><i class="fas fa-bell-slash" style="font-size:28px;display:block;margin-bottom:10px;opacity:0.3;"></i>No notifications yet</div>';
+      return;
+    }
+
+    list.innerHTML = allNotifs.slice(0, 30).map(n => `
+      <div class="notif-item-enhanced ${!n.read ? 'unread' : ''}" data-symbol="${n.symbol || ''}" data-id="${n.serverId || ''}">
+        <div class="notif-icon-wrap" style="background:${n.color}15;">
+          <i class="fas ${n.icon}" style="color:${n.color};font-size:13px;"></i>
+        </div>
+        <div class="notif-body">
+          <div class="notif-title">${escHtml(n.title)}</div>
+          ${n.detail ? `<div class="notif-detail">${escHtml(n.detail)}</div>` : ''}
+          <div class="notif-time">${escHtml(n.time)}</div>
+        </div>
+        ${!n.read ? '<div class="notif-unread-dot"></div>' : ''}
+      </div>
+    `).join('');
+
+    // Click handlers
+    list.querySelectorAll('.notif-item-enhanced').forEach(item => {
+      item.addEventListener('click', async () => {
+        const sym = item.dataset.symbol;
+        const id = item.dataset.id;
+
+        // Mark as read if server notification
+        if (id && state.token) {
+          try {
+            await apiFetch(`/api/notifications/${id}/read`, {
+              method: 'PUT',
+              headers: { 'Authorization': 'Bearer ' + state.token }
+            });
+            item.classList.remove('unread');
+            const dot = item.querySelector('.notif-unread-dot');
+            if (dot) dot.remove();
+          } catch (_) {}
+        }
+
+        if (sym) {
+          openStockDetail(sym);
+          $('#notifPanel').style.display = 'none';
+          $('#notifPanel').classList.remove('show');
+        }
+      });
+    });
+  }
+
+  function updateNotifBadgeCount(allNotifs) {
+    const unreadCount = allNotifs ? allNotifs.filter(n => !n.read).length : 0;
+    const badge = $('#notifCountBadge');
+    const dot = $('#notifBtn .notif-dot');
+
+    if (badge) {
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+    if (dot) dot.style.display = unreadCount > 0 || notifications.length > 0 ? 'block' : 'none';
+  }
+
+  // Override the existing notification rendering to use the enhanced version
+  const origRenderNotifications = renderNotifications;
+  renderNotifications = function() {
+    mergeAndRenderNotifications();
+  };
+
+  const origUpdateNotifDot = updateNotifDot;
+  updateNotifDot = function() {
+    mergeAndRenderNotifications();
+  };
+
+  // Enhanced notif panel toggle
+  $('#notifBtn')?.removeEventListener?.('click', () => {});
+  // Re-bind
+  const notifBtnEl = $('#notifBtn');
+  if (notifBtnEl) {
+    const newBtn = notifBtnEl.cloneNode(true);
+    notifBtnEl.parentNode.replaceChild(newBtn, notifBtnEl);
+    newBtn.addEventListener('click', () => {
+      const panel = $('#notifPanel');
+      const isOpen = panel.classList.contains('show');
+      if (isOpen) {
+        panel.classList.remove('show');
+      } else {
+        panel.classList.add('show');
+        // Load server notifications on open
+        if (state.token) loadServerNotifications();
+      }
+    });
+  }
+
+  // Mark all read
+  $('#markAllReadBtn')?.addEventListener('click', async () => {
+    if (state.token) {
+      try {
+        // Try to mark all as read on server
+        await apiFetch('/api/notifications/read-all', {
+          method: 'PUT',
+          headers: { 'Authorization': 'Bearer ' + state.token }
+        });
+      } catch (_) {
+        // Fall back: mark local as read
+      }
+    }
+    serverNotifications.forEach(n => n.read = true);
+    notifications = [];
+    mergeAndRenderNotifications();
+    showToast('All notifications marked as read', 'success');
+  });
+
+  // Clear all notifications
+  const clearBtnEl = $('#clearNotifsBtn');
+  if (clearBtnEl) {
+    const newClearBtn = clearBtnEl.cloneNode(true);
+    clearBtnEl.parentNode.replaceChild(newClearBtn, clearBtnEl);
+    newClearBtn.addEventListener('click', () => {
+      notifications = [];
+      serverNotifications = [];
+      mergeAndRenderNotifications();
+    });
+  }
+
+  // Close notif panel on outside click (re-bind for enhanced panel)
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#notifPanel') && !e.target.closest('#notifBtn')) {
+      const panel = $('#notifPanel');
+      if (panel) panel.classList.remove('show');
+    }
+  });
+
+  // Load server notifications on boot if logged in
+  if (state.token) {
+    setTimeout(loadServerNotifications, 1000);
+  }
 
   // ══════════════════════════════════════════════════════════════════════════════
   // ── Admin Dashboard View ───────────────────────────────────────────────────

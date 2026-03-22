@@ -56,7 +56,7 @@ router.get("/api/admin/dashboard", authMiddleware, requireAdmin, async (req, res
       prisma.order.count({ where: { createdAt: { gte: startOfDay } } }),
       prisma.order.count({ where: { createdAt: { gte: startOfMonth } } }),
       prisma.subscription.count({ where: { status: "ACTIVE" } }),
-      prisma.priceAlert.count({ where: { isActive: true } }),
+      prisma.priceAlert.count({ where: { isTriggered: false } }),
     ]);
 
     // Recent signups
@@ -70,7 +70,7 @@ router.get("/api/admin/dashboard", authMiddleware, requireAdmin, async (req, res
     const recentOrders = await prisma.order.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
-      select: { id: true, symbol: true, side: true, type: true, quantity: true, price: true, status: true, createdAt: true, userId: true },
+      select: { id: true, symbol: true, side: true, orderType: true, quantity: true, limitPrice: true, status: true, createdAt: true, userId: true },
     });
 
     // Subscription breakdown
@@ -163,7 +163,7 @@ router.get("/api/admin/users/:id", authMiddleware, requireAdmin, async (req, res
         wallets: true,
         portfolioPositions: true,
         orders: { orderBy: { createdAt: "desc" }, take: 20 },
-        subscriptions: true,
+        subscription: true,
         priceAlerts: true,
       },
     });

@@ -1,7 +1,7 @@
 {
-  "name": "jamaica-financial-advisor",
+  "name": "gotham-financial",
   "version": "2.0.0",
-  "description": "AI-powered Jamaica Stock Exchange Investment & Trading Platform",
+  "description": "Gotham Financial — AI-powered Investment & Trading Platform",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

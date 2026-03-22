@@ -1,12 +1,12 @@
-# Jamaica Financial Advisor
+# Gotham Financial
 
 AI-powered investment analysis tailored to your experience level.
 
 ## Problem
-Most Jamaicans struggle with stock market investing due to complex financial jargon and lack of accessible education. Even experienced traders find specialized terminology confusing.
+Most investors struggle with stock market investing due to complex financial jargon and lack of accessible education. Even experienced traders find specialized terminology confusing.
 
 ## Solution
-Jamaica Financial Advisor provides adaptive AI analysis at three expertise levels—Beginner, Intermediate, and Advanced—making the Jamaica Stock Exchange accessible to everyone.
+Gotham Financial provides adaptive AI analysis at three expertise levels—Beginner, Intermediate, and Advanced—making the Jamaica Stock Exchange accessible to everyone.
 
 ## Features
 ✅ Real-time JSE market data (gainers, losers, volumes, charts)

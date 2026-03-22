@@ -4,10 +4,10 @@ const router = Router();
 const API_DOCS = {
   openapi: "3.0.3",
   info: {
-    title: "JSE Live Trading Platform API",
+    title: "Gotham Financial Trading Platform API",
     version: "2.0.0",
-    description: "AI-powered Jamaica Stock Exchange Investment & Trading Platform",
-    contact: { name: "JSE Live Support" },
+    description: "Gotham Financial — AI-powered Investment & Trading Platform",
+    contact: { name: "Gotham Financial Support" },
   },
   servers: [
     { url: "http://localhost:3000", description: "Development" },
@@ -167,7 +167,7 @@ router.get("/api/docs", (_req, res) => {
   res.send(`<!DOCTYPE html>
 <html>
 <head>
-  <title>JSE Live API Docs</title>
+  <title>Gotham Financial API Docs</title>
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
   <style>body{margin:0;background:#1a1a2e;} .swagger-ui .topbar{display:none;}</style>
 </head>

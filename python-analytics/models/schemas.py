@@ -1,5 +1,5 @@
 """
-Pydantic models for all request/response types in the Jamaica Financial Advisor
+Pydantic models for all request/response types in the Gotham Financial
 analytics engine. Every field is strictly typed for FastAPI automatic validation.
 """
 

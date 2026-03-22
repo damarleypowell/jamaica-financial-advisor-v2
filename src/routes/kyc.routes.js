@@ -173,7 +173,7 @@ router.post("/api/admin/kyc/review", authMiddleware, async (req, res) => {
       data: {
         userId,
         title: approved ? "KYC Verified" : "KYC Rejected",
-        message: approved
+        body: approved
           ? "Your identity has been verified. You can now make withdrawals and access all features."
           : `Your KYC submission was rejected: ${reason || "Documents did not meet requirements"}. Please resubmit.`,
         type: "KYC",
