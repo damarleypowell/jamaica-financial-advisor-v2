@@ -1,3 +1,48 @@
-.env
+# Dependencies
 node_modules/
+package-lock.json
+
+# Environment & secrets
+.env
+.env.local
+.env.production
 config/yahoo-api-keys.json
+
+# Database
+prisma/migrations/
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Build & cache
+dist/
+.cache/
+*.tmp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Docker
+.docker/
+
+# User data (should be in DB, not committed)
+data/users.json
+data/*.json
+
+# Uploaded files
+uploads/
