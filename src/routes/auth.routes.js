@@ -3,7 +3,10 @@ const crypto = require("crypto");
 const { authenticator } = require("otplib");
 const {
   signJWT,
+  signJWTWithIP,
   hashPassword,
+  hashPasswordAsync,
+  verifyPassword,
   authMiddleware,
   getUsersDB,
   saveUsersDB,
@@ -13,6 +16,180 @@ const { logAudit, AuditAction } = require("../services/audit.service");
 
 // ── Revoked tokens (in-memory session revocation) ────────────────────────────
 const revokedTokens = new Set();
+
+// ── Brute Force Protection (in-memory) ───────────────────────────────────────
+const failedLoginAttempts = new Map();
+const LOCKOUT_THRESHOLD = 5;
+const LOCKOUT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes
+
+/**
+ * Check if an email is locked out due to too many failed login attempts.
+ * Returns { locked: boolean, remainingMs: number }
+ */
+function checkLockout(email) {
+  const entry = failedLoginAttempts.get(email);
+  if (!entry) return { locked: false, remainingMs: 0 };
+
+  const now = Date.now();
+
+  // If locked out, check if lockout has expired
+  if (entry.lockedUntil) {
+    if (now < entry.lockedUntil) {
+      return { locked: true, remainingMs: entry.lockedUntil - now };
+    }
+    // Lockout expired — reset
+    failedLoginAttempts.delete(email);
+    return { locked: false, remainingMs: 0 };
+  }
+
+  // Clean up old attempts outside the window
+  entry.attempts = entry.attempts.filter((t) => now - t < LOCKOUT_WINDOW_MS);
+  if (entry.attempts.length === 0) {
+    failedLoginAttempts.delete(email);
+  }
+
+  return { locked: false, remainingMs: 0 };
+}
+
+/**
+ * Record a failed login attempt. Returns true if account is now locked.
+ */
+function recordFailedAttempt(email) {
+  const now = Date.now();
+  let entry = failedLoginAttempts.get(email);
+
+  if (!entry) {
+    entry = { attempts: [], lockedUntil: null };
+    failedLoginAttempts.set(email, entry);
+  }
+
+  // Clean old attempts
+  entry.attempts = entry.attempts.filter((t) => now - t < LOCKOUT_WINDOW_MS);
+  entry.attempts.push(now);
+
+  if (entry.attempts.length >= LOCKOUT_THRESHOLD) {
+    entry.lockedUntil = now + LOCKOUT_DURATION_MS;
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Clear failed login attempts on successful login.
+ */
+function clearFailedAttempts(email) {
+  failedLoginAttempts.delete(email);
+}
+
+// Clean up expired lockout entries every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, entry] of failedLoginAttempts) {
+    if (entry.lockedUntil && now > entry.lockedUntil) {
+      failedLoginAttempts.delete(email);
+    } else if (entry.attempts) {
+      entry.attempts = entry.attempts.filter((t) => now - t < LOCKOUT_WINDOW_MS);
+      if (entry.attempts.length === 0 && !entry.lockedUntil) {
+        failedLoginAttempts.delete(email);
+      }
+    }
+  }
+}, 10 * 60 * 1000);
+
+// ── Password Policy ──────────────────────────────────────────────────────────
+
+const COMMON_PASSWORDS = new Set([
+  "password123", "qwerty123456", "123456789012", "password1234",
+  "qwerty123456", "iloveyou1234", "admin1234567", "welcome12345",
+  "monkey1234567", "dragon123456", "master123456", "letmein123456",
+  "football12345", "shadow123456", "sunshine12345", "trustno1234",
+  "princess12345", "baseball12345", "superman12345", "michael12345",
+  "password12345", "1234567890ab", "abcdef123456", "password!234",
+  "qwertyuiop12", "abc123456789", "password1!", "changeme1234",
+  "welcome1234!", "passw0rd1234", "p@ssword1234", "p@ssw0rd1234",
+  "admin12345678", "root12345678", "toor12345678", "access123456",
+  "login1234567", "master1234567", "hello1234567", "charlie12345",
+  "donald123456", "loveme1234567", "batman12345678", "access1234567",
+  "hello12345678", "charlie123456", "123456abcdef", "password123!",
+  "qwerty12345!", "abcdefghij12", "1234abcdefgh", "testpassword1",
+  "mypassword123", "yourpassword1", "thepassword1", "password0000",
+  "p@$$w0rd1234", "letmein12345", "welcome12345", "monkey12345!",
+  "dragon12345!", "master12345!", "football1234", "shadow12345!",
+  "sunshine1234", "trustno12345", "princess1234", "baseball1234",
+  "superman1234", "michael1234!", "jordan123456", "thomas123456",
+  "hunter123456", "ranger123456", "buster123456", "soccer123456",
+  "harley123456", "george123456", "andrew123456", "joshua123456",
+  "pepper123456", "tigger123456", "samantha1234", "charlie1234!",
+  "robert123456", "daniel123456", "matthew12345", "jessica12345",
+  "jennifer1234", "corvette1234", "mercedes1234", "midnight1234",
+  "diamond12345", "thunder12345", "computer1234", "ginger123456",
+  "internet1234", "password1!@#", "qwerty1234!@", "asdfgh123456",
+  "zxcvbn123456", "pokemon12345", "starwars1234", "whatever1234",
+  "freedom12345", "forever12345", "nothing12345", "gateway12345",
+  "creative1234", "password#123", "secure123456", "jamaica12345",
+]);
+
+/**
+ * Validate password against security policy.
+ * Returns { valid: boolean, errors: string[] }
+ */
+function validatePasswordPolicy(password, email, name) {
+  const errors = [];
+
+  if (!password || typeof password !== "string") {
+    return { valid: false, errors: ["Password is required"] };
+  }
+
+  if (password.length < 12) {
+    errors.push("Password must be at least 12 characters long");
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    errors.push("Password must contain at least one uppercase letter");
+  }
+
+  if (!/[a-z]/.test(password)) {
+    errors.push("Password must contain at least one lowercase letter");
+  }
+
+  if (!/[0-9]/.test(password)) {
+    errors.push("Password must contain at least one number");
+  }
+
+  if (!/[!@#$%^&*()_+\-=]/.test(password)) {
+    errors.push("Password must contain at least one special character (!@#$%^&*()_+-=)");
+  }
+
+  // Check if password contains email or name
+  const pwLower = password.toLowerCase();
+  if (email) {
+    const emailLocal = email.toLowerCase().split("@")[0];
+    if (emailLocal.length >= 3 && pwLower.includes(emailLocal)) {
+      errors.push("Password cannot contain your email address");
+    }
+  }
+
+  if (name) {
+    const nameLower = name.toLowerCase().trim();
+    // Check each part of the name (first, last, etc.)
+    const nameParts = nameLower.split(/\s+/).filter((p) => p.length >= 3);
+    for (const part of nameParts) {
+      if (pwLower.includes(part)) {
+        errors.push("Password cannot contain your name");
+        break;
+      }
+    }
+  }
+
+  // Check against common passwords
+  if (COMMON_PASSWORDS.has(pwLower)) {
+    errors.push("This password is too common. Please choose a more unique password");
+  }
+
+  return { valid: errors.length === 0, errors };
+}
 
 // ── Prisma / DB toggle ───────────────────────────────────────────────────────
 let prisma;
@@ -29,17 +206,23 @@ const router = Router();
 // ── Auth Routes ─────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-router.post("/api/auth/signup", rateLimit(60000, 5), async (req, res) => {
+router.post("/api/auth/signup", rateLimit.signup(), async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password)
       return res
         .status(400)
         .json({ error: "Name, email, and password required" });
-    if (password.length < 6)
-      return res
-        .status(400)
-        .json({ error: "Password must be at least 6 characters" });
+
+    // Validate password policy
+    const policyResult = validatePasswordPolicy(password, email, name);
+    if (!policyResult.valid) {
+      return res.status(400).json({
+        error: "Password does not meet security requirements",
+        details: policyResult.errors,
+      });
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email))
       return res.status(400).json({ error: "Invalid email format" });
@@ -72,11 +255,10 @@ router.post("/api/auth/signup", rateLimit(60000, 5), async (req, res) => {
         email: user.email,
       });
 
-      const token = signJWT({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      });
+      const token = signJWTWithIP(
+        { id: user.id, name: user.name, email: user.email },
+        req.ip
+      );
       return res.json({
         token,
         user: {
@@ -117,11 +299,10 @@ router.post("/api/auth/signup", rateLimit(60000, 5), async (req, res) => {
       email: user.email,
     });
 
-    const token = signJWT({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    });
+    const token = signJWTWithIP(
+      { id: user.id, name: user.name, email: user.email },
+      req.ip
+    );
     res.json({
       token,
       user: {
@@ -137,7 +318,7 @@ router.post("/api/auth/signup", rateLimit(60000, 5), async (req, res) => {
   }
 });
 
-router.post("/api/auth/login", rateLimit(60000, 10), async (req, res) => {
+router.post("/api/auth/login", rateLimit.login(), async (req, res) => {
   try {
     const { email, password, twoFactorToken } = req.body;
     if (!email || !password)
@@ -145,27 +326,43 @@ router.post("/api/auth/login", rateLimit(60000, 10), async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
+    // ── Brute force protection: check lockout ──
+    const lockout = checkLockout(normalizedEmail);
+    if (lockout.locked) {
+      const minutes = Math.ceil(lockout.remainingMs / 60000);
+      logAudit(AuditAction.LOGIN_FAILED, {
+        ip: req.ip,
+        email: normalizedEmail,
+        message: `Account locked out. ${minutes} minutes remaining`,
+      });
+      return res
+        .status(401)
+        .json({ error: "Invalid email or password" });
+    }
+
     if (USE_DB) {
       // ── Prisma path ──
       const user = await prisma.user.findUnique({
         where: { email: normalizedEmail },
       });
       if (!user || !user.isActive) {
+        recordFailedAttempt(normalizedEmail);
         logAudit(AuditAction.LOGIN_FAILED, {
           ip: req.ip,
           email: normalizedEmail,
-          message: "Unknown email",
+          message: "Invalid credentials",
         });
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
       const { hash } = hashPassword(password, user.salt);
       if (hash !== user.passwordHash) {
+        const locked = recordFailedAttempt(normalizedEmail);
         logAudit(AuditAction.LOGIN_FAILED, {
           ip: req.ip,
           userId: user.id,
           email: normalizedEmail,
-          message: "Wrong password",
+          message: locked ? "Account locked after too many attempts" : "Invalid credentials",
         });
         return res.status(401).json({ error: "Invalid email or password" });
       }
@@ -177,15 +374,19 @@ router.post("/api/auth/login", rateLimit(60000, 10), async (req, res) => {
         }
         const isValid = authenticator.check(twoFactorToken, user.twoFactorSecret);
         if (!isValid) {
+          recordFailedAttempt(normalizedEmail);
           logAudit(AuditAction.LOGIN_FAILED, {
             ip: req.ip,
             userId: user.id,
             email: normalizedEmail,
             message: "Invalid 2FA code",
           });
-          return res.status(401).json({ error: "Invalid 2FA code" });
+          return res.status(401).json({ error: "Invalid email or password" });
         }
       }
+
+      // ── Success: clear failed attempts ──
+      clearFailedAttempts(normalizedEmail);
 
       logAudit(AuditAction.LOGIN_SUCCESS, {
         ip: req.ip,
@@ -193,11 +394,10 @@ router.post("/api/auth/login", rateLimit(60000, 10), async (req, res) => {
         email: normalizedEmail,
       });
 
-      const token = signJWT({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      });
+      const token = signJWTWithIP(
+        { id: user.id, name: user.name, email: user.email },
+        req.ip
+      );
       return res.json({
         token,
         user: {
@@ -213,21 +413,23 @@ router.post("/api/auth/login", rateLimit(60000, 10), async (req, res) => {
     const users = getUsersDB();
     const user = users.find((u) => u.email === normalizedEmail);
     if (!user) {
+      recordFailedAttempt(normalizedEmail);
       logAudit(AuditAction.LOGIN_FAILED, {
         ip: req.ip,
         email: normalizedEmail,
-        message: "Unknown email",
+        message: "Invalid credentials",
       });
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
     const { hash } = hashPassword(password, user.salt);
     if (hash !== user.hash) {
+      const locked = recordFailedAttempt(normalizedEmail);
       logAudit(AuditAction.LOGIN_FAILED, {
         ip: req.ip,
         userId: user.id,
         email: normalizedEmail,
-        message: "Wrong password",
+        message: locked ? "Account locked after too many attempts" : "Invalid credentials",
       });
       return res.status(401).json({ error: "Invalid email or password" });
     }
@@ -239,15 +441,19 @@ router.post("/api/auth/login", rateLimit(60000, 10), async (req, res) => {
       }
       const isValid = authenticator.check(twoFactorToken, user.twoFactorSecret);
       if (!isValid) {
+        recordFailedAttempt(normalizedEmail);
         logAudit(AuditAction.LOGIN_FAILED, {
           ip: req.ip,
           userId: user.id,
           email: normalizedEmail,
           message: "Invalid 2FA code",
         });
-        return res.status(401).json({ error: "Invalid 2FA code" });
+        return res.status(401).json({ error: "Invalid email or password" });
       }
     }
+
+    // ── Success: clear failed attempts ──
+    clearFailedAttempts(normalizedEmail);
 
     logAudit(AuditAction.LOGIN_SUCCESS, {
       ip: req.ip,
@@ -255,11 +461,10 @@ router.post("/api/auth/login", rateLimit(60000, 10), async (req, res) => {
       email: normalizedEmail,
     });
 
-    const token = signJWT({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    });
+    const token = signJWTWithIP(
+      { id: user.id, name: user.name, email: user.email },
+      req.ip
+    );
     res.json({
       token,
       user: {
@@ -331,7 +536,7 @@ const resetTokens = new Map();
 
 router.post(
   "/api/auth/reset-password",
-  rateLimit(60000, 3),
+  rateLimit.passwordReset(),
   async (req, res) => {
     try {
       const { email, token, newPassword } = req.body;
@@ -380,10 +585,44 @@ router.post(
 
       // ── Step 2: Redeem the token (token + newPassword) ──
       if (token && newPassword) {
-        if (newPassword.length < 6) {
-          return res
-            .status(400)
-            .json({ error: "Password must be at least 6 characters" });
+        // Enforce the same password policy as signup
+        // We need the user's email/name to check against, so fetch user first
+        let userEmail = null;
+        let userName = null;
+
+        if (USE_DB) {
+          const users = await prisma.user.findMany({
+            where: {
+              settings: {
+                path: ["resetToken"],
+                equals: token,
+              },
+            },
+          });
+          const user = users[0];
+          if (user) {
+            userEmail = user.email;
+            userName = user.name;
+          }
+        } else {
+          const stored = resetTokens.get(token);
+          if (stored) {
+            const users = getUsersDB();
+            const user = users.find((u) => u.id === stored.userId);
+            if (user) {
+              userEmail = user.email;
+              userName = user.name;
+            }
+          }
+        }
+
+        // Validate password policy
+        const policyResult = validatePasswordPolicy(newPassword, userEmail, userName);
+        if (!policyResult.valid) {
+          return res.status(400).json({
+            error: "Password does not meet security requirements",
+            details: policyResult.errors,
+          });
         }
 
         const { hash, salt } = hashPassword(newPassword);
@@ -792,7 +1031,7 @@ router.put("/api/user/risk-profile", authMiddleware, async (req, res) => {
 router.post(
   "/api/auth/2fa/setup",
   authMiddleware,
-  rateLimit(60000, 5),
+  rateLimit.twoFactorSetup(),
   async (req, res) => {
     try {
       const secret = authenticator.generateSecret();

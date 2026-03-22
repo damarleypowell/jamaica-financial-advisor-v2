@@ -384,6 +384,142 @@ router.get("/api/research/:symbol", async (req, res) => {
   }
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Forex Rates ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+const FOREX_PAIRS = [
+  { pair: "JMDUSD=X", from: "JMD", to: "USD", name: "Jamaican Dollar / US Dollar" },
+  { pair: "USDGBP=X", from: "USD", to: "GBP", name: "US Dollar / British Pound" },
+  { pair: "USDEUR=X", from: "USD", to: "EUR", name: "US Dollar / Euro" },
+  { pair: "USDJPY=X", from: "USD", to: "JPY", name: "US Dollar / Japanese Yen" },
+  { pair: "USDCAD=X", from: "USD", to: "CAD", name: "US Dollar / Canadian Dollar" },
+  { pair: "USDCHF=X", from: "USD", to: "CHF", name: "US Dollar / Swiss Franc" },
+  { pair: "USDAUD=X", from: "USD", to: "AUD", name: "US Dollar / Australian Dollar" },
+  { pair: "USDTTD=X", from: "USD", to: "TTD", name: "US Dollar / Trinidad Dollar" },
+  { pair: "USDBBD=X", from: "USD", to: "BBD", name: "US Dollar / Barbados Dollar" },
+  { pair: "BTCUSD=X", from: "BTC", to: "USD", name: "Bitcoin / US Dollar" },
+  { pair: "ETHUSD=X", from: "ETH", to: "USD", name: "Ethereum / US Dollar" },
+];
+
+let forexCache = null;
+let forexCacheTime = 0;
+const FOREX_TTL = 60 * 1000; // 1 minute
+
+// Helper: fetch multiple Yahoo quotes in small batches with delay
+async function batchYahooQuotes(symbols) {
+  const yf = marketService.yahooFinance;
+  if (!yf) return {};
+  const results = {};
+  const batchSize = 3;
+  for (let i = 0; i < symbols.length; i += batchSize) {
+    const batch = symbols.slice(i, i + batchSize);
+    const settled = await Promise.allSettled(batch.map(s => yf.quote(s).catch(() => null)));
+    settled.forEach((r, j) => {
+      if (r.status === "fulfilled" && r.value?.regularMarketPrice) {
+        results[batch[j]] = r.value;
+      }
+    });
+    if (i + batchSize < symbols.length) await new Promise(r => setTimeout(r, 500));
+  }
+  return results;
+}
+
+router.get("/api/forex", async (_req, res) => {
+  const now = Date.now();
+  if (forexCache && now - forexCacheTime < FOREX_TTL) return res.json(forexCache);
+
+  if (!marketService.yahooFinance) {
+    return res.status(503).json({ error: "Yahoo Finance not available" });
+  }
+
+  try {
+    const quotes = await batchYahooQuotes(FOREX_PAIRS.map(p => p.pair));
+
+    const rates = FOREX_PAIRS.map(p => {
+      const q = quotes[p.pair];
+      if (!q) return null;
+      return {
+        pair: `${p.from}/${p.to}`,
+        name: p.name,
+        rate: q.regularMarketPrice,
+        change: q.regularMarketChangePercent ? +q.regularMarketChangePercent.toFixed(4) : null,
+        dayHigh: q.regularMarketDayHigh || null,
+        dayLow: q.regularMarketDayLow || null,
+        prevClose: q.regularMarketPreviousClose || null,
+      };
+    }).filter(Boolean);
+
+    forexCache = { rates, updatedAt: new Date().toISOString() };
+    forexCacheTime = now;
+    res.json(forexCache);
+  } catch (e) {
+    console.error("Forex fetch error:", e.message);
+    res.status(500).json({ error: "Failed to fetch forex rates" });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Global Market Indices ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+const GLOBAL_INDICES = [
+  { symbol: "^DJI", name: "Dow Jones", market: "US" },
+  { symbol: "^GSPC", name: "S&P 500", market: "US" },
+  { symbol: "^IXIC", name: "NASDAQ", market: "US" },
+  { symbol: "^RUT", name: "Russell 2000", market: "US" },
+  { symbol: "^FTSE", name: "FTSE 100", market: "UK" },
+  { symbol: "^N225", name: "Nikkei 225", market: "Japan" },
+  { symbol: "^HSI", name: "Hang Seng", market: "Hong Kong" },
+  { symbol: "^GDAXI", name: "DAX", market: "Germany" },
+  { symbol: "GC=F", name: "Gold", market: "Commodity" },
+  { symbol: "SI=F", name: "Silver", market: "Commodity" },
+  { symbol: "CL=F", name: "Crude Oil", market: "Commodity" },
+  { symbol: "BTC-USD", name: "Bitcoin", market: "Crypto" },
+  { symbol: "ETH-USD", name: "Ethereum", market: "Crypto" },
+];
+
+let indicesCache = null;
+let indicesCacheTime = 0;
+const INDICES_TTL = 60 * 1000;
+
+router.get("/api/global-markets", async (_req, res) => {
+  const now = Date.now();
+  if (indicesCache && now - indicesCacheTime < INDICES_TTL) return res.json(indicesCache);
+
+  if (!marketService.yahooFinance) {
+    return res.status(503).json({ error: "Yahoo Finance not available" });
+  }
+
+  try {
+    const quotes = await batchYahooQuotes(GLOBAL_INDICES.map(idx => idx.symbol));
+
+    const indices = GLOBAL_INDICES.map(idx => {
+      const q = quotes[idx.symbol];
+      if (!q) return null;
+      return {
+        symbol: idx.symbol,
+        name: idx.name,
+        market: idx.market,
+        price: q.regularMarketPrice,
+        change: q.regularMarketChangePercent ? +q.regularMarketChangePercent.toFixed(2) : null,
+        dollarChange: q.regularMarketChange ? +q.regularMarketChange.toFixed(2) : null,
+        dayHigh: q.regularMarketDayHigh || null,
+        dayLow: q.regularMarketDayLow || null,
+        prevClose: q.regularMarketPreviousClose || null,
+        volume: q.regularMarketVolume || null,
+      };
+    }).filter(Boolean);
+
+    indicesCache = { indices, updatedAt: new Date().toISOString() };
+    indicesCacheTime = now;
+    res.json(indicesCache);
+  } catch (e) {
+    console.error("Global markets fetch error:", e.message);
+    res.status(500).json({ error: "Failed to fetch global market data" });
+  }
+});
+
 // ── News ────────────────────────────────────────────────────────────────────
 
 router.get("/api/news", async (req, res) => {

@@ -1195,6 +1195,8 @@
         <div class="nav-section-title">Invest</div>
         <div class="nav-item" data-view="portfolio"><i class="fas fa-wallet"></i> Portfolio</div>
         <div class="nav-item" data-view="us-stocks"><i class="fas fa-flag-usa"></i> US Stocks</div>
+        <div class="nav-item" data-view="forex"><i class="fas fa-exchange-alt"></i> Forex</div>
+        <div class="nav-item" data-view="global-markets"><i class="fas fa-globe"></i> Markets</div>
         <div class="nav-item" data-view="calculators"><i class="fas fa-calculator"></i> Calculators</div>
         <div class="nav-item" data-view="planner"><i class="fas fa-bullseye"></i> Financial Planner</div>
         <div class="nav-item" data-view="transactions"><i class="fas fa-clock-rotate-left"></i> Orders &amp; History</div>
@@ -1991,6 +1993,62 @@
     <!-- Subscription View -->
     <div class="view" id="view-subscription">
       <div id="subscriptionContent" style="display:grid;gap:16px;"></div>
+    </div>
+
+    <!-- ── Forex View ──────────────────────────────────────────── -->
+    <div class="view" id="view-forex">
+      <!-- JMD Converter -->
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header"><h3><i class="fas fa-calculator text-gold"></i> JMD Currency Converter</h3></div>
+        <div class="card-body">
+          <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+            <div style="flex:1;min-width:160px;">
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Amount (JMD)</label>
+              <input type="number" id="forexConvertAmount" value="1000" min="0" step="0.01"
+                style="width:100%;padding:10px 14px;background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:15px;font-family:'JetBrains Mono',monospace;">
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Target Currency</label>
+              <select id="forexConvertTarget"
+                style="width:100%;padding:10px 14px;background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;">
+                <option value="">Select currency...</option>
+              </select>
+            </div>
+            <div style="flex:1;min-width:200px;">
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Converted Value</label>
+              <div id="forexConvertResult"
+                style="padding:10px 14px;background:var(--glass2);border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--green);min-height:42px;display:flex;align-items:center;">
+                --
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Forex Rates Grid -->
+      <div id="forexGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+        <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">
+          <i class="fas fa-exchange-alt" style="font-size:40px;margin-bottom:12px;display:block;"></i>
+          Loading forex rates...
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Global Markets View ───────────────────────────────────── -->
+    <div class="view" id="view-global-markets">
+      <div id="globalMarketsContent">
+        <div style="text-align:center;padding:60px 20px;color:var(--muted);">
+          <i class="fas fa-globe" style="font-size:40px;margin-bottom:12px;display:block;"></i>
+          Loading global market data...
+        </div>
+      </div>
+      <div style="margin-top:24px;padding:16px 20px;background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-flag-usa" style="color:var(--blue);font-size:18px;"></i>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);">Trade US Stocks</div>
+          <div style="font-size:12px;color:var(--muted);">You can trade US-listed securities directly via the <a href="#" onclick="event.preventDefault();document.querySelector('.nav-item[data-view=us-stocks]').click();" style="color:var(--blue);text-decoration:underline;">US Stocks</a> tab.</div>
+        </div>
+      </div>
     </div>
 
     <!-- Admin View -->

@@ -23,7 +23,7 @@ const USE_DB = !!(process.env.DATABASE_URL && prisma);
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 const { securityHeaders, corsMiddleware, csrfProtection } = require("./middleware/security");
-const { sanitizeBody } = require("./middleware/validation");
+const { sanitizeBody, protectBody } = require("./middleware/validation");
 const { auditMiddleware } = require("./services/audit.service");
 
 // ── Route modules ────────────────────────────────────────────────────────────
@@ -53,6 +53,10 @@ const { checkAlerts } = require("./routes/alerts.routes");
 
 const app = express();
 
+// Remove X-Powered-By header (defense-in-depth, also done in securityHeaders)
+app.disable("trust proxy");
+app.set("x-powered-by", false);
+
 // Security
 app.use(securityHeaders);
 app.use(corsMiddleware);
@@ -62,6 +66,9 @@ app.use(express.json({ limit: "5mb" }));
 
 // CSRF protection
 app.use(csrfProtection);
+
+// Prototype pollution protection & body size check
+app.use(protectBody);
 
 // Input sanitization & audit logging
 app.use(sanitizeBody);
@@ -160,6 +167,8 @@ async function start() {
     console.log(`  GET  /api/news                — market news`);
     console.log(`  POST /api/screener            — stock screener`);
     console.log(`  POST /api/compare             — stock comparison`);
+    console.log(`  GET  /api/forex               — live forex rates`);
+    console.log(`  GET  /api/global-markets      — global indices & commodities`);
     console.log(`  ── AI Services ──`);
     console.log(`  POST /analyze                 — AI stock analysis`);
     console.log(`  POST /api/chat                — AI chat assistant`);

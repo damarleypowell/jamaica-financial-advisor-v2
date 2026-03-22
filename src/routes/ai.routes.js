@@ -557,6 +557,26 @@ Trading Days in Data:  ${d.candleCount}`;
 // ── Text-to-Speech ───────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Convert text to speech-friendly format (TTS reads "$675 JMD" awkwardly)
+function speechFriendly(raw) {
+  return raw
+    // "$1,234.56 JMD" → "1,234 point 56 Jamaican dollars"
+    .replace(/\$\s*([\d,]+(?:\.\d+)?)\s*JMD/gi, '$1 Jamaican dollars')
+    // "$1,234.56 USD" → "1,234 point 56 US dollars"
+    .replace(/\$\s*([\d,]+(?:\.\d+)?)\s*USD/gi, '$1 US dollars')
+    // "J$675" or "J$ 675" → "675 Jamaican dollars"
+    .replace(/J\$\s*([\d,]+(?:\.\d+)?)/gi, '$1 Jamaican dollars')
+    // "$675" standalone → "675 dollars"
+    .replace(/\$([\d,]+(?:\.\d+)?)/g, '$1 dollars')
+    // "JMD" standalone → "Jamaican dollars"
+    .replace(/\bJMD\b/g, 'Jamaican dollars')
+    // "USD" standalone → "US dollars"
+    .replace(/\bUSD\b/g, 'US dollars')
+    // Clean up markdown artifacts that TTS reads literally
+    .replace(/[*#_`]/g, '')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
 router.post("/api/speak", rateLimit(60000, 10), async (req, res) => {
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: "Missing text" });
@@ -581,7 +601,7 @@ router.post("/api/speak", rateLimit(60000, 10), async (req, res) => {
           Accept: "audio/mpeg",
         },
         body: JSON.stringify({
-          text,
+          text: speechFriendly(text),
           model_id: "eleven_multilingual_v2",
           voice_settings: { stability: 0.5, similarity_boost: 0.75 },
         }),
@@ -686,7 +706,8 @@ IMPORTANT: Your response will be read aloud via text-to-speech. Keep it:
 - Include specific numbers and data when available
 - Reference actual JSE companies and market data
 - Always mention it's not financial advice when giving recommendations
-- Be warm, professional, and Jamaican-friendly in tone`;
+- Be warm, professional, and Jamaican-friendly in tone
+- CRITICAL: Never write dollar signs or currency codes. Say "675 Jamaican dollars" not "$675 JMD" or "J$675". Say "50 US dollars" not "$50 USD". This is because text-to-speech reads symbols awkwardly.`;
 
   try {
     const response = await client.messages.create({
@@ -719,7 +740,7 @@ IMPORTANT: Your response will be read aloud via text-to-speech. Keep it:
             Accept: "audio/mpeg",
           },
           body: JSON.stringify({
-            text: aiText,
+            text: speechFriendly(aiText),
             model_id: "eleven_multilingual_v2",
             voice_settings: { stability: 0.5, similarity_boost: 0.75 },
           }),

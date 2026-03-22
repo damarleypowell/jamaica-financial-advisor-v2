@@ -7,6 +7,10 @@
 
 const { z } = require("zod");
 
+// ─── Dangerous Keys (Prototype Pollution Prevention) ────
+
+const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
 // ─── Reusable Schemas ────────────────────────────────────
 
 const symbolSchema = z.string().min(1).max(20).regex(/^[A-Za-z0-9.]+$/, "Invalid symbol format");
@@ -14,11 +18,12 @@ const symbolSchema = z.string().min(1).max(20).regex(/^[A-Za-z0-9.]+$/, "Invalid
 const emailSchema = z.string().email().max(255).transform(s => s.toLowerCase().trim());
 
 const passwordSchema = z.string()
-  .min(8, "Password must be at least 8 characters")
+  .min(12, "Password must be at least 12 characters")
   .max(128, "Password too long")
   .regex(/[A-Z]/, "Password must contain an uppercase letter")
   .regex(/[a-z]/, "Password must contain a lowercase letter")
-  .regex(/[0-9]/, "Password must contain a number");
+  .regex(/[0-9]/, "Password must contain a number")
+  .regex(/[!@#$%^&*()_+\-=]/, "Password must contain a special character (!@#$%^&*()_+-=)");
 
 const usernameSchema = z.string()
   .min(2, "Username must be at least 2 characters")
@@ -135,6 +140,45 @@ function sanitize(str) {
 }
 
 /**
+ * Check an object for prototype pollution keys recursively.
+ * Returns true if a dangerous key is found.
+ */
+function hasDangerousKeys(obj, depth = 0) {
+  if (depth > 10) return false; // prevent infinite recursion
+  if (!obj || typeof obj !== "object") return false;
+
+  for (const key of Object.keys(obj)) {
+    if (DANGEROUS_KEYS.has(key)) return true;
+    if (typeof obj[key] === "object" && obj[key] !== null) {
+      if (hasDangerousKeys(obj[key], depth + 1)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Middleware to reject requests with prototype pollution attempts
+ * and enforce maximum body size at the application level.
+ */
+function protectBody(req, res, next) {
+  // Check body size (defense-in-depth alongside express.json limit)
+  const contentLength = parseInt(req.headers["content-length"] || "0", 10);
+  const MAX_BODY_SIZE = 5 * 1024 * 1024; // 5MB
+  if (contentLength > MAX_BODY_SIZE) {
+    return res.status(413).json({ error: "Request body too large" });
+  }
+
+  // Check for prototype pollution
+  if (req.body && typeof req.body === "object") {
+    if (hasDangerousKeys(req.body)) {
+      return res.status(400).json({ error: "Invalid request: forbidden property name detected" });
+    }
+  }
+
+  next();
+}
+
+/**
  * Middleware to sanitize all string fields in req.body
  */
 function sanitizeBody(req, res, next) {
@@ -154,4 +198,4 @@ function sanitizeObject(obj) {
   }
 }
 
-module.exports = { validate, sanitize, sanitizeBody, schemas };
+module.exports = { validate, sanitize, sanitizeBody, protectBody, schemas };

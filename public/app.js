@@ -3620,6 +3620,199 @@
 
   viewTitles['us-stocks'] = ['US Stocks', 'Trade US securities via Alpaca'];
   viewTitles['calculators'] = ['Calculators', 'Financial planning calculators'];
+  viewTitles['forex'] = ['Forex', 'Live currency exchange rates'];
+  viewTitles['global-markets'] = ['Global Markets', 'World indices and commodities'];
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── FOREX VIEW ─────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  let forexRatesData = [];
+  let forexRefreshInterval = null;
+
+  async function loadForexRates() {
+    try {
+      const data = await apiFetch('/api/forex');
+      const rates = data.rates || [];
+      forexRatesData = rates;
+      renderForexGrid(rates);
+      populateForexConverter(rates);
+      updateForexConversion();
+    } catch (e) {
+      console.error('Failed to load forex rates:', e);
+      const grid = $('#forexGrid');
+      if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);"><i class="fas fa-exclamation-triangle" style="font-size:40px;margin-bottom:12px;display:block;color:var(--red);"></i>Failed to load forex rates. Please try again later.</div>';
+    }
+  }
+
+  function renderForexGrid(rates) {
+    const grid = $('#forexGrid');
+    if (!grid) return;
+    if (!rates.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">No forex data available.</div>';
+      return;
+    }
+    grid.innerHTML = rates.map(r => {
+      const isUp = r.change >= 0;
+      const changeColor = isUp ? 'var(--green)' : 'var(--red)';
+      const changeIcon = isUp ? 'fa-caret-up' : 'fa-caret-down';
+      const changeStr = (isUp ? '+' : '') + (r.change != null ? r.change.toFixed(2) : '0.00') + '%';
+      return `
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:16px 20px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+              <div>
+                <div style="font-size:16px;font-weight:700;color:var(--text);">${r.pair || '--'}</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px;">${r.name || ''}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:${changeColor};font-family:'JetBrains Mono',monospace;">
+                <i class="fas ${changeIcon}"></i> ${changeStr}
+              </div>
+            </div>
+            <div style="font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);margin-bottom:12px;">
+              ${r.rate != null ? r.rate.toFixed(4) : '--'}
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">
+              <span>High: <span style="color:var(--green);font-family:'JetBrains Mono',monospace;">${r.dayHigh != null ? r.dayHigh.toFixed(4) : '--'}</span></span>
+              <span>Low: <span style="color:var(--red);font-family:'JetBrains Mono',monospace;">${r.dayLow != null ? r.dayLow.toFixed(4) : '--'}</span></span>
+              <span>Prev: <span style="font-family:'JetBrains Mono',monospace;">${r.prevClose != null ? r.prevClose.toFixed(4) : '--'}</span></span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function populateForexConverter(rates) {
+    const select = $('#forexConvertTarget');
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = '<option value="">Select currency...</option>';
+    rates.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.pair;
+      opt.textContent = r.pair + ' — ' + (r.name || '');
+      select.appendChild(opt);
+    });
+    if (current) select.value = current;
+  }
+
+  function updateForexConversion() {
+    const amountEl = $('#forexConvertAmount');
+    const targetEl = $('#forexConvertTarget');
+    const resultEl = $('#forexConvertResult');
+    if (!amountEl || !targetEl || !resultEl) return;
+
+    const amount = parseFloat(amountEl.value) || 0;
+    const pair = targetEl.value;
+    if (!pair || !amount) { resultEl.textContent = '--'; return; }
+
+    const rateObj = forexRatesData.find(r => r.pair === pair);
+    if (!rateObj || !rateObj.rate) { resultEl.textContent = '--'; return; }
+
+    const converted = amount * rateObj.rate;
+    const target = pair.split('/')[1] || pair;
+    resultEl.textContent = converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + ' ' + target;
+  }
+
+  // Bind converter events
+  $('#forexConvertAmount')?.addEventListener('input', updateForexConversion);
+  $('#forexConvertTarget')?.addEventListener('change', updateForexConversion);
+
+  function startForexAutoRefresh() {
+    if (forexRefreshInterval) clearInterval(forexRefreshInterval);
+    forexRefreshInterval = setInterval(() => {
+      if (state.currentView === 'forex') loadForexRates();
+    }, 60000);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── GLOBAL MARKETS VIEW ────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  const marketGroupLabels = {
+    'US': { label: 'United States', icon: 'fa-flag-usa', color: 'var(--blue)' },
+    'UK': { label: 'United Kingdom', icon: 'fa-landmark', color: 'var(--purple)' },
+    'Japan': { label: 'Japan', icon: 'fa-torii-gate', color: 'var(--red)' },
+    'Germany': { label: 'Germany', icon: 'fa-industry', color: 'var(--gold)' },
+    'Hong Kong': { label: 'Hong Kong', icon: 'fa-city', color: 'var(--green)' },
+    'Commodity': { label: 'Commodities', icon: 'fa-gem', color: 'var(--gold)' },
+    'Crypto': { label: 'Cryptocurrency', icon: 'fa-bitcoin-sign', color: '#f7931a' },
+  };
+
+  async function loadGlobalMarkets() {
+    try {
+      const data = await apiFetch('/api/global-markets');
+      const indices = data.indices || [];
+      renderGlobalMarkets(indices);
+    } catch (e) {
+      console.error('Failed to load global markets:', e);
+      const el = $('#globalMarketsContent');
+      if (el) el.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted);"><i class="fas fa-exclamation-triangle" style="font-size:40px;margin-bottom:12px;display:block;color:var(--red);"></i>Failed to load market data. Please try again later.</div>';
+    }
+  }
+
+  function renderGlobalMarkets(indices) {
+    const container = $('#globalMarketsContent');
+    if (!container) return;
+    if (!indices.length) {
+      container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted);">No market data available.</div>';
+      return;
+    }
+
+    // Group by market
+    const groups = {};
+    indices.forEach(idx => {
+      const market = idx.market || 'Other';
+      if (!groups[market]) groups[market] = [];
+      groups[market].push(idx);
+    });
+
+    let html = '';
+    const groupOrder = ['US', 'UK', 'Germany', 'Japan', 'Hong Kong', 'Commodity', 'Crypto'];
+    const sortedKeys = [...groupOrder.filter(k => groups[k]), ...Object.keys(groups).filter(k => !groupOrder.includes(k))];
+
+    sortedKeys.forEach(market => {
+      const items = groups[market];
+      const meta = marketGroupLabels[market] || { label: market, icon: 'fa-chart-bar', color: 'var(--muted)' };
+
+      html += `
+        <div style="margin-bottom:28px;">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <i class="fas ${meta.icon}" style="color:${meta.color};"></i> ${meta.label}
+          </h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;">
+            ${items.map(idx => {
+              const isUp = idx.change >= 0;
+              const changeColor = isUp ? 'var(--green)' : 'var(--red)';
+              const changeIcon = isUp ? 'fa-caret-up' : 'fa-caret-down';
+              const changeStr = (isUp ? '+' : '') + (idx.change != null ? idx.change.toFixed(2) : '0.00') + '%';
+              const dollarStr = idx.dollarChange != null ? ((idx.dollarChange >= 0 ? '+' : '') + idx.dollarChange.toFixed(2)) : '';
+              return `
+                <div class="card" style="padding:16px 20px;">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                    <div>
+                      <div style="font-size:14px;font-weight:700;color:var(--text);">${idx.name || idx.symbol}</div>
+                      <div style="font-size:11px;color:var(--muted);margin-top:2px;">${idx.symbol || ''}</div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:${changeColor};font-family:'JetBrains Mono',monospace;">
+                        <i class="fas ${changeIcon}"></i> ${changeStr}
+                      </div>
+                      ${dollarStr ? `<div style="font-size:11px;color:${changeColor};font-family:'JetBrains Mono',monospace;margin-top:2px;">${dollarStr}</div>` : ''}
+                    </div>
+                  </div>
+                  <div style="font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);">
+                    ${idx.price != null ? idx.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
+                  </div>
+                  ${idx.volume ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;">Vol: ${Number(idx.volume).toLocaleString()}</div>` : ''}
+                </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+  }
 
   // Re-bind nav items for new views
   $$('.nav-item').forEach(item => {
@@ -3641,6 +3834,13 @@
         if (retirementChart) retirementChart.applyOptions({ width: $('#retirementChartWrap')?.clientWidth || 600 });
         if (loanChart) loanChart.applyOptions({ width: $('#loanChartWrap')?.clientWidth || 600 });
       }, 100);
+    }
+    if (view === 'forex') {
+      loadForexRates();
+      startForexAutoRefresh();
+    }
+    if (view === 'global-markets') {
+      loadGlobalMarkets();
     }
   };
 
