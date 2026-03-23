@@ -3,6 +3,7 @@ const Anthropic = require("@anthropic-ai/sdk");
 const config = require("../config/env");
 const rateLimit = require("../middleware/rateLimit");
 const { authMiddleware } = require("../middleware/auth");
+const { checkFeature } = require("../middleware/subscription");
 const marketService = require("../services/market.service");
 const analytics = require("../services/analytics.service");
 const { fetchAllNews } = require("../../news-scraper");
@@ -626,7 +627,7 @@ router.post("/api/speak", rateLimit(60000, 10), async (req, res) => {
 
 // ── Voice Chat: Speech → AI → ElevenLabs Voice Response ─────────────────────
 
-router.post("/api/voice-chat", rateLimit(60000, 10), async (req, res) => {
+router.post("/api/voice-chat", authMiddleware, checkFeature("voiceAgent"), rateLimit(60000, 10), async (req, res) => {
   const { text, context } = req.body;
   if (!text) return res.status(400).json({ error: "Missing text" });
 

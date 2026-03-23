@@ -1,9 +1,11 @@
 const { Router } = require("express");
 const crypto = require("crypto");
 const { authenticator } = require("otplib");
+const QRCode = require("qrcode");
 const {
   signJWT,
   signJWTWithIP,
+  verifyJWT,
   hashPassword,
   hashPasswordAsync,
   verifyPassword,
@@ -13,6 +15,11 @@ const {
 } = require("../middleware/auth");
 const rateLimit = require("../middleware/rateLimit");
 const { logAudit, AuditAction } = require("../services/audit.service");
+const {
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+  sendWelcomeEmail,
+} = require("../services/email.service");
 
 // ── Revoked tokens (in-memory session revocation) ────────────────────────────
 const revokedTokens = new Set();
@@ -208,7 +215,8 @@ const router = Router();
 
 router.post("/api/auth/signup", rateLimit.signup(), async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, accountType } = req.body;
+    const isPaperTrading = accountType !== "live";
     if (!name || !email || !password)
       return res
         .status(400)
@@ -239,14 +247,23 @@ router.post("/api/auth/signup", rateLimit.signup(), async (req, res) => {
         return res.status(409).json({ error: "Email already registered" });
       }
 
+      const verifyToken = crypto.randomBytes(32).toString("hex");
+
       const user = await prisma.user.create({
         data: {
           name: name.trim(),
           email: normalizedEmail,
           passwordHash: hash,
           salt,
-          settings: { theme: "dark", notifications: true },
+          emailVerified: false,
+          verifyToken,
+          settings: { theme: "dark", notifications: true, accountType: isPaperTrading ? "paper" : "live" },
         },
+      });
+
+      // Send verification email (fire-and-forget, don't block signup)
+      sendVerificationEmail(user.email, verifyToken, user.name).catch((err) => {
+        console.error("[auth/signup] Failed to send verification email:", err.message);
       });
 
       logAudit(AuditAction.SIGNUP, {
@@ -265,8 +282,10 @@ router.post("/api/auth/signup", rateLimit.signup(), async (req, res) => {
           id: user.id,
           name: user.name,
           email: user.email,
+          emailVerified: false,
           settings: user.settings,
         },
+        message: "Account created. Please check your email to verify your account.",
       });
     }
 
@@ -276,22 +295,37 @@ router.post("/api/auth/signup", rateLimit.signup(), async (req, res) => {
       return res.status(409).json({ error: "Email already registered" });
     }
 
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+
     const user = {
       id: crypto.randomUUID(),
       name: name.trim(),
       email: normalizedEmail,
       hash,
       salt,
+      emailVerified: false,
+      verifyToken,
       createdAt: new Date().toISOString(),
       portfolio: [],
       watchlist: [],
       goals: [],
       chatHistory: [],
       riskProfile: null,
-      settings: { theme: "dark", notifications: true },
+      settings: { theme: "dark", notifications: true, accountType: isPaperTrading ? "paper" : "live" },
     };
     users.push(user);
     saveUsersDB(users);
+
+    // Also store in the in-memory map for backwards compat
+    verificationTokens.set(verifyToken, {
+      userId: user.id,
+      email: normalizedEmail,
+    });
+
+    // Send verification email (fire-and-forget)
+    sendVerificationEmail(user.email, verifyToken, user.name).catch((err) => {
+      console.error("[auth/signup] Failed to send verification email:", err.message);
+    });
 
     logAudit(AuditAction.SIGNUP, {
       ip: req.ip,
@@ -309,8 +343,10 @@ router.post("/api/auth/signup", rateLimit.signup(), async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        emailVerified: false,
         settings: user.settings,
       },
+      message: "Account created. Please check your email to verify your account.",
     });
   } catch (err) {
     console.error("[auth/signup] Error:", err);
@@ -320,7 +356,7 @@ router.post("/api/auth/signup", rateLimit.signup(), async (req, res) => {
 
 router.post("/api/auth/login", rateLimit.login(), async (req, res) => {
   try {
-    const { email, password, twoFactorToken } = req.body;
+    const { email, password } = req.body;
     if (!email || !password)
       return res.status(400).json({ error: "Email and password required" });
 
@@ -368,21 +404,14 @@ router.post("/api/auth/login", rateLimit.login(), async (req, res) => {
       }
 
       // ── 2FA check ──
-      if (user.twoFactorSecret) {
-        if (!twoFactorToken) {
-          return res.status(200).json({ requires2FA: true });
-        }
-        const isValid = authenticator.check(twoFactorToken, user.twoFactorSecret);
-        if (!isValid) {
-          recordFailedAttempt(normalizedEmail);
-          logAudit(AuditAction.LOGIN_FAILED, {
-            ip: req.ip,
-            userId: user.id,
-            email: normalizedEmail,
-            message: "Invalid 2FA code",
-          });
-          return res.status(401).json({ error: "Invalid email or password" });
-        }
+      if (user.twoFactorSecret || user.twoFactorEnabled) {
+        // Issue a short-lived temp token (5 min) so the client can submit 2FA code
+        const tempToken = signJWT(
+          { id: user.id, email: user.email, purpose: "2fa" },
+          "5m"
+        );
+        clearFailedAttempts(normalizedEmail);
+        return res.status(200).json({ requires2FA: true, tempToken });
       }
 
       // ── Success: clear failed attempts ──
@@ -393,6 +422,13 @@ router.post("/api/auth/login", rateLimit.login(), async (req, res) => {
         userId: user.id,
         email: normalizedEmail,
       });
+
+      // Fetch subscription tier
+      let subscriptionTier = "BASIC";
+      try {
+        const sub = await prisma.subscription.findUnique({ where: { userId: user.id } });
+        if (sub && sub.status === "ACTIVE" && sub.plan) subscriptionTier = sub.plan;
+      } catch (_) {}
 
       const token = signJWTWithIP(
         { id: user.id, name: user.name, email: user.email },
@@ -405,6 +441,7 @@ router.post("/api/auth/login", rateLimit.login(), async (req, res) => {
           name: user.name,
           email: user.email,
           settings: user.settings,
+          subscriptionTier,
         },
       });
     }
@@ -435,21 +472,13 @@ router.post("/api/auth/login", rateLimit.login(), async (req, res) => {
     }
 
     // ── 2FA check (file-based) ──
-    if (user.twoFactorSecret) {
-      if (!twoFactorToken) {
-        return res.status(200).json({ requires2FA: true });
-      }
-      const isValid = authenticator.check(twoFactorToken, user.twoFactorSecret);
-      if (!isValid) {
-        recordFailedAttempt(normalizedEmail);
-        logAudit(AuditAction.LOGIN_FAILED, {
-          ip: req.ip,
-          userId: user.id,
-          email: normalizedEmail,
-          message: "Invalid 2FA code",
-        });
-        return res.status(401).json({ error: "Invalid email or password" });
-      }
+    if (user.twoFactorSecret || (user.settings && user.settings.twoFactorEnabled)) {
+      const tempToken = signJWT(
+        { id: user.id, email: user.email, purpose: "2fa" },
+        "5m"
+      );
+      clearFailedAttempts(normalizedEmail);
+      return res.status(200).json({ requires2FA: true, tempToken });
     }
 
     // ── Success: clear failed attempts ──
@@ -494,6 +523,13 @@ router.get("/api/auth/me", authMiddleware, async (req, res) => {
       });
       if (!user) return res.status(404).json({ error: "User not found" });
 
+      // Fetch subscription tier
+      let subscriptionTier = "BASIC";
+      try {
+        const sub = await prisma.subscription.findUnique({ where: { userId: user.id } });
+        if (sub && sub.status === "ACTIVE" && sub.plan) subscriptionTier = sub.plan;
+      } catch (_) {}
+
       return res.json({
         id: user.id,
         name: user.name,
@@ -501,6 +537,8 @@ router.get("/api/auth/me", authMiddleware, async (req, res) => {
         kycStatus: user.kycStatus,
         riskProfile: user.riskProfile,
         settings: user.settings,
+        subscriptionTier,
+        twoFactorEnabled: user.twoFactorEnabled || !!(user.twoFactorSecret),
         portfolio: user.portfolioPositions,
         watchlist: user.watchlists,
         goals: user.financialGoals,
@@ -520,6 +558,7 @@ router.get("/api/auth/me", authMiddleware, async (req, res) => {
       goals: user.goals,
       riskProfile: user.riskProfile,
       settings: user.settings,
+      twoFactorEnabled: !!(user.twoFactorSecret) || !!(user.settings && user.settings.twoFactorEnabled),
     });
   } catch (err) {
     console.error("[auth/me] Error:", err);
@@ -534,158 +573,156 @@ router.get("/api/auth/me", authMiddleware, async (req, res) => {
 // In-memory reset token store (file-based fallback)
 const resetTokens = new Map();
 
+// ── POST /api/auth/forgot-password — Request a password reset link ──────────
+router.post(
+  "/api/auth/forgot-password",
+  rateLimit.passwordReset(),
+  async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      if (USE_DB) {
+        const user = await prisma.user.findUnique({
+          where: { email: normalizedEmail },
+        });
+        // Always return success to prevent email enumeration
+        if (user) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              resetToken,
+              resetTokenExpiry: expiresAt,
+            },
+          });
+
+          // Send the reset email
+          sendPasswordResetEmail(user.email, resetToken, user.name).catch((err) => {
+            console.error("[auth/forgot-password] Failed to send reset email:", err.message);
+          });
+
+          logAudit(AuditAction.PASSWORD_RESET_REQUESTED, {
+            ip: req.ip,
+            userId: user.id,
+            email: normalizedEmail,
+          });
+        }
+      } else {
+        const users = getUsersDB();
+        const user = users.find((u) => u.email === normalizedEmail);
+        if (user) {
+          resetTokens.set(resetToken, {
+            userId: user.id,
+            expiresAt: expiresAt.toISOString(),
+          });
+
+          // Send the reset email
+          sendPasswordResetEmail(user.email, resetToken, user.name).catch((err) => {
+            console.error("[auth/forgot-password] Failed to send reset email:", err.message);
+          });
+
+          logAudit(AuditAction.PASSWORD_RESET_REQUESTED, {
+            ip: req.ip,
+            userId: user.id,
+            email: normalizedEmail,
+          });
+        }
+      }
+
+      // Always return the same response to prevent email enumeration
+      return res.json({
+        message: "If that email exists, a password reset link has been sent",
+      });
+    } catch (err) {
+      console.error("[auth/forgot-password] Error:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ── POST /api/auth/reset-password — Redeem a reset token ───────────────────
 router.post(
   "/api/auth/reset-password",
   rateLimit.passwordReset(),
   async (req, res) => {
     try {
-      const { email, token, newPassword } = req.body;
-
-      // ── Step 1: Request a reset (email only) ──
-      if (email && !token) {
-        const normalizedEmail = email.toLowerCase().trim();
-        const resetToken = crypto.randomBytes(32).toString("hex");
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-        if (USE_DB) {
-          const user = await prisma.user.findUnique({
-            where: { email: normalizedEmail },
-          });
-          // Always return success to prevent email enumeration
-          if (user) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: {
-                settings: {
-                  ...(typeof user.settings === "object" ? user.settings : {}),
-                  resetToken,
-                  resetTokenExpires: expiresAt.toISOString(),
-                },
-              },
-            });
-          }
-        } else {
-          const users = getUsersDB();
-          const user = users.find((u) => u.email === normalizedEmail);
-          if (user) {
-            resetTokens.set(resetToken, {
-              userId: user.id,
-              expiresAt: expiresAt.toISOString(),
-            });
-          }
-        }
-
-        // In production, send the token via email. For now, return it in dev.
-        const response = { message: "If that email exists, a reset link has been sent" };
-        if (process.env.NODE_ENV !== "production") {
-          response.resetToken = resetToken;
-        }
-        return res.json(response);
+      const { token, newPassword } = req.body;
+      if (!token || !newPassword) {
+        return res
+          .status(400)
+          .json({ error: "Token and new password are required" });
       }
 
-      // ── Step 2: Redeem the token (token + newPassword) ──
-      if (token && newPassword) {
-        // Enforce the same password policy as signup
-        // We need the user's email/name to check against, so fetch user first
-        let userEmail = null;
-        let userName = null;
+      // ── Look up the user associated with this token ──
+      let userEmail = null;
+      let userName = null;
 
-        if (USE_DB) {
-          const users = await prisma.user.findMany({
-            where: {
-              settings: {
-                path: ["resetToken"],
-                equals: token,
-              },
-            },
-          });
-          const user = users[0];
+      if (USE_DB) {
+        const user = await prisma.user.findFirst({
+          where: { resetToken: token },
+        });
+        if (user) {
+          userEmail = user.email;
+          userName = user.name;
+        }
+      } else {
+        const stored = resetTokens.get(token);
+        if (stored) {
+          const users = getUsersDB();
+          const user = users.find((u) => u.id === stored.userId);
           if (user) {
             userEmail = user.email;
             userName = user.name;
           }
-        } else {
-          const stored = resetTokens.get(token);
-          if (stored) {
-            const users = getUsersDB();
-            const user = users.find((u) => u.id === stored.userId);
-            if (user) {
-              userEmail = user.email;
-              userName = user.name;
-            }
-          }
         }
+      }
 
-        // Validate password policy
-        const policyResult = validatePasswordPolicy(newPassword, userEmail, userName);
-        if (!policyResult.valid) {
-          return res.status(400).json({
-            error: "Password does not meet security requirements",
-            details: policyResult.errors,
-          });
-        }
+      // Validate password policy (even before checking token validity,
+      // so we can give useful errors; the token check follows immediately)
+      const policyResult = validatePasswordPolicy(newPassword, userEmail, userName);
+      if (!policyResult.valid) {
+        return res.status(400).json({
+          error: "Password does not meet security requirements",
+          details: policyResult.errors,
+        });
+      }
 
-        const { hash, salt } = hashPassword(newPassword);
+      const { hash, salt } = hashPassword(newPassword);
 
-        if (USE_DB) {
-          // Search for the user with this reset token in settings
-          const users = await prisma.user.findMany({
-            where: {
-              settings: {
-                path: ["resetToken"],
-                equals: token,
-              },
-            },
-          });
+      if (USE_DB) {
+        const user = await prisma.user.findFirst({
+          where: { resetToken: token },
+        });
 
-          const user = users[0];
-          if (!user) {
-            return res.status(400).json({ error: "Invalid or expired reset token" });
-          }
-
-          const settings =
-            typeof user.settings === "object" ? user.settings : {};
-          if (
-            settings.resetTokenExpires &&
-            new Date(settings.resetTokenExpires) < new Date()
-          ) {
-            return res.status(400).json({ error: "Invalid or expired reset token" });
-          }
-
-          const { resetToken: _rt, resetTokenExpires: _rte, ...cleanSettings } =
-            settings;
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              passwordHash: hash,
-              salt,
-              settings: cleanSettings,
-            },
-          });
-
-          logAudit(AuditAction.PASSWORD_CHANGE, {
-            userId: user.id,
-            ip: req.ip,
-          });
-          return res.json({ message: "Password reset successfully" });
-        }
-
-        // ── File-based fallback ──
-        const stored = resetTokens.get(token);
-        if (!stored || new Date(stored.expiresAt) < new Date()) {
-          return res.status(400).json({ error: "Invalid or expired reset token" });
-        }
-
-        const users = getUsersDB();
-        const user = users.find((u) => u.id === stored.userId);
         if (!user) {
           return res.status(400).json({ error: "Invalid or expired reset token" });
         }
 
-        user.hash = hash;
-        user.salt = salt;
-        saveUsersDB(users);
-        resetTokens.delete(token);
+        // Check expiry
+        if (user.resetTokenExpiry && new Date(user.resetTokenExpiry) < new Date()) {
+          // Invalidate the expired token
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { resetToken: null, resetTokenExpiry: null },
+          });
+          return res.status(400).json({ error: "Invalid or expired reset token" });
+        }
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            passwordHash: hash,
+            salt,
+            resetToken: null,
+            resetTokenExpiry: null,
+          },
+        });
 
         logAudit(AuditAction.PASSWORD_CHANGE, {
           userId: user.id,
@@ -694,9 +731,29 @@ router.post(
         return res.json({ message: "Password reset successfully" });
       }
 
-      return res
-        .status(400)
-        .json({ error: "Provide email (to request reset) or token + newPassword (to reset)" });
+      // ── File-based fallback ──
+      const stored = resetTokens.get(token);
+      if (!stored || new Date(stored.expiresAt) < new Date()) {
+        if (stored) resetTokens.delete(token);
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+
+      const users = getUsersDB();
+      const user = users.find((u) => u.id === stored.userId);
+      if (!user) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+
+      user.hash = hash;
+      user.salt = salt;
+      saveUsersDB(users);
+      resetTokens.delete(token);
+
+      logAudit(AuditAction.PASSWORD_CHANGE, {
+        userId: user.id,
+        ip: req.ip,
+      });
+      return res.json({ message: "Password reset successfully" });
     } catch (err) {
       console.error("[auth/reset-password] Error:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -711,107 +768,153 @@ router.post(
 // In-memory verification token store (file-based fallback)
 const verificationTokens = new Map();
 
+// ── POST /api/auth/verify-email — Verify email with token ───────────────────
 router.post(
   "/api/auth/verify-email",
   rateLimit(60000, 5),
   async (req, res) => {
     try {
-      const { email, token } = req.body;
-
-      // ── Step 1: Request a verification token (email only) ──
-      if (email && !token) {
-        const normalizedEmail = email.toLowerCase().trim();
-        const verifyToken = crypto.randomBytes(32).toString("hex");
-
-        if (USE_DB) {
-          const user = await prisma.user.findUnique({
-            where: { email: normalizedEmail },
-          });
-          if (!user) {
-            return res.json({ message: "If that email exists, a verification link has been sent" });
-          }
-
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              settings: {
-                ...(typeof user.settings === "object" ? user.settings : {}),
-                emailVerifyToken: verifyToken,
-              },
-            },
-          });
-        } else {
-          const users = getUsersDB();
-          const user = users.find((u) => u.email === normalizedEmail);
-          if (user) {
-            verificationTokens.set(verifyToken, {
-              userId: user.id,
-              email: normalizedEmail,
-            });
-          }
-        }
-
-        const response = { message: "If that email exists, a verification link has been sent" };
-        if (process.env.NODE_ENV !== "production") {
-          response.verifyToken = verifyToken;
-        }
-        return res.json(response);
+      const { token } = req.body;
+      if (!token) {
+        return res.status(400).json({ error: "Verification token is required" });
       }
 
-      // ── Step 2: Verify the token ──
-      if (token) {
-        if (USE_DB) {
-          const users = await prisma.user.findMany({
-            where: {
-              settings: {
-                path: ["emailVerifyToken"],
-                equals: token,
-              },
-            },
-          });
+      if (USE_DB) {
+        const user = await prisma.user.findFirst({
+          where: { verifyToken: token },
+        });
 
-          const user = users[0];
-          if (!user) {
-            return res.status(400).json({ error: "Invalid verification token" });
-          }
-
-          const settings =
-            typeof user.settings === "object" ? user.settings : {};
-          const { emailVerifyToken: _evt, ...cleanSettings } = settings;
-
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              kycStatus: "PENDING", // Email verified, KYC starts
-              settings: { ...cleanSettings, emailVerified: true },
-            },
-          });
-
-          return res.json({ message: "Email verified successfully" });
-        }
-
-        // ── File-based fallback ──
-        const stored = verificationTokens.get(token);
-        if (!stored) {
+        if (!user) {
           return res.status(400).json({ error: "Invalid verification token" });
         }
 
-        const users = getUsersDB();
-        const user = users.find((u) => u.id === stored.userId);
-        if (user) {
-          user.emailVerified = true;
-          saveUsersDB(users);
+        if (user.emailVerified) {
+          return res.json({ message: "Email is already verified" });
         }
-        verificationTokens.delete(token);
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            emailVerified: true,
+            verifyToken: null,
+            kycStatus: "PENDING", // Email verified, KYC flow begins
+          },
+        });
+
+        // Send welcome email (fire-and-forget)
+        sendWelcomeEmail(user.email, user.name).catch((err) => {
+          console.error("[auth/verify-email] Failed to send welcome email:", err.message);
+        });
+
+        logAudit(AuditAction.EMAIL_VERIFIED, {
+          userId: user.id,
+          ip: req.ip,
+          email: user.email,
+        });
 
         return res.json({ message: "Email verified successfully" });
       }
 
-      return res
-        .status(400)
-        .json({ error: "Provide email (to request verification) or token (to verify)" });
+      // ── File-based fallback ──
+      const stored = verificationTokens.get(token);
+      if (!stored) {
+        return res.status(400).json({ error: "Invalid verification token" });
+      }
+
+      const users = getUsersDB();
+      const user = users.find((u) => u.id === stored.userId);
+      if (user) {
+        user.emailVerified = true;
+        delete user.verifyToken;
+        saveUsersDB(users);
+
+        // Send welcome email (fire-and-forget)
+        sendWelcomeEmail(user.email, user.name).catch((err) => {
+          console.error("[auth/verify-email] Failed to send welcome email:", err.message);
+        });
+      }
+      verificationTokens.delete(token);
+
+      logAudit(AuditAction.EMAIL_VERIFIED, {
+        userId: user?.id,
+        ip: req.ip,
+        email: stored.email,
+      });
+
+      return res.json({ message: "Email verified successfully" });
     } catch (err) {
       console.error("[auth/verify-email] Error:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ── POST /api/auth/resend-verification — Resend the verification email ──────
+router.post(
+  "/api/auth/resend-verification",
+  rateLimit(60000, 3),
+  async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      const newToken = crypto.randomBytes(32).toString("hex");
+
+      if (USE_DB) {
+        const user = await prisma.user.findUnique({
+          where: { email: normalizedEmail },
+        });
+
+        // Always return success to prevent email enumeration
+        if (user && !user.emailVerified) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { verifyToken: newToken },
+          });
+
+          sendVerificationEmail(user.email, newToken, user.name).catch((err) => {
+            console.error("[auth/resend-verification] Failed to send email:", err.message);
+          });
+
+          logAudit(AuditAction.EMAIL_VERIFICATION_SENT, {
+            ip: req.ip,
+            userId: user.id,
+            email: normalizedEmail,
+          });
+        }
+      } else {
+        const users = getUsersDB();
+        const user = users.find((u) => u.email === normalizedEmail);
+
+        if (user && !user.emailVerified) {
+          user.verifyToken = newToken;
+          saveUsersDB(users);
+
+          verificationTokens.set(newToken, {
+            userId: user.id,
+            email: normalizedEmail,
+          });
+
+          sendVerificationEmail(user.email, newToken, user.name).catch((err) => {
+            console.error("[auth/resend-verification] Failed to send email:", err.message);
+          });
+
+          logAudit(AuditAction.EMAIL_VERIFICATION_SENT, {
+            ip: req.ip,
+            userId: user.id,
+            email: normalizedEmail,
+          });
+        }
+      }
+
+      return res.json({
+        message: "If that email exists and is not yet verified, a new verification link has been sent",
+      });
+    } catch (err) {
+      console.error("[auth/resend-verification] Error:", err);
       res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -1046,9 +1149,21 @@ router.post(
           typeof user.settings === "object" ? user.settings : {};
         const otpauthUrl = authenticator.keyuri(
           user.email,
-          "JSE Trading",
+          "Gotham Financial",
           secret
         );
+
+        // Generate QR code as data URL
+        let qrDataUrl = null;
+        try {
+          qrDataUrl = await QRCode.toDataURL(otpauthUrl, {
+            width: 200,
+            margin: 2,
+            color: { dark: "#000000", light: "#ffffff" },
+          });
+        } catch (_qrErr) {
+          // QR generation failed; client can fall back to otpauthUrl
+        }
 
         await prisma.user.update({
           where: { id: user.id },
@@ -1057,7 +1172,7 @@ router.post(
           },
         });
 
-        return res.json({ secret, otpauthUrl });
+        return res.json({ secret, otpauthUrl, qrDataUrl });
       }
 
       // ── File-based fallback ──
@@ -1067,9 +1182,21 @@ router.post(
 
       const otpauthUrl = authenticator.keyuri(
         user.email,
-        "JSE Trading",
+        "Gotham Financial",
         secret
       );
+
+      // Generate QR code as data URL
+      let qrDataUrl = null;
+      try {
+        qrDataUrl = await QRCode.toDataURL(otpauthUrl, {
+          width: 200,
+          margin: 2,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+      } catch (_qrErr) {
+        // QR generation failed; client can fall back to otpauthUrl
+      }
 
       if (!user.settings || typeof user.settings !== "object") {
         user.settings = {};
@@ -1077,7 +1204,7 @@ router.post(
       user.settings.pendingTwoFactorSecret = secret;
       saveUsersDB(users);
 
-      res.json({ secret, otpauthUrl });
+      res.json({ secret, otpauthUrl, qrDataUrl });
     } catch (err) {
       console.error("[auth/2fa/setup] Error:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -1124,6 +1251,7 @@ router.post(
           where: { id: user.id },
           data: {
             twoFactorSecret: pendingSecret,
+            twoFactorEnabled: true,
             settings: { ...cleanSettings, twoFactorEnabled: true },
           },
         });
@@ -1201,6 +1329,7 @@ router.post(
           where: { id: user.id },
           data: {
             twoFactorSecret: null,
+            twoFactorEnabled: false,
             settings: { ...settings, twoFactorEnabled: false },
           },
         });
@@ -1237,6 +1366,135 @@ router.post(
       res.json({ message: "2FA disabled" });
     } catch (err) {
       console.error("[auth/2fa/disable] Error:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ── POST /api/auth/2fa/login — Complete login with TOTP code + tempToken ────
+router.post(
+  "/api/auth/2fa/login",
+  rateLimit(60000, 10),
+  async (req, res) => {
+    try {
+      const { tempToken, code } = req.body;
+      if (!tempToken || !code) {
+        return res
+          .status(400)
+          .json({ error: "Temp token and 2FA code required" });
+      }
+
+      // Verify the short-lived temp token
+      const payload = verifyJWT(tempToken);
+      if (!payload || payload.purpose !== "2fa") {
+        return res
+          .status(401)
+          .json({ error: "Invalid or expired session. Please log in again." });
+      }
+
+      if (USE_DB) {
+        const user = await prisma.user.findUnique({
+          where: { id: payload.id },
+        });
+        if (!user || !user.isActive) {
+          return res.status(401).json({ error: "User not found" });
+        }
+
+        if (!user.twoFactorSecret) {
+          return res.status(400).json({ error: "2FA is not configured" });
+        }
+
+        const isValid = authenticator.check(code, user.twoFactorSecret);
+        if (!isValid) {
+          recordFailedAttempt(user.email);
+          logAudit(AuditAction.LOGIN_FAILED, {
+            ip: req.ip,
+            userId: user.id,
+            email: user.email,
+            message: "Invalid 2FA code during login",
+          });
+          return res.status(401).json({ error: "Invalid 2FA code" });
+        }
+
+        clearFailedAttempts(user.email);
+
+        logAudit(AuditAction.LOGIN_SUCCESS, {
+          ip: req.ip,
+          userId: user.id,
+          email: user.email,
+          message: "2FA login completed",
+        });
+
+        // Fetch subscription tier
+        let subscriptionTier2fa = "BASIC";
+        try {
+          const sub = await prisma.subscription.findUnique({ where: { userId: user.id } });
+          if (sub && sub.status === "ACTIVE" && sub.plan) subscriptionTier2fa = sub.plan;
+        } catch (_) {}
+
+        const token = signJWTWithIP(
+          { id: user.id, name: user.name, email: user.email },
+          req.ip
+        );
+        return res.json({
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            settings: user.settings,
+            subscriptionTier: subscriptionTier2fa,
+          },
+        });
+      }
+
+      // ── File-based fallback ──
+      const users = getUsersDB();
+      const user = users.find((u) => u.id === payload.id);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      if (!user.twoFactorSecret) {
+        return res.status(400).json({ error: "2FA is not configured" });
+      }
+
+      const isValid = authenticator.check(code, user.twoFactorSecret);
+      if (!isValid) {
+        recordFailedAttempt(user.email);
+        logAudit(AuditAction.LOGIN_FAILED, {
+          ip: req.ip,
+          userId: user.id,
+          email: user.email,
+          message: "Invalid 2FA code during login",
+        });
+        return res.status(401).json({ error: "Invalid 2FA code" });
+      }
+
+      clearFailedAttempts(user.email);
+
+      logAudit(AuditAction.LOGIN_SUCCESS, {
+        ip: req.ip,
+        userId: user.id,
+        email: user.email,
+        message: "2FA login completed",
+      });
+
+      const token = signJWTWithIP(
+        { id: user.id, name: user.name, email: user.email },
+        req.ip
+      );
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          settings: user.settings,
+        },
+      });
+    } catch (err) {
+      console.error("[auth/2fa/login] Error:", err);
       res.status(500).json({ error: "Internal server error" });
     }
   }

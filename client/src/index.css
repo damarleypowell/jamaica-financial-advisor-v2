@@ -1,0 +1,255 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ── Gotham Financial — Design System ─────────────────────────────────────────
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  --color-bg: #060810;
+  --color-bg2: #0c1017;
+  --color-bg3: #111822;
+  --color-card: rgba(255, 255, 255, 0.03);
+  --color-card-border: rgba(255, 255, 255, 0.06);
+  --color-card-hover: rgba(255, 255, 255, 0.06);
+  --color-gf-green: #00c853;
+  --color-gf-gold: #ffd600;
+  --color-gf-red: #ff1744;
+  --color-gf-blue: #00b0ff;
+  --color-gf-purple: #bb86fc;
+  --color-jamaica: #007a3d;
+  --color-text-primary: #e8edf2;
+  --color-text-secondary: #8899a6;
+  --color-text-muted: #556677;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ── Base Styles ────────────────────────────────────────────────────────────── */
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Glass Card ─────────────────────────────────────────────────────────────── */
+
+.glass-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-card-border);
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-card:hover {
+  background: var(--color-card-hover);
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(0, 200, 83, 0.2); }
+  50% { box-shadow: 0 0 15px rgba(0, 200, 83, 0.4); }
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-15px) rotate(1deg); }
+  66% { transform: translateY(8px) rotate(-1deg); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-ticker {
+  animation: ticker-scroll 60s linear infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ── Ambient Background Orbs ────────────────────────────────────────────────── */
+
+.ambient-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ambient-orb-1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, var(--color-gf-green), transparent);
+  top: -100px;
+  left: -100px;
+  animation: float 8s ease-in-out infinite;
+}
+
+.ambient-orb-2 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, var(--color-gf-gold), transparent);
+  bottom: -50px;
+  right: -50px;
+  animation: float 10s ease-in-out infinite 2s;
+}
+
+.ambient-orb-3 {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, var(--color-gf-blue), transparent);
+  top: 40%;
+  right: 20%;
+  animation: float 12s ease-in-out infinite 4s;
+}
+
+/* ── Ticker Bar ─────────────────────────────────────────────────────────────── */
+
+.ticker-bar {
+  background: rgba(6, 8, 16, 0.9);
+  border-bottom: 1px solid var(--color-card-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────────────────── */
+
+.sidebar-gradient {
+  background: linear-gradient(180deg, var(--color-gf-green) 0%, var(--color-gf-gold) 100%);
+}
+
+/* ── Skeleton Loading ───────────────────────────────────────────────────────── */
+
+.skeleton {
+  background: linear-gradient(90deg, var(--color-bg3) 25%, rgba(255,255,255,0.05) 50%, var(--color-bg3) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* ── Number Font ────────────────────────────────────────────────────────────── */
+
+.font-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Gradient Text ──────────────────────────────────────────────────────────── */
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-gf-green), var(--color-gf-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Chart Container ────────────────────────────────────────────────────────── */
+
+.chart-container {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+}
+
+/* ── Modal Overlay ──────────────────────────────────────────────────────────── */
+
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ── Custom Select ──────────────────────────────────────────────────────────── */
+
+select {
+  background-color: var(--color-bg3);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-card-border);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+textarea {
+  background-color: var(--color-bg2);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-card-border);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-gf-green);
+  box-shadow: 0 0 0 2px rgba(0, 200, 83, 0.15);
+}
+
+/* ── Utility ────────────────────────────────────────────────────────────────── */
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

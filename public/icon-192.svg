@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="32" fill="#060810"/>
+  <rect x="8" y="8" width="176" height="176" rx="28" fill="none" stroke="#007a3d" stroke-width="3"/>
+  <text x="96" y="72" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="64" fill="#00c853">G</text>
+  <text x="96" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="18" fill="#e8edf2">GOTHAM</text>
+  <text x="96" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-weight="400" font-size="12" fill="#8a939e">FINANCIAL</text>
+  <line x1="40" y1="152" x2="152" y2="152" stroke="#007a3d" stroke-width="2"/>
+  <polyline points="50,170 70,160 90,165 110,155 130,158 150,148" fill="none" stroke="#00c853" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -15,18 +15,9 @@ const USE_DB = !!(process.env.DATABASE_URL && prisma);
 // ── Tier Definitions ────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-const TIER_ORDER = ["FREE", "BASIC", "PRO", "ENTERPRISE"];
+const TIER_ORDER = ["BASIC", "PRO", "ENTERPRISE"];
 
 const TIER_LIMITS = {
-  FREE: {
-    maxTrades: 5,           // per month
-    maxWatchlists: 1,
-    maxAlerts: 3,
-    aiChats: 10,            // per day
-    usStocks: false,
-    advancedAnalytics: false,
-    mlPredictions: false,
-  },
   BASIC: {
     maxTrades: 50,          // per month
     maxWatchlists: 5,
@@ -35,6 +26,8 @@ const TIER_LIMITS = {
     usStocks: true,
     advancedAnalytics: true,
     mlPredictions: false,
+    voiceAgent: false,
+    tradeServiceCharge: "1% JSE / 0.5% US per trade",
   },
   PRO: {
     maxTrades: Infinity,
@@ -44,6 +37,8 @@ const TIER_LIMITS = {
     usStocks: true,
     advancedAnalytics: true,
     mlPredictions: true,
+    voiceAgent: true,
+    tradeServiceCharge: "1% JSE / 0.5% US per trade",
   },
   ENTERPRISE: {
     maxTrades: Infinity,
@@ -53,6 +48,8 @@ const TIER_LIMITS = {
     usStocks: true,
     advancedAnalytics: true,
     mlPredictions: true,
+    voiceAgent: true,
+    tradeServiceCharge: "1% JSE / 0.5% US per trade",
   },
 };
 
@@ -111,7 +108,7 @@ async function getUserTier(userId) {
   const cached = getCachedTier(userId);
   if (cached) return cached;
 
-  let tier = "FREE";
+  let tier = "BASIC";
 
   if (USE_DB) {
     try {

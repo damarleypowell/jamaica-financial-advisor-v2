@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
+@theme {
+  --color-green: #00c853;
+  --color-green2: #007a3d;
+  --color-gold: #ffd600;
+  --color-red: #ff1744;
+  --color-blue: #00b0ff;
+  --color-purple: #bb86fc;
+
+  --color-bg: #060810;
+  --color-bg2: #0c1017;
+  --color-bg3: #111822;
+
+  --color-card: rgba(255, 255, 255, 0.03);
+  --color-glass: rgba(255, 255, 255, 0.05);
+  --color-glass2: rgba(255, 255, 255, 0.08);
+
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border2: rgba(255, 255, 255, 0.1);
+
+  --color-text: #e8edf2;
+  --color-text2: #c0c8d4;
+  --color-muted: #6b7a8d;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+.animate-fade-in { animation: fadeIn 0.4s ease-out; }
+.animate-pulse-slow { animation: pulse 2s ease-in-out infinite; }
+.animate-shimmer { animation: shimmer 2s linear infinite; background-size: 200% 100%; }
+.animate-ticker { animation: tickerScroll 180s linear infinite; }
+.animate-ticker:hover { animation-play-state: paused; }
+.animate-spin { animation: spin 1s linear infinite; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+.glass {
+  background: var(--color-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border);
+}
+
+.glass-strong {
+  background: var(--color-glass2);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid var(--color-border2);
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--color-glass) 25%, var(--color-glass2) 50%, var(--color-glass) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: 6px;
+}
+
+.chart-container { width: 100%; position: relative; }
+.chart-container > div { width: 100% !important; }

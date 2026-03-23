@@ -6,10 +6,10 @@ const nodemailer = require("nodemailer");
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
-const EMAIL_HOST = process.env.EMAIL_HOST || "smtp.gmail.com";
-const EMAIL_PORT = parseInt(process.env.EMAIL_PORT, 10) || 587;
-const EMAIL_USER = process.env.EMAIL_USER || "";
-const EMAIL_PASS = process.env.EMAIL_PASS || "";
+const EMAIL_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST || "smtp.gmail.com";
+const EMAIL_PORT = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT, 10) || 587;
+const EMAIL_USER = process.env.SMTP_USER || process.env.EMAIL_USER || "";
+const EMAIL_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS || "";
 const EMAIL_FROM = process.env.EMAIL_FROM || `"Gotham Financial" <${EMAIL_USER || "noreply@gothamfinancial.com"}>`;
 const APP_URL = process.env.APP_URL || "http://localhost:3000";
 
@@ -251,6 +251,56 @@ async function sendOrderConfirmation(email, order) {
 }
 
 /**
+ * Send a welcome email after a user successfully verifies their account.
+ */
+async function sendWelcomeEmail(email, name) {
+  const html = buildEmail({
+    title: "Welcome to Gotham Financial",
+    preheader: "Your account is ready. Start investing with AI-powered insights.",
+    greeting: `Welcome aboard, ${name || "Investor"}!`,
+    body: `
+      <p>Your Gotham Financial account is now fully set up. Here's what you can do next:</p>
+      <div class="info-box">
+        <div class="label">Getting Started</div>
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
+          <tr>
+            <td style="padding:8px 0;color:#00c853;font-weight:700;font-size:14px;width:28px;">1.</td>
+            <td style="padding:8px 0;color:#e8edf2;font-size:14px;">Browse Jamaica Stock Exchange listings in real-time</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:#00c853;font-weight:700;font-size:14px;">2.</td>
+            <td style="padding:8px 0;color:#e8edf2;font-size:14px;">Ask the AI advisor for personalised investment insights</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:#00c853;font-weight:700;font-size:14px;">3.</td>
+            <td style="padding:8px 0;color:#e8edf2;font-size:14px;">Practice with paper trading before investing real money</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:#00c853;font-weight:700;font-size:14px;">4.</td>
+            <td style="padding:8px 0;color:#e8edf2;font-size:14px;">Set price alerts so you never miss an opportunity</td>
+          </tr>
+        </table>
+      </div>
+    `,
+    ctaText: "Go to Dashboard",
+    ctaUrl: APP_URL,
+    footer: `<p>Need help getting started? Reply to this email or use the AI chat inside the app.</p>`,
+  });
+
+  return transporter.sendMail({
+    from: EMAIL_FROM,
+    to: email,
+    subject: "Welcome to Gotham Financial — Let's Get Started",
+    text: `Welcome to Gotham Financial, ${name || "Investor"}! Your account is ready. Visit ${APP_URL} to get started.`,
+    html,
+    headers: {
+      "X-Mailer": "Gotham-Financial/2.0",
+      "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
+    },
+  });
+}
+
+/**
  * Send a price alert notification when a user's alert triggers.
  */
 async function sendAlertTriggered(email, alert) {
@@ -316,6 +366,7 @@ async function sendAlertTriggered(email, alert) {
 module.exports = {
   sendVerificationEmail,
   sendPasswordResetEmail,
+  sendWelcomeEmail,
   sendOrderConfirmation,
   sendAlertTriggered,
 };

@@ -29,17 +29,29 @@ const memPositions = new Map();
 // ── Wallet helpers ──────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
+async function getAccountType(userId) {
+  if (USE_DB) {
+    try {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { settings: true } });
+      return user?.settings?.accountType || "paper";
+    } catch (_) { return "paper"; }
+  }
+  return "paper";
+}
+
 async function getWallet(userId, currency = "JMD") {
   if (USE_DB) {
     let wallet = await prisma.wallet.findUnique({
       where: { userId_currency: { userId, currency } },
     });
     if (!wallet) {
+      const acctType = await getAccountType(userId);
+      const startBalance = (acctType === "paper" && currency === "JMD") ? 1000000 : 0;
       wallet = await prisma.wallet.create({
         data: {
           userId,
           currency,
-          balance: currency === "JMD" ? 1000000 : 0,
+          balance: startBalance,
           heldBalance: 0,
         },
       });
@@ -321,7 +333,7 @@ async function getUserTransactions(userId) {
 // ── Fee calculation ──────────────────────────────────────────────────────────
 
 function calculateFee(totalAmount, market = "JSE") {
-  const rate = market === "JSE" ? 0.005 : 0.003;
+  const rate = market === "JSE" ? 0.01 : 0.005; // 1% JSE, 0.5% US service charge
   return +(totalAmount * rate).toFixed(2);
 }
 

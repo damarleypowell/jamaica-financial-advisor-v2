@@ -44,6 +44,27 @@
     return res.json();
   }
 
+  // Helper: render skeleton loading cards
+  function renderSkeleton(container, count = 3) {
+    if (typeof container === 'string') container = $(container);
+    if (!container) return;
+    container.innerHTML = Array(count).fill(0).map(() =>
+      `<div class="skeleton-card"><div class="shimmer-line w60"></div><div class="shimmer-line w100"></div><div class="shimmer-line w40"></div></div>`
+    ).join('');
+  }
+
+  // Helper: render error state
+  function renderError(container, message, retryFn) {
+    if (typeof container === 'string') container = $(container);
+    if (!container) return;
+    container.innerHTML = `<div class="error-state">
+      <i class="fas fa-exclamation-triangle"></i>
+      <p>${message}</p>
+      ${retryFn ? '<button class="btn btn-primary btn-sm" id="retryBtn"><i class="fas fa-sync-alt"></i> Retry</button>' : ''}
+    </div>`;
+    if (retryFn) container.querySelector('#retryBtn')?.addEventListener('click', retryFn);
+  }
+
   function getStockName(symbol) {
     const s = fullStockData.find(x => x.symbol === symbol);
     return s?.name || symbol;
@@ -128,6 +149,7 @@
     settings: ['Settings', 'Account settings and security'],
     subscription: ['Subscription', 'Manage your plan'],
     admin: ['Admin Dashboard', 'Platform management'],
+    technicals: ['Advanced Chart', 'Professional technical analysis'],
   };
 
   function navigateTo(view) {
@@ -156,13 +178,48 @@
     if (view === 'settings') loadSettingsView();
     if (view === 'subscription') loadSubscriptionView();
     if (view === 'admin') loadAdminDashboard();
+    if (view === 'watchlists') loadWatchlists();
+    if (view === 'dividends') loadDividends();
+    if (view === 'currency-impact') loadCurrencyImpact();
+    if (view === 'leaderboard') loadLeaderboard();
+    if (view === 'technicals') initTechnicalAnalysis();
 
     // Close mobile sidebar
     $('#sidebar').classList.remove('open');
   }
 
+  // Tier order for comparison
+  const TIER_RANK = { BASIC: 0, PRO: 1, ENTERPRISE: 2 };
+
+  function getUserTier() {
+    if (!state.user) return null;
+    return state.user.subscriptionTier || state.user.subscription?.plan || 'BASIC';
+  }
+
+  function canAccessTier(requiredTier) {
+    const userTier = getUserTier();
+    if (!userTier) return false;
+    return (TIER_RANK[userTier] ?? -1) >= (TIER_RANK[requiredTier] ?? 0);
+  }
+
   $$('.nav-item').forEach(item => {
-    item.addEventListener('click', () => navigateTo(item.dataset.view));
+    item.addEventListener('click', () => {
+      const requiredTier = item.dataset.tier;
+      if (requiredTier) {
+        if (!state.user) {
+          showToast('Please sign in to access this feature', 'error');
+          showAuthModal('login');
+          return;
+        }
+        if (!canAccessTier(requiredTier)) {
+          const userTier = getUserTier();
+          showToast(`This feature requires a ${requiredTier} plan. You are on ${userTier}.`, 'error');
+          navigateTo('subscription');
+          return;
+        }
+      }
+      navigateTo(item.dataset.view);
+    });
   });
 
   $('#sidebarToggle')?.addEventListener('click', () => {
@@ -170,40 +227,130 @@
   });
 
   // ── Auth ───────────────────────────────────────────────────────────────────
+  const authForms = ['loginForm', 'signupForm', 'forgotPasswordForm', 'resetPasswordForm', 'verifyEmailNotice', 'twoFactorForm'];
+
+  // ── 2FA login state ──
+  let pending2FATempToken = null;
+
   function showAuthModal(form = 'login') {
     $('#authModal').classList.add('show');
-    if (form === 'login') {
-      $('#loginForm').style.display = 'block';
-      $('#signupForm').style.display = 'none';
-    } else {
-      $('#loginForm').style.display = 'none';
-      $('#signupForm').style.display = 'block';
+    authForms.forEach(f => { const el = $(`#${f}`); if (el) el.style.display = 'none'; });
+    const map = { login: 'loginForm', signup: 'signupForm', forgot: 'forgotPasswordForm', reset: 'resetPasswordForm', verify: 'verifyEmailNotice', '2fa': 'twoFactorForm' };
+    const target = $(`#${map[form] || map.login}`);
+    if (target) target.style.display = 'block';
+    // Auto-focus first digit when showing 2FA form
+    if (form === '2fa') {
+      setTimeout(() => {
+        const firstDigit = document.querySelector('#tfaCodeInputGroup .tfa-digit[data-idx="0"]');
+        if (firstDigit) firstDigit.focus();
+      }, 100);
     }
   }
 
   function hideAuthModal() {
     $('#authModal').classList.remove('show');
-    $('#loginError').classList.remove('show');
-    $('#signupError').classList.remove('show');
+    pending2FATempToken = null;
+    ['loginError', 'signupError', 'forgotError', 'resetError', 'tfaError'].forEach(id => {
+      const el = $(`#${id}`);
+      if (el) el.classList.remove('show');
+    });
+    // Clear 2FA digit inputs
+    document.querySelectorAll('#tfaCodeInputGroup .tfa-digit').forEach(d => { d.value = ''; d.classList.remove('filled'); });
   }
 
   function updateUserArea() {
     const area = $('#userArea');
     if (state.user) {
       const initials = state.user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      const tier = state.user.subscriptionTier || state.user.subscription?.plan || 'BASIC';
+      const tierColors = { BASIC: '#2979ff', PRO: '#ffd600', ENTERPRISE: '#00c853' };
+      const tierColor = tierColors[tier] || '#2979ff';
       area.innerHTML = `
-        <div class="user-menu" id="userMenu">
-          <div class="user-avatar">${escHtml(initials)}</div>
+        <div class="user-menu" id="userMenu" style="position:relative;">
+          <div class="user-avatar" style="border:2px solid ${tierColor};">${escHtml(initials)}</div>
           <span class="user-name">${escHtml(state.user.name)}</span>
+          <i class="fas fa-chevron-down" style="font-size:10px;color:var(--muted);margin-left:4px;"></i>
+        </div>
+        <div class="user-dropdown" id="userDropdown" style="display:none;position:absolute;top:100%;right:0;margin-top:8px;width:260px;background:var(--bg3);border:1px solid var(--border2);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.5);backdrop-filter:blur(20px);z-index:1200;overflow:hidden;animation:fadeIn 0.15s ease-out;">
+          <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
+            <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,${tierColor},${tierColor}88);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#000;">${escHtml(initials)}</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">${escHtml(state.user.name)}</div>
+              <div style="font-size:11px;color:var(--muted);">${escHtml(state.user.email || '')}</div>
+              <span style="font-size:10px;font-weight:700;color:${tierColor};background:${tierColor}15;padding:2px 8px;border-radius:4px;margin-top:2px;display:inline-block;">${tier}</span>
+            </div>
+          </div>
+          <div style="padding:6px 0;">
+            <div class="user-dropdown-item" data-action="profile" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
+              <i class="fas fa-user-circle" style="width:18px;text-align:center;color:var(--blue);"></i> My Profile
+            </div>
+            <div class="user-dropdown-item" data-action="settings" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
+              <i class="fas fa-cog" style="width:18px;text-align:center;color:var(--muted);"></i> Settings
+            </div>
+            <div class="user-dropdown-item" data-action="subscription" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
+              <i class="fas fa-crown" style="width:18px;text-align:center;color:var(--gold);"></i> Subscription & Billing
+            </div>
+            <div class="user-dropdown-item" data-action="wallet" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
+              <i class="fas fa-wallet" style="width:18px;text-align:center;color:var(--green);"></i> Wallet & Deposits
+            </div>
+            <div class="user-dropdown-item" data-action="alerts" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
+              <i class="fas fa-bell" style="width:18px;text-align:center;color:var(--gold);"></i> Price Alerts
+            </div>
+            <div class="user-dropdown-item" data-action="security" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
+              <i class="fas fa-shield-halved" style="width:18px;text-align:center;color:var(--blue);"></i> Security & 2FA
+            </div>
+            <div class="user-dropdown-item" data-action="kyc" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
+              <i class="fas fa-id-card" style="width:18px;text-align:center;color:var(--muted);"></i> KYC Verification
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding:6px 0;">
+            <div class="user-dropdown-item" data-action="signout" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--red);">
+              <i class="fas fa-right-from-bracket" style="width:18px;text-align:center;"></i> Sign Out
+            </div>
+          </div>
         </div>`;
-      $('#userMenu').addEventListener('click', () => {
-        if (confirm('Sign out?')) {
-          state.user = null;
-          state.token = null;
-          state.portfolio = [];
-          localStorage.removeItem('jse_token');
-          updateUserArea();
-          renderPortfolio();
+
+      // Toggle dropdown
+      $('#userMenu').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dd = $('#userDropdown');
+        dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+      });
+
+      // Dropdown item actions
+      area.querySelectorAll('.user-dropdown-item').forEach(item => {
+        item.addEventListener('mouseenter', () => { item.style.background = 'var(--glass)'; });
+        item.addEventListener('mouseleave', () => { item.style.background = 'transparent'; });
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const action = item.dataset.action;
+          $('#userDropdown').style.display = 'none';
+          switch (action) {
+            case 'profile': navigateTo('settings'); break;
+            case 'settings': navigateTo('settings'); break;
+            case 'subscription': navigateTo('subscription'); break;
+            case 'wallet': openWalletModal('deposit'); break;
+            case 'alerts': navigateTo('dashboard'); showToast('Set alerts from any stock detail page', 'info'); break;
+            case 'security': navigateTo('settings'); break;
+            case 'kyc': navigateTo('settings'); break;
+            case 'signout':
+              state.user = null;
+              state.token = null;
+              state.portfolio = [];
+              localStorage.removeItem('jse_token');
+              updateUserArea();
+              renderPortfolio();
+              showToast('Signed out successfully', 'info');
+              break;
+          }
+        });
+      });
+
+      // Close dropdown on outside click
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#userArea')) {
+          const dd = $('#userDropdown');
+          if (dd) dd.style.display = 'none';
         }
       });
     } else {
@@ -236,6 +383,14 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
+
+      // ── 2FA required: show TOTP input step ──
+      if (data.requires2FA) {
+        pending2FATempToken = data.tempToken;
+        showAuthModal('2fa');
+        return;
+      }
+
       state.token = data.token;
       state.user = data.user;
       localStorage.setItem('jse_token', data.token);
@@ -253,23 +408,140 @@
   $('#loginEmail')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#loginSubmit').click(); });
   $('#loginPassword')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#loginSubmit').click(); });
 
+  // ── 2FA Code Input (auto-advance between digits) ──────────────────────────
+  (function init2FAInputs() {
+    const digits = document.querySelectorAll('#tfaCodeInputGroup .tfa-digit');
+    digits.forEach((input, idx) => {
+      input.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/\D/g, '');
+        e.target.value = val.slice(0, 1);
+        if (val) {
+          e.target.classList.add('filled');
+          if (idx < digits.length - 1) digits[idx + 1].focus();
+        } else {
+          e.target.classList.remove('filled');
+        }
+        // Auto-submit when all 6 digits filled
+        const full = Array.from(digits).map(d => d.value).join('');
+        if (full.length === 6) {
+          setTimeout(() => $('#tfaSubmit')?.click(), 100);
+        }
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+          digits[idx - 1].focus();
+          digits[idx - 1].value = '';
+          digits[idx - 1].classList.remove('filled');
+        }
+        if (e.key === 'Enter') $('#tfaSubmit')?.click();
+      });
+      // Handle paste of full code
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+        text.split('').forEach((ch, i) => {
+          if (digits[i]) {
+            digits[i].value = ch;
+            digits[i].classList.add('filled');
+          }
+        });
+        if (text.length > 0) {
+          const focusIdx = Math.min(text.length, digits.length - 1);
+          digits[focusIdx].focus();
+        }
+        if (text.length === 6) {
+          setTimeout(() => $('#tfaSubmit')?.click(), 100);
+        }
+      });
+    });
+  })();
+
+  // ── 2FA Submit ──
+  $('#tfaSubmit')?.addEventListener('click', async () => {
+    const digits = document.querySelectorAll('#tfaCodeInputGroup .tfa-digit');
+    const code = Array.from(digits).map(d => d.value).join('');
+    if (code.length !== 6) { showFormError('tfaError', 'Enter all 6 digits'); return; }
+    if (!pending2FATempToken) { showFormError('tfaError', 'Session expired. Please log in again.'); return; }
+    try {
+      $('#tfaSubmit').disabled = true;
+      const data = await apiFetch('/api/auth/2fa/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken: pending2FATempToken, code }),
+      });
+      pending2FATempToken = null;
+      state.token = data.token;
+      state.user = data.user;
+      localStorage.setItem('jse_token', data.token);
+      hideAuthModal();
+      updateUserArea();
+      loadUserData();
+    } catch (e) {
+      showFormError('tfaError', e.message);
+      // Clear digits for retry
+      digits.forEach(d => { d.value = ''; d.classList.remove('filled'); });
+      digits[0]?.focus();
+    } finally {
+      $('#tfaSubmit').disabled = false;
+    }
+  });
+
+  // Back to login from 2FA
+  $('#tfaBackToLogin')?.addEventListener('click', () => {
+    pending2FATempToken = null;
+    showAuthModal('login');
+  });
+
+  // ── Account type toggle (paper vs live) ──
+  function setupAccountTypeToggle() {
+    const paperBtn = $('#signupPaperBtn');
+    const liveBtn = $('#signupLiveBtn');
+    const hiddenInput = $('#signupAccountType');
+    if (!paperBtn || !liveBtn) return;
+
+    paperBtn.addEventListener('click', () => {
+      hiddenInput.value = 'paper';
+      paperBtn.style.border = '2px solid var(--green)';
+      paperBtn.style.background = 'rgba(0,200,83,0.08)';
+      paperBtn.style.color = 'var(--green)';
+      liveBtn.style.border = '2px solid var(--border)';
+      liveBtn.style.background = 'transparent';
+      liveBtn.style.color = 'var(--muted)';
+    });
+
+    liveBtn.addEventListener('click', () => {
+      hiddenInput.value = 'live';
+      liveBtn.style.border = '2px solid var(--blue)';
+      liveBtn.style.background = 'rgba(41,121,255,0.08)';
+      liveBtn.style.color = 'var(--blue)';
+      paperBtn.style.border = '2px solid var(--border)';
+      paperBtn.style.background = 'transparent';
+      paperBtn.style.color = 'var(--muted)';
+    });
+  }
+  setupAccountTypeToggle();
+
   $('#signupSubmit')?.addEventListener('click', async () => {
     const name = $('#signupName').value.trim();
     const email = $('#signupEmail').value.trim();
     const password = $('#signupPassword').value;
+    const accountType = $('#signupAccountType')?.value || 'paper';
     if (!name || !email || !password) { showFormError('signupError', 'Fill in all fields'); return; }
     try {
       $('#signupSubmit').disabled = true;
       const data = await apiFetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, accountType }),
       });
       state.token = data.token;
       state.user = data.user;
       localStorage.setItem('jse_token', data.token);
-      hideAuthModal();
       updateUserArea();
+      // Show verification notice
+      const verifyAddr = $('#verifyEmailAddr');
+      if (verifyAddr) verifyAddr.textContent = email;
+      showAuthModal('verify');
     } catch (e) {
       showFormError('signupError', e.message);
     } finally {
@@ -279,6 +551,100 @@
 
   // Enter key on signup fields
   $('#signupPassword')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#signupSubmit').click(); });
+
+  // ── Forgot Password ────────────────────────────────────────────────────────
+  $('#showForgotPassword')?.addEventListener('click', () => showAuthModal('forgot'));
+  $('#backToLogin')?.addEventListener('click', () => showAuthModal('login'));
+  $('#resetBackToLogin')?.addEventListener('click', () => showAuthModal('login'));
+  $('#verifyBackToLogin')?.addEventListener('click', () => showAuthModal('login'));
+
+  $('#forgotSubmit')?.addEventListener('click', async () => {
+    const email = $('#forgotEmail').value.trim();
+    if (!email) { showFormError('forgotError', 'Enter your email address'); return; }
+    try {
+      $('#forgotSubmit').disabled = true;
+      $('#forgotSubmit').textContent = 'Sending...';
+      await apiFetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const suc = $('#forgotSuccess');
+      suc.style.display = 'block';
+      suc.textContent = 'If an account exists with that email, a reset link has been sent. Check your inbox (and spam folder).';
+      $('#forgotError').classList.remove('show');
+    } catch (e) {
+      // Always show success message to prevent email enumeration
+      const suc = $('#forgotSuccess');
+      suc.style.display = 'block';
+      suc.textContent = 'If an account exists with that email, a reset link has been sent. Check your inbox (and spam folder).';
+    } finally {
+      $('#forgotSubmit').disabled = false;
+      $('#forgotSubmit').textContent = 'Send Reset Link';
+    }
+  });
+  $('#forgotEmail')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#forgotSubmit').click(); });
+
+  // ── Reset Password (from email link) ──────────────────────────────────────
+  $('#resetSubmit')?.addEventListener('click', async () => {
+    const newPw = $('#resetNewPassword').value;
+    const confirmPw = $('#resetConfirmPassword').value;
+    if (!newPw || !confirmPw) { showFormError('resetError', 'Fill in both fields'); return; }
+    if (newPw !== confirmPw) { showFormError('resetError', 'Passwords do not match'); return; }
+    if (newPw.length < 12) { showFormError('resetError', 'Password must be at least 12 characters'); return; }
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token') || params.get('reset_token');
+    if (!token) { showFormError('resetError', 'Reset token missing. Please use the link from your email.'); return; }
+
+    try {
+      $('#resetSubmit').disabled = true;
+      $('#resetSubmit').textContent = 'Resetting...';
+      await apiFetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword: newPw }),
+      });
+      const suc = $('#resetSuccess');
+      suc.style.display = 'block';
+      suc.textContent = 'Password reset successfully! You can now sign in with your new password.';
+      $('#resetError').classList.remove('show');
+      setTimeout(() => showAuthModal('login'), 3000);
+    } catch (e) {
+      showFormError('resetError', e.message);
+    } finally {
+      $('#resetSubmit').disabled = false;
+      $('#resetSubmit').textContent = 'Reset Password';
+    }
+  });
+
+  // ── Resend Verification Email ─────────────────────────────────────────────
+  $('#resendVerifyBtn')?.addEventListener('click', async () => {
+    const email = $('#verifyEmailAddr')?.textContent;
+    if (!email) return;
+    try {
+      $('#resendVerifyBtn').disabled = true;
+      $('#resendVerifyBtn').textContent = 'Sending...';
+      await apiFetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      $('#resendVerifyBtn').textContent = 'Email Sent!';
+      setTimeout(() => { $('#resendVerifyBtn').textContent = 'Resend Verification Email'; $('#resendVerifyBtn').disabled = false; }, 5000);
+    } catch (e) {
+      $('#resendVerifyBtn').textContent = 'Resend Verification Email';
+      $('#resendVerifyBtn').disabled = false;
+    }
+  });
+
+  // Check URL for reset token on page load
+  (function checkResetToken() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('token') || params.get('reset_token')) {
+      showAuthModal('reset');
+    }
+  })();
 
   function showFormError(id, msg) {
     const el = $(`#${id}`);
@@ -1895,55 +2261,311 @@
   $('#refreshSectorsBtn')?.addEventListener('click', loadSectors);
 
   // ── Compare ────────────────────────────────────────────────────────────────
-  $('#compareBtn')?.addEventListener('click', async () => {
-    const symbols = [
-      ($('#compareInput1')?.value || '').trim().toUpperCase(),
-      ($('#compareInput2')?.value || '').trim().toUpperCase(),
-      ($('#compareInput3')?.value || '').trim().toUpperCase(),
-    ].filter(Boolean);
+  const compareSelectedSymbols = [];
+  const compareSearchInput = $('#compareSearchInput');
+  const compareAutocomplete = $('#compareAutocomplete');
+  const compareChips = $('#compareChips');
+  const MAX_COMPARE = 5;
 
-    if (symbols.length < 2) { alert('Enter at least 2 symbols to compare'); return; }
+  function renderCompareChips() {
+    compareChips.innerHTML = compareSelectedSymbols.map(sym => {
+      const stock = state.stocks.find(s => s.symbol === sym);
+      const name = stock ? stock.name : '';
+      return `<span class="compare-chip">
+        ${sym}${name ? ` <span style="font-weight:400;opacity:.8;font-size:11px;">${name}</span>` : ''}
+        <span class="chip-remove" data-symbol="${sym}">&times;</span>
+      </span>`;
+    }).join('');
+    compareChips.querySelectorAll('.chip-remove').forEach(el => {
+      el.addEventListener('click', () => {
+        const sym = el.dataset.symbol;
+        const idx = compareSelectedSymbols.indexOf(sym);
+        if (idx > -1) compareSelectedSymbols.splice(idx, 1);
+        renderCompareChips();
+      });
+    });
+  }
+
+  function addCompareSymbol(sym) {
+    sym = sym.toUpperCase();
+    if (compareSelectedSymbols.includes(sym)) return;
+    if (compareSelectedSymbols.length >= MAX_COMPARE) {
+      alert(`Maximum ${MAX_COMPARE} stocks for comparison`);
+      return;
+    }
+    compareSelectedSymbols.push(sym);
+    renderCompareChips();
+    compareSearchInput.value = '';
+    compareAutocomplete.classList.remove('show');
+  }
+
+  let compareAcIndex = -1;
+  compareSearchInput?.addEventListener('input', () => {
+    const query = compareSearchInput.value.trim().toLowerCase();
+    compareAcIndex = -1;
+    if (!query || !state.stocks.length) {
+      compareAutocomplete.classList.remove('show');
+      return;
+    }
+    const matches = state.stocks
+      .filter(s =>
+        !compareSelectedSymbols.includes(s.symbol) &&
+        (s.symbol.toLowerCase().includes(query) || (s.name || '').toLowerCase().includes(query))
+      )
+      .slice(0, 8);
+    if (!matches.length) {
+      compareAutocomplete.classList.remove('show');
+      return;
+    }
+    compareAutocomplete.innerHTML = matches.map(s =>
+      `<div class="compare-ac-item" data-symbol="${s.symbol}">
+        <span><span class="ac-symbol">${s.symbol}</span><span class="ac-name">${s.name || ''}</span></span>
+        <span style="color:var(--muted);font-size:11px;">$${fmt(s.price || s.livePrice || 0)}</span>
+      </div>`
+    ).join('');
+    compareAutocomplete.classList.add('show');
+    compareAutocomplete.querySelectorAll('.compare-ac-item').forEach(el => {
+      el.addEventListener('click', () => addCompareSymbol(el.dataset.symbol));
+    });
+  });
+
+  compareSearchInput?.addEventListener('keydown', (e) => {
+    const items = compareAutocomplete.querySelectorAll('.compare-ac-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      compareAcIndex = Math.min(compareAcIndex + 1, items.length - 1);
+      items.forEach((el, i) => el.classList.toggle('active', i === compareAcIndex));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      compareAcIndex = Math.max(compareAcIndex - 1, 0);
+      items.forEach((el, i) => el.classList.toggle('active', i === compareAcIndex));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (compareAcIndex >= 0 && items[compareAcIndex]) {
+        addCompareSymbol(items[compareAcIndex].dataset.symbol);
+      }
+    } else if (e.key === 'Escape') {
+      compareAutocomplete.classList.remove('show');
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.compare-search-wrap')) {
+      compareAutocomplete.classList.remove('show');
+    }
+  });
+
+  $('#compareBtn')?.addEventListener('click', async () => {
+    if (compareSelectedSymbols.length < 2) {
+      alert('Select at least 2 stocks to compare');
+      return;
+    }
 
     const btn = $('#compareBtn');
     const results = $('#compareResults');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Comparing...';
-    results.innerHTML = '<div class="loading-shimmer" style="width:100%;height:200px;grid-column:1/-1;"></div>';
+    results.innerHTML = '<div class="loading-shimmer" style="width:100%;height:200px;"></div>';
 
     try {
       const data = await apiFetch('/api/compare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbols }),
+        body: JSON.stringify({ symbols: compareSelectedSymbols }),
       });
 
-      if (data.comparison && Array.isArray(data.comparison)) {
-        results.innerHTML = data.comparison.map(s => {
-          const change = s.change || s.liveChange || 0;
-          const chgCls = change >= 0 ? 'text-green' : 'text-red';
-          return `<div class="compare-card">
-            <h4>${s.symbol} <span style="font-size:12px;color:var(--muted);font-weight:400;">${s.name || ''}</span></h4>
-            <div class="compare-row"><span class="label">Price</span><span class="value">$${fmt(s.price || s.livePrice)}</span></div>
-            <div class="compare-row"><span class="label">Change</span><span class="value ${chgCls}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span></div>
-            <div class="compare-row"><span class="label">Volume</span><span class="value">${fmtInt(s.volume)}</span></div>
-            <div class="compare-row"><span class="label">P/E Ratio</span><span class="value">${s.pe || '--'}</span></div>
-            <div class="compare-row"><span class="label">Div Yield</span><span class="value">${s.divYield ? s.divYield + '%' : '--'}</span></div>
-            <div class="compare-row"><span class="label">Sector</span><span class="value">${s.sector || '--'}</span></div>
-            <div class="compare-row"><span class="label">Market Cap</span><span class="value">${s.marketCap || '--'}</span></div>
-            ${s.rsi ? `<div class="compare-row"><span class="label">RSI (14)</span><span class="value">${s.rsi}</span></div>` : ''}
-            ${s.high30 ? `<div class="compare-row"><span class="label">30D High</span><span class="value">$${fmt(s.high30)}</span></div>` : ''}
-            ${s.low30 ? `<div class="compare-row"><span class="label">30D Low</span><span class="value">$${fmt(s.low30)}</span></div>` : ''}
-          </div>`;
+      if (!data.comparison || !Array.isArray(data.comparison) || data.comparison.length === 0) {
+        results.innerHTML = '<div class="card" style="padding:30px;text-align:center;"><i class="fas fa-clock" style="font-size:28px;color:var(--muted);margin-bottom:10px;display:block;"></i><p style="color:var(--muted);">Market data is loading, please try again in a moment.</p></div>';
+        return;
+      }
+
+      const stocks = data.comparison;
+      const metrics = [
+        { key: 'price', label: 'Price', render: v => v != null ? `$${fmt(v)}` : '--' },
+        { key: 'change', label: 'Change %', render: v => v != null ? `<span class="${v >= 0 ? 'text-green' : 'text-red'}">${v >= 0 ? '+' : ''}${v.toFixed(2)}%</span>` : '--' },
+        { key: 'volume', label: 'Volume', render: v => v != null ? fmtInt(v) : '--' },
+        { key: 'pe', label: 'P/E Ratio', render: v => v || '--' },
+        { key: 'divYield', label: 'Div Yield', render: v => v ? v + '%' : '--' },
+        { key: 'sector', label: 'Sector', render: v => v || '--' },
+        { key: 'marketCap', label: 'Market Cap', render: v => v || '--' },
+        { key: 'high52', label: '52W High', render: v => v != null ? `$${fmt(v)}` : '--' },
+        { key: 'low52', label: '52W Low', render: v => v != null ? `$${fmt(v)}` : '--' },
+        { key: 'rsi', label: 'RSI (14)', render: v => v || '--' },
+        { key: 'high30', label: '30D High', render: v => v != null ? `$${fmt(v)}` : '--' },
+        { key: 'low30', label: '30D Low', render: v => v != null ? `$${fmt(v)}` : '--' },
+        { key: 'bid', label: 'Bid', render: v => v != null ? `$${fmt(v)}` : '--' },
+        { key: 'ask', label: 'Ask', render: v => v != null ? `$${fmt(v)}` : '--' },
+        { key: 'dayHigh', label: 'Day High', render: v => v != null ? `$${fmt(v)}` : '--' },
+        { key: 'dayLow', label: 'Day Low', render: v => v != null ? `$${fmt(v)}` : '--' },
+      ];
+
+      const headerCols = stocks.map(s =>
+        `<th>${s.symbol}<br><span style="font-size:11px;font-weight:400;color:var(--muted);">${s.name || ''}</span></th>`
+      ).join('');
+
+      const rows = metrics
+        .filter(m => stocks.some(s => s[m.key] != null && s[m.key] !== '' && s[m.key] !== '--'))
+        .map(m => {
+          const cells = stocks.map(s => `<td>${m.render(s[m.key])}</td>`).join('');
+          return `<tr><td>${m.label}</td>${cells}</tr>`;
         }).join('');
-      } else {
-        results.innerHTML = '<p class="text-muted" style="grid-column:1/-1;">No comparison data returned</p>';
+
+      results.innerHTML = `<div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>Metric</th>${headerCols}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+
+      if (data.partial) {
+        results.innerHTML += '<p style="color:var(--muted);font-size:12px;margin-top:10px;"><i class="fas fa-info-circle"></i> Some stocks have limited data — market may be closed or data still loading.</p>';
       }
     } catch (e) {
-      results.innerHTML = `<p style="color:var(--red);grid-column:1/-1;">${e.message}</p>`;
+      results.innerHTML = `<p style="color:var(--red);">${e.message}</p>`;
     } finally {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-balance-scale"></i> Compare';
     }
+  });
+
+  // ── Watchlists ──────────────────────────────────────────────────────────────
+
+  viewTitles['watchlists'] = ['Watchlists', 'Track your favorite stocks'];
+
+  let cachedWatchlists = [];
+
+  async function loadWatchlists() {
+    const container = $('#watchlistsContainer');
+    if (!container) return;
+    try {
+      const data = await apiFetch('/api/watchlists');
+      cachedWatchlists = data.watchlists || [];
+      renderWatchlists();
+    } catch (e) {
+      container.innerHTML = `<div class="wl-empty"><i class="fas fa-exclamation-circle" style="font-size:32px;display:block;margin-bottom:8px;"></i>${e.message}</div>`;
+    }
+  }
+
+  function renderWatchlists() {
+    const container = $('#watchlistsContainer');
+    if (!container) return;
+
+    if (!cachedWatchlists.length) {
+      container.innerHTML = `<div class="wl-empty">
+        <i class="fas fa-eye" style="font-size:40px;display:block;margin-bottom:12px;"></i>
+        <p>No watchlists yet. Create one to start tracking stocks!</p>
+      </div>`;
+      return;
+    }
+
+    container.innerHTML = cachedWatchlists.map(wl => {
+      const stocksHtml = (wl.stocks || []).map(s => {
+        const chg = s.change || 0;
+        const cls = chg >= 0 ? 'text-green' : 'text-red';
+        const priceStr = s.price != null ? `$${fmt(s.price)}` : '--';
+        const chgStr = chg !== 0 ? `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%` : '--';
+        return `<div class="wl-stock-item" onclick="document.querySelector('.nav-item[data-view=dashboard]').click(); setTimeout(()=>document.querySelector('#stockTable tbody tr[data-sym=${s.symbol}]')?.click(), 300)">
+          <div><div class="wl-sym">${s.symbol}</div><div class="wl-name">${s.name || ''}</div></div>
+          <div class="wl-price"><div class="price">${priceStr}</div><div class="change ${cls}">${chgStr}</div></div>
+        </div>`;
+      }).join('');
+
+      return `<div class="wl-card" data-wl-id="${wl.id}">
+        <div class="wl-card-header">
+          <h4><i class="fas fa-list" style="margin-right:8px;color:var(--blue);"></i>${wl.name} <span style="font-size:12px;color:var(--muted);font-weight:400;">(${(wl.symbols || []).length} stocks)</span></h4>
+          <div class="wl-card-actions">
+            <button onclick="promptAddStockToWatchlist('${wl.id}')" title="Add stock"><i class="fas fa-plus"></i></button>
+            <button onclick="deleteWatchlist('${wl.id}')" title="Delete watchlist"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+        ${(wl.stocks || []).length ? `<div class="wl-stock-grid">${stocksHtml}</div>` : '<div class="wl-empty">No stocks in this watchlist yet. Click + to add some.</div>'}
+        <div class="wl-add-stock" id="wlAdd-${wl.id}" style="display:none;">
+          <input type="text" placeholder="Enter symbol (e.g. NCBFG)" id="wlAddInput-${wl.id}" onkeydown="if(event.key==='Enter')addStockToWatchlist('${wl.id}')">
+          <button class="btn btn-primary btn-sm" onclick="addStockToWatchlist('${wl.id}')"><i class="fas fa-plus"></i> Add</button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('wlAdd-${wl.id}').style.display='none'"><i class="fas fa-times"></i></button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Expose watchlist functions globally (used by onclick handlers)
+  window.promptAddStockToWatchlist = function(wlId) {
+    const el = document.getElementById('wlAdd-' + wlId);
+    if (el) { el.style.display = 'flex'; document.getElementById('wlAddInput-' + wlId)?.focus(); }
+  };
+
+  window.addStockToWatchlist = async function(wlId) {
+    const input = document.getElementById('wlAddInput-' + wlId);
+    if (!input || !input.value.trim()) return;
+    try {
+      await apiFetch(`/api/watchlists/${wlId}/symbols`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol: input.value.trim() }),
+      });
+      input.value = '';
+      document.getElementById('wlAdd-' + wlId).style.display = 'none';
+      loadWatchlists();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  window.removeStockFromWatchlist = async function(wlId, symbol) {
+    try {
+      await apiFetch(`/api/watchlists/${wlId}/symbols/${symbol}`, { method: 'DELETE' });
+      loadWatchlists();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  window.deleteWatchlist = async function(wlId) {
+    if (!confirm('Delete this watchlist?')) return;
+    try {
+      await apiFetch(`/api/watchlists/${wlId}`, { method: 'DELETE' });
+      loadWatchlists();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  // Create watchlist modal
+  $('#createWatchlistBtn')?.addEventListener('click', () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'wl-modal-overlay';
+    overlay.innerHTML = `<div class="wl-modal">
+      <h3><i class="fas fa-plus" style="margin-right:8px;color:var(--blue);"></i>New Watchlist</h3>
+      <input type="text" id="newWlName" placeholder="Watchlist name (e.g. Blue Chips)" autofocus>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" id="cancelWlBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveWlBtn"><i class="fas fa-check"></i> Create</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#cancelWlBtn').onclick = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    const save = async () => {
+      const name = overlay.querySelector('#newWlName').value.trim();
+      if (!name) return;
+      try {
+        await apiFetch('/api/watchlists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, symbols: [] }),
+        });
+        overlay.remove();
+        loadWatchlists();
+      } catch (e) {
+        alert(e.message);
+      }
+    };
+
+    overlay.querySelector('#saveWlBtn').onclick = save;
+    overlay.querySelector('#newWlName').onkeydown = (e) => { if (e.key === 'Enter') save(); };
   });
 
   // ── Voice Input → AI Research → ElevenLabs Voice Response ─────────────────
@@ -2295,6 +2917,10 @@
     loadDetailChart(symbol);
 
     // Wire buttons
+    $('#detailChartBtn').onclick = () => {
+      modal.style.display = 'none';
+      window.jseApp.openTechnicals(symbol);
+    };
     $('#detailAnalyzeBtn').onclick = () => {
       modal.style.display = 'none';
       $('#analysisSymbol').value = symbol;
@@ -2419,7 +3045,7 @@
     list.querySelectorAll('.notif-item[data-symbol]').forEach(item => {
       item.addEventListener('click', () => {
         const sym = item.dataset.symbol;
-        if (sym) { openStockDetail(sym); $('#notifPanel').style.display = 'none'; }
+        if (sym) { openStockDetail(sym); $('#notifPanel').classList.remove('show'); }
       });
     });
   }
@@ -2429,9 +3055,10 @@
     if (dot) dot.style.display = notifications.length > 0 ? 'block' : 'none';
   }
 
+  // Notification panel toggle — uses .show class (enhanced handler below takes over)
   $('#notifBtn')?.addEventListener('click', () => {
     const panel = $('#notifPanel');
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    panel.classList.toggle('show');
   });
 
   $('#clearNotifsBtn')?.addEventListener('click', () => {
@@ -2444,7 +3071,7 @@
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#notifPanel') && !e.target.closest('#notifBtn')) {
       const panel = $('#notifPanel');
-      if (panel) panel.style.display = 'none';
+      if (panel) panel.classList.remove('show');
     }
   });
 
@@ -2713,36 +3340,74 @@
   }
 
   function setupOnboarding() {
-    // Path buttons
-    $$('.onboard-path-btn').forEach(btn => {
-      btn.onclick = () => {
-        const level = btn.dataset.level;
-        state.analysisLevel = level === 'beginner' ? 'Beginner' : level === 'advanced' ? 'Advanced' : 'Intermediate';
-        $('#onboardStep1').style.display = 'none';
-        $('#onboardStep2').style.display = '';
-        $$('.onboard-dot').forEach(d => d.style.background = d.dataset.step === '2' ? 'var(--green)' : 'var(--border)');
+    let selectedExperience = null;
+
+    // Experience cards (Step 1)
+    $$('.experience-card').forEach(card => {
+      card.onclick = () => {
+        $$('.experience-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedExperience = card.dataset.experience;
+        const level = selectedExperience === 'beginner' ? 'Beginner' : selectedExperience === 'professional' ? 'Advanced' : 'Intermediate';
+        state.analysisLevel = level;
+        const nextBtn = $('#onboardingNext1');
+        if (nextBtn) nextBtn.disabled = false;
       };
     });
 
-    // Risk next
-    const riskNext = $('#onboardRiskNext');
-    if (riskNext) riskNext.onclick = () => {
-      // Calculate risk score from answers
-      let score = 0;
-      for (let i = 1; i <= 3; i++) {
-        const checked = document.querySelector(`input[name="rq${i}"]:checked`);
-        if (checked) score += parseInt(checked.value);
-      }
-      const profile = score <= 4 ? 'Conservative' : score <= 7 ? 'Moderate' : 'Aggressive';
-      state.riskProfile = profile;
-
-      $('#onboardStep2').style.display = 'none';
-      $('#onboardStep3').style.display = '';
-      $$('.onboard-dot').forEach(d => d.style.background = d.dataset.step === '3' ? 'var(--green)' : 'var(--border)');
+    // Step 1 → Step 2
+    const next1 = $('#onboardingNext1');
+    if (next1) next1.onclick = () => {
+      $('#onboardingStep1').style.display = 'none';
+      $('#onboardingStep2').style.display = 'block';
+      $$('.onboarding-dot').forEach(d => {
+        d.classList.remove('active', 'completed');
+        if (d.dataset.step === '1') d.classList.add('completed');
+        if (d.dataset.step === '2') d.classList.add('active');
+      });
     };
 
-    // Start trading
-    const startBtn = $('#onboardStart');
+    // Step 2 → Back to Step 1
+    const back2 = $('#onboardingBack2');
+    if (back2) back2.onclick = () => {
+      $('#onboardingStep2').style.display = 'none';
+      $('#onboardingStep1').style.display = 'block';
+      $$('.onboarding-dot').forEach(d => {
+        d.classList.remove('active', 'completed');
+        if (d.dataset.step === '1') d.classList.add('active');
+      });
+    };
+
+    // Step 2 → Step 3
+    const next2 = $('#onboardingNext2');
+    if (next2) next2.onclick = () => {
+      // Calculate risk score from answers (5 questions, values 1-4)
+      let score = 0;
+      let answered = 0;
+      for (let i = 1; i <= 5; i++) {
+        const checked = document.querySelector(`input[name="riskQ${i}"]:checked`);
+        if (checked) { score += parseInt(checked.value); answered++; }
+      }
+      const profile = score <= 8 ? 'Conservative' : score <= 14 ? 'Moderate' : 'Aggressive';
+      state.riskProfile = profile;
+
+      $('#onboardingStep2').style.display = 'none';
+      $('#onboardingStep3').style.display = 'block';
+      $$('.onboarding-dot').forEach(d => {
+        d.classList.remove('active', 'completed');
+        if (d.dataset.step === '1' || d.dataset.step === '2') d.classList.add('completed');
+        if (d.dataset.step === '3') d.classList.add('active');
+      });
+    };
+
+    // Close onboarding
+    const closeBtn = $('#onboardingClose');
+    if (closeBtn) closeBtn.onclick = () => {
+      $('#onboardingModal').style.display = 'none';
+    };
+
+    // Start trading (Step 3)
+    const startBtn = $('#onboardingStartTrading');
     if (startBtn) startBtn.onclick = () => {
       $('#onboardingModal').style.display = 'none';
       localStorage.setItem('jse_onboarded', 'true');
@@ -3622,6 +4287,168 @@
   viewTitles['calculators'] = ['Calculators', 'Financial planning calculators'];
   viewTitles['forex'] = ['Forex', 'Live currency exchange rates'];
   viewTitles['global-markets'] = ['Global Markets', 'World indices and commodities'];
+  viewTitles['learn'] = ['Learn', 'Financial literacy and JSE education'];
+  viewTitles['dividends'] = ['Dividends', 'Dividend calendar and yield tracker'];
+  viewTitles['currency-impact'] = ['Currency Impact', 'How USD/JMD affects JSE stocks'];
+  viewTitles['leaderboard'] = ['Leaderboard', 'Paper trading performance rankings'];
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── DIVIDEND CALENDAR VIEW ────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async function loadDividends() {
+    const tbody = $('#dividendTableBody');
+    const summary = $('#dividendSummary');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;"><span class="spinner-inline"></span> Loading dividend data from Yahoo Finance...</td></tr>';
+
+    try {
+      const data = await apiFetch('/api/dividends');
+      const divs = data.dividends || [];
+
+      if (!divs.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted" style="padding:40px;">No dividend data available right now. Markets may be closed.</td></tr>';
+        return;
+      }
+
+      // Summary stats
+      const yields = divs.map(d => parseFloat(d.divYield) || 0).filter(y => y > 0);
+      const avgYield = yields.length ? (yields.reduce((a, b) => a + b, 0) / yields.length) : 0;
+      const maxYield = yields.length ? Math.max(...yields) : 0;
+
+      if (summary) {
+        summary.style.display = 'block';
+        $('#divStockCount').textContent = divs.length;
+        $('#divAvgYield').textContent = avgYield.toFixed(2) + '%';
+        $('#divHighestYield').textContent = maxYield.toFixed(2) + '%';
+      }
+
+      tbody.innerHTML = divs.map(d => {
+        const yieldCls = parseFloat(d.divYield) >= 4 ? 'text-green' : parseFloat(d.divYield) >= 2 ? 'text-gold' : '';
+        return `<tr>
+          <td><strong>${d.symbol}</strong></td>
+          <td>${d.name || '--'}</td>
+          <td>$${fmt(d.price)}</td>
+          <td class="${yieldCls}" style="font-weight:700;">${d.divYield || '--'}%</td>
+          <td>${d.annualDiv ? '$' + fmt(d.annualDiv) : '--'}</td>
+          <td>${d.exDivDate || '--'}</td>
+          <td>${d.divDate || '--'}</td>
+          <td>${d.payoutRatio ? d.payoutRatio + '%' : '--'}</td>
+          <td>${d.sector || '--'}</td>
+        </tr>`;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center" style="padding:40px;color:var(--red);">${e.message}</td></tr>`;
+    }
+  }
+
+  $('#refreshDividendsBtn')?.addEventListener('click', loadDividends);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── CURRENCY IMPACT VIEW ──────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  function renderCIStockList(container, stocks) {
+    if (!container) return;
+    if (!stocks || !stocks.length) {
+      container.innerHTML = '<div class="text-center text-muted" style="padding:20px;">No stocks in this category</div>';
+      return;
+    }
+    container.innerHTML = `<table class="stock-table" style="margin:0;"><thead><tr><th>Symbol</th><th>Company</th><th>Price</th><th>Change</th><th>Sector</th></tr></thead><tbody>${
+      stocks.map(s => {
+        const chg = s.change || 0;
+        const cls = chg >= 0 ? 'text-green' : 'text-red';
+        return `<tr><td><strong>${s.symbol}</strong></td><td>${s.name || '--'}</td><td>$${fmt(s.price)}</td><td class="${cls}">${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%</td><td>${s.sector || '--'}</td></tr>`;
+      }).join('')
+    }</tbody></table>`;
+  }
+
+  async function loadCurrencyImpact() {
+    const rateEl = $('#ciRate');
+    const analysis = $('#ciAnalysis');
+    if (!rateEl) return;
+
+    rateEl.textContent = '...';
+    if (analysis) analysis.innerHTML = '<span class="spinner-inline"></span> Analyzing currency impact...';
+
+    try {
+      const data = await apiFetch('/api/currency-impact');
+
+      if (data.currentRate) {
+        const jmdPerUsd = (1 / data.currentRate).toFixed(2);
+        rateEl.textContent = 'J$' + jmdPerUsd;
+      } else {
+        rateEl.textContent = 'N/A';
+      }
+
+      const c30 = $('#ciChange30d');
+      const c90 = $('#ciChange90d');
+      if (c30 && data.rateChange30d !== null) {
+        const v = data.rateChange30d;
+        c30.textContent = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+        c30.style.color = v >= 0 ? 'var(--green)' : 'var(--red)';
+      }
+      if (c90 && data.rateChange90d !== null) {
+        const v = data.rateChange90d;
+        c90.textContent = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+        c90.style.color = v >= 0 ? 'var(--green)' : 'var(--red)';
+      }
+
+      if (analysis && data.analysis) {
+        analysis.textContent = data.analysis.summary;
+      }
+
+      renderCIStockList($('#ciExporters'), data.exportBeneficiaries);
+      renderCIStockList($('#ciImporters'), data.importSensitive);
+
+    } catch (e) {
+      if (analysis) analysis.innerHTML = `<span style="color:var(--red);">${e.message}</span>`;
+    }
+  }
+
+  $('#refreshCurrencyImpactBtn')?.addEventListener('click', loadCurrencyImpact);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── LEADERBOARD VIEW ──────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async function loadLeaderboard() {
+    const tbody = $('#leaderboardBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px;"><span class="spinner-inline"></span> Loading leaderboard...</td></tr>';
+
+    try {
+      const data = await apiFetch('/api/leaderboard');
+      const board = data.leaderboard || [];
+
+      if (!board.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;">No traders on the leaderboard yet. Start paper trading to appear here!</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = board.map(entry => {
+        const retCls = entry.totalReturn >= 0 ? 'text-green' : 'text-red';
+        const rankIcon = entry.rank === 1 ? '<i class="fas fa-crown text-gold"></i> ' :
+                        entry.rank === 2 ? '<i class="fas fa-medal" style="color:silver;"></i> ' :
+                        entry.rank === 3 ? '<i class="fas fa-medal" style="color:#cd7f32;"></i> ' : '';
+        return `<tr${entry.rank <= 3 ? ' style="background:rgba(255,214,0,0.03);"' : ''}>
+          <td style="font-weight:700;font-size:16px;">${rankIcon}${entry.rank}</td>
+          <td><strong>${entry.name}</strong></td>
+          <td style="font-weight:700;">J$${fmtInt(entry.totalValue)}</td>
+          <td>J$${fmtInt(entry.cashBalance)}</td>
+          <td>J$${fmtInt(entry.portfolioValue)}</td>
+          <td class="${retCls}" style="font-weight:700;">${entry.totalReturn >= 0 ? '+' : ''}${entry.totalReturn.toFixed(2)}%</td>
+          <td>${entry.positionCount}</td>
+        </tr>`;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding:40px;color:var(--red);">${e.message}</td></tr>`;
+    }
+  }
+
+  $('#refreshLeaderboardBtn')?.addEventListener('click', loadLeaderboard);
 
   // ══════════════════════════════════════════════════════════════════════════
   // ── FOREX VIEW ─────────────────────────────────────────────────────────
@@ -3814,9 +4641,16 @@
     container.innerHTML = html;
   }
 
-  // Re-bind nav items for new views
+  // Re-bind nav items for new views (with tier enforcement)
   $$('.nav-item').forEach(item => {
-    item.addEventListener('click', () => navigateTo(item.dataset.view));
+    item.addEventListener('click', () => {
+      const requiredTier = item.dataset.tier;
+      if (requiredTier) {
+        if (!state.user) { showToast('Please sign in to access this feature', 'error'); showAuthModal('login'); return; }
+        if (!canAccessTier(requiredTier)) { showToast(`This feature requires a ${requiredTier} plan.`, 'error'); navigateTo('subscription'); return; }
+      }
+      navigateTo(item.dataset.view);
+    });
   });
 
   // Patch navigateTo to handle new views
@@ -3842,15 +4676,134 @@
     if (view === 'global-markets') {
       loadGlobalMarkets();
     }
+    if (view === 'learn') {
+      initLearnView();
+    }
   };
 
-  // Override click handlers for nav items to use patched navigateTo
+  // Override click handlers for nav items to use patched navigateTo (with tier enforcement)
   $$('.nav-item').forEach(item => {
-    // Remove old listeners by cloning
     const newItem = item.cloneNode(true);
     item.parentNode.replaceChild(newItem, item);
-    newItem.addEventListener('click', () => _patchedNav(newItem.dataset.view));
+    newItem.addEventListener('click', () => {
+      const requiredTier = newItem.dataset.tier;
+      if (requiredTier) {
+        if (!state.user) { showToast('Please sign in to access this feature', 'error'); showAuthModal('login'); return; }
+        if (!canAccessTier(requiredTier)) { showToast(`This feature requires a ${requiredTier} plan. Upgrade to unlock it.`, 'error'); _patchedNav('subscription'); return; }
+      }
+      _patchedNav(newItem.dataset.view);
+    });
   });
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── LEARN VIEW ─────────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  const GLOSSARY_TERMS = [
+    { term: 'P/E Ratio', def: 'Price-to-Earnings Ratio. The current share price divided by earnings per share. A higher P/E may indicate investors expect higher future growth, while a lower P/E may suggest the stock is undervalued or the company is experiencing difficulties.' },
+    { term: 'Market Capitalisation', def: 'The total market value of a company\'s outstanding shares, calculated as share price multiplied by the number of shares outstanding. Companies are often classified as large-cap, mid-cap, or small-cap based on this figure.' },
+    { term: 'Dividend Yield', def: 'The annual dividend payment divided by the current share price, expressed as a percentage. It represents the return on investment from dividends alone, excluding any capital gains.' },
+    { term: 'Earnings Per Share (EPS)', def: 'A company\'s net profit divided by the number of outstanding common shares. EPS is one of the most widely used metrics for assessing a company\'s profitability on a per-share basis.' },
+    { term: 'Book Value', def: 'The net asset value of a company, calculated as total assets minus total liabilities. Book value per share divides this figure by the number of outstanding shares and is used to assess whether a stock is trading above or below its intrinsic worth.' },
+    { term: 'Beta', def: 'A measure of a stock\'s volatility relative to the overall market. A beta of 1 means the stock moves in line with the market; above 1 means it is more volatile; below 1 means it is less volatile.' },
+    { term: 'RSI (Relative Strength Index)', def: 'A momentum oscillator ranging from 0 to 100 that measures the speed and magnitude of recent price changes. Readings above 70 suggest overbought conditions; below 30 suggest oversold conditions.' },
+    { term: 'MACD', def: 'Moving Average Convergence Divergence. A trend-following momentum indicator that shows the relationship between two exponential moving averages (typically the 12-period and 26-period EMA). A MACD crossover above the signal line is considered bullish.' },
+    { term: 'Bollinger Bands', def: 'A technical analysis tool consisting of a middle band (usually a 20-day simple moving average) and two outer bands set two standard deviations above and below. When the price moves near the upper band, the stock may be overbought; near the lower band, oversold.' },
+    { term: 'Support', def: 'A price level at which a stock tends to find buying interest as it falls, preventing the price from declining further. Support levels are identified by looking at previous price lows.' },
+    { term: 'Resistance', def: 'A price level at which a stock tends to encounter selling pressure as it rises, preventing the price from increasing further. Resistance levels are identified by looking at previous price highs.' },
+    { term: 'Bull Market', def: 'A financial market condition in which prices are rising or are expected to rise, typically defined as a sustained increase of 20% or more from recent lows. Bull markets are characterised by investor optimism and confidence.' },
+    { term: 'Bear Market', def: 'A financial market condition in which prices are falling or are expected to fall, typically defined as a decline of 20% or more from recent highs. Bear markets are characterised by widespread pessimism and negative investor sentiment.' },
+    { term: 'IPO (Initial Public Offering)', def: 'The process by which a private company offers its shares to the public for the first time. On the JSE, companies can list on the Main Market or the Junior Market through an IPO.' },
+    { term: 'Market Order', def: 'An order to buy or sell a stock immediately at the best available current price. Market orders guarantee execution but not price, which can be a concern in illiquid markets.' },
+    { term: 'Limit Order', def: 'An order to buy or sell a stock at a specific price or better. A buy limit order executes at the limit price or lower; a sell limit order executes at the limit price or higher.' },
+    { term: 'Stop Loss', def: 'An order placed with a broker to sell a stock when it reaches a certain price, designed to limit an investor\'s loss on a position. Also called a stop order.' },
+    { term: 'Portfolio', def: 'The collection of all financial investments held by an individual or institution, including stocks, bonds, cash, real estate, and other assets.' },
+    { term: 'Diversification', def: 'An investment strategy that spreads investments across various financial instruments, industries, and other categories to reduce exposure to any single risk. The goal is to maximise returns by investing in different areas that would each react differently to the same event.' },
+    { term: 'Asset Allocation', def: 'The process of dividing an investment portfolio among different asset categories such as stocks, bonds, and cash. The appropriate allocation depends on an investor\'s goals, risk tolerance, and time horizon.' },
+    { term: 'Blue Chip', def: 'A nationally or internationally recognised, well-established, and financially sound company. Blue-chip stocks are generally leaders in their industry and have a history of reliable earnings and dividend payments. On the JSE, examples include NCB Financial Group and GraceKennedy.' },
+    { term: 'Penny Stock', def: 'A stock that trades at a relatively low price (typically below J$10 or US$5 per share) and has a small market capitalisation. Penny stocks are generally more volatile and carry higher risk.' },
+    { term: 'Bid', def: 'The highest price a buyer is willing to pay for a stock at a given time. The bid price is always lower than the ask price.' },
+    { term: 'Ask', def: 'The lowest price a seller is willing to accept for a stock at a given time. Also called the offer price.' },
+    { term: 'Spread', def: 'The difference between the bid price and the ask price of a stock. A narrower spread typically indicates higher liquidity; a wider spread suggests lower liquidity.' },
+    { term: 'Volume', def: 'The number of shares traded during a given period. High volume indicates strong investor interest and typically better liquidity.' },
+    { term: 'Liquidity', def: 'The degree to which a stock can be quickly bought or sold without significantly affecting its price. Stocks with high daily trading volumes are considered more liquid.' },
+    { term: 'Volatility', def: 'A statistical measure of the dispersion of returns for a given stock or market index. Higher volatility means the price can change dramatically in a short period in either direction.' },
+    { term: 'Short Selling', def: 'The practice of selling borrowed shares with the intention of buying them back later at a lower price. Short sellers profit when the stock price falls. Note: short selling is not widely practised on the JSE.' },
+    { term: 'Margin', def: 'Borrowed money from a broker used to purchase securities. Buying on margin amplifies both gains and losses and requires the investor to maintain a minimum account balance (the margin requirement).' },
+    { term: 'Futures', def: 'Financial contracts obligating the buyer to purchase, or the seller to sell, an asset at a predetermined future date and price. Futures are commonly used for commodities, currencies, and indices.' },
+    { term: 'Options', def: 'Financial derivatives that give the holder the right, but not the obligation, to buy (call option) or sell (put option) an underlying asset at a specified price within a certain time period.' },
+    { term: 'ETF (Exchange-Traded Fund)', def: 'An investment fund that is traded on a stock exchange, much like a stock. ETFs hold assets such as stocks, commodities, or bonds and generally track an index. They offer diversification at a lower cost than mutual funds.' },
+    { term: 'Mutual Fund', def: 'A professionally managed investment fund that pools money from many investors to purchase securities. In Jamaica, mutual funds are offered by companies like JMMB, Sagicor, and NCB Capital Markets.' },
+    { term: 'Index Fund', def: 'A type of mutual fund or ETF designed to replicate the performance of a specific market index, such as the JSE Main Index. Index funds offer broad market exposure with low management fees.' },
+    { term: 'Bonds', def: 'Debt securities issued by corporations or governments to raise capital. When you buy a bond, you are lending money to the issuer in exchange for periodic interest payments and the return of the bond\'s face value at maturity.' },
+    { term: 'Treasury Bills', def: 'Short-term government debt instruments issued by the Bank of Jamaica, typically with maturities of 30, 60, 90, or 180 days. T-bills are considered very low-risk investments and are sold at a discount to their face value.' },
+    { term: 'Foreign Exchange (Forex)', def: 'The global marketplace for trading national currencies against one another. In Jamaica, the JMD/USD exchange rate is closely watched by investors because currency movements affect import costs, inflation, and the returns on foreign investments.' },
+    { term: 'Inflation', def: 'The rate at which the general level of prices for goods and services is rising, and subsequently, purchasing power is falling. The Bank of Jamaica targets an inflation rate of 4-6% per annum.' },
+    { term: 'GDP (Gross Domestic Product)', def: 'The total monetary value of all finished goods and services produced within a country\'s borders in a specific time period. GDP growth is a key indicator of economic health.' },
+    { term: 'Interest Rate', def: 'The amount charged by a lender to a borrower for the use of money, expressed as a percentage of the principal. The Bank of Jamaica\'s policy interest rate influences borrowing costs across the economy and affects stock market valuations.' },
+  ];
+
+  let learnViewInitialized = false;
+
+  function initLearnView() {
+    if (learnViewInitialized) return;
+    learnViewInitialized = true;
+
+    // Tab switching
+    $$('.learn-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        $$('.learn-tab').forEach(t => t.classList.remove('active'));
+        $$('.learn-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        const panelId = 'learn-' + tab.dataset.learnTab;
+        const panel = document.getElementById(panelId);
+        if (panel) panel.classList.add('active');
+      });
+    });
+
+    // Module expand/collapse
+    $$('.learn-module-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        // Don't collapse if user is selecting text
+        if (window.getSelection().toString().length > 0) return;
+        const wasExpanded = card.classList.contains('expanded');
+        // Collapse all first
+        $$('.learn-module-card').forEach(c => c.classList.remove('expanded'));
+        if (!wasExpanded) {
+          card.classList.add('expanded');
+          setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        }
+      });
+    });
+
+    // Populate glossary
+    renderGlossary(GLOSSARY_TERMS);
+
+    // Glossary search
+    const searchInput = $('#glossarySearch');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        const q = searchInput.value.toLowerCase().trim();
+        $$('.glossary-item').forEach(item => {
+          const term = item.querySelector('.glossary-term').textContent.toLowerCase();
+          const def = item.querySelector('.glossary-def').textContent.toLowerCase();
+          item.classList.toggle('hidden', q && !term.includes(q) && !def.includes(q));
+        });
+      });
+    }
+  }
+
+  function renderGlossary(terms) {
+    const list = $('#glossaryList');
+    if (!list) return;
+    const sorted = [...terms].sort((a, b) => a.term.localeCompare(b.term));
+    list.innerHTML = sorted.map(t => `
+      <div class="glossary-item">
+        <div class="glossary-term">${t.term}</div>
+        <div class="glossary-def">${t.def}</div>
+      </div>
+    `).join('');
+  }
 
   // ══════════════════════════════════════════════════════════════════════════════
   // ── Settings View (Enhanced) ──────────────────────────────────────────────
@@ -3869,8 +4822,8 @@
 
     const memberSince = state.user.createdAt ? new Date(state.user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
     const has2FA = state.user.twoFactorEnabled || false;
-    const tier = state.user.subscriptionTier || state.user.subscription?.plan || 'FREE';
-    const tierColors = { FREE: 'var(--muted)', BASIC: 'var(--blue)', PRO: 'var(--gold)', ENTERPRISE: 'var(--green)' };
+    const tier = state.user.subscriptionTier || state.user.subscription?.plan || 'BASIC';
+    const tierColors = { BASIC: 'var(--blue)', PRO: 'var(--gold)', ENTERPRISE: 'var(--green)' };
     const tierColor = tierColors[tier] || 'var(--muted)';
 
     el.innerHTML = `
@@ -3904,7 +4857,7 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="wallet-form-group" style="margin-bottom:0;">
               <label>New Password</label>
-              <input type="password" class="settings-input" id="settingsNewPwd" placeholder="Min 6 characters">
+              <input type="password" class="settings-input" id="settingsNewPwd" placeholder="Min 12 chars, upper+lower+number+symbol">
             </div>
             <div class="wallet-form-group" style="margin-bottom:0;">
               <label>Confirm New Password</label>
@@ -4059,7 +5012,7 @@
     const newPwd = $('#settingsNewPwd')?.value;
     const confirmPwd = $('#settingsConfirmPwd')?.value;
     if (!currentPwd) return showToast('Enter your current password', 'error');
-    if (!newPwd || newPwd.length < 6) return showToast('New password must be at least 6 characters', 'error');
+    if (!newPwd || newPwd.length < 12) return showToast('Password must be at least 12 characters with uppercase, lowercase, number, and special character', 'error');
     if (newPwd !== confirmPwd) return showToast('Passwords do not match', 'error');
     try {
       const email = state.user.email;
@@ -4115,21 +5068,30 @@
       });
       if (data.otpauthUrl) {
         const el = $('#settings2FAResult');
+        const qrSrc = data.qrDataUrl || ('https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(data.otpauthUrl));
         el.innerHTML = `
-          <div class="card" style="padding:24px;margin-top:12px;">
-            <h4 style="margin-bottom:12px;font-size:15px;font-weight:700;">
+          <div class="tfa-setup">
+            <h4>
               <i class="fas fa-qrcode" style="color:var(--blue);margin-right:8px;"></i>Scan with your authenticator app
             </h4>
-            <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
-              <div style="background:#fff;padding:16px;border-radius:12px;display:inline-block;">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(data.otpauthUrl)}" alt="QR Code" style="display:block;">
+            <div class="tfa-setup-grid">
+              <div class="tfa-qr">
+                <img src="${qrSrc}" alt="QR Code">
               </div>
-              <div style="flex:1;min-width:200px;">
+              <div class="tfa-setup-info">
                 <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Or enter this secret manually:</p>
-                <code style="display:block;background:var(--glass2);padding:10px 14px;border-radius:8px;font-size:13px;word-break:break-all;margin-bottom:16px;">${data.secret}</code>
+                <code class="tfa-secret-code">${data.secret}</code>
                 <div class="wallet-form-group" style="margin-bottom:8px;">
                   <label>Verification Code</label>
-                  <input type="text" id="verify2FACode" class="settings-input" placeholder="Enter 6-digit code" maxlength="6" style="font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:4px;text-align:center;">
+                  <div class="tfa-code-input" id="setup2FADigits" style="justify-content:flex-start;margin:12px 0;">
+                    <input type="text" maxlength="1" class="tfa-digit" data-idx="0" inputmode="numeric">
+                    <input type="text" maxlength="1" class="tfa-digit" data-idx="1" inputmode="numeric">
+                    <input type="text" maxlength="1" class="tfa-digit" data-idx="2" inputmode="numeric">
+                    <span class="tfa-separator">-</span>
+                    <input type="text" maxlength="1" class="tfa-digit" data-idx="3" inputmode="numeric">
+                    <input type="text" maxlength="1" class="tfa-digit" data-idx="4" inputmode="numeric">
+                    <input type="text" maxlength="1" class="tfa-digit" data-idx="5" inputmode="numeric">
+                  </div>
                 </div>
                 <button onclick="window.__confirm2FA()" class="settings-btn settings-btn-green-fill" style="width:100%;padding:12px;">
                   <i class="fas fa-check-circle" style="margin-right:6px;"></i>Verify & Enable 2FA
@@ -4137,12 +5099,36 @@
               </div>
             </div>
           </div>`;
+        // Wire up auto-advance for setup digits
+        const setupDigits = el.querySelectorAll('#setup2FADigits .tfa-digit');
+        setupDigits.forEach((inp, idx) => {
+          inp.addEventListener('input', (e) => {
+            const val = e.target.value.replace(/\D/g, '');
+            e.target.value = val.slice(0, 1);
+            if (val) { e.target.classList.add('filled'); if (idx < setupDigits.length - 1) setupDigits[idx + 1].focus(); }
+            else { e.target.classList.remove('filled'); }
+          });
+          inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+              setupDigits[idx - 1].focus(); setupDigits[idx - 1].value = ''; setupDigits[idx - 1].classList.remove('filled');
+            }
+            if (e.key === 'Enter') window.__confirm2FA();
+          });
+          inp.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+            text.split('').forEach((ch, i) => { if (setupDigits[i]) { setupDigits[i].value = ch; setupDigits[i].classList.add('filled'); } });
+            if (text.length > 0) setupDigits[Math.min(text.length, setupDigits.length - 1)].focus();
+          });
+        });
+        setupDigits[0]?.focus();
       }
     } catch (e) { showToast('Error setting up 2FA: ' + e.message, 'error'); }
   };
 
   window.__confirm2FA = async function() {
-    const code = $('#verify2FACode')?.value;
+    const setupDigits = document.querySelectorAll('#setup2FADigits .tfa-digit');
+    const code = setupDigits.length ? Array.from(setupDigits).map(d => d.value).join('') : ($('#verify2FACode')?.value || '');
     if (!code || code.length !== 6) return showToast('Enter a 6-digit code', 'error');
     try {
       const data = await apiFetch('/api/auth/2fa/verify', {
@@ -4205,7 +5191,7 @@
         body: JSON.stringify({ email })
       });
       if (res1.resetToken) {
-        const newPass = prompt('Enter your new password (min 6 chars):');
+        const newPass = prompt('Enter your new password (min 12 chars, upper+lower+number+symbol):');
         if (newPass && newPass.length >= 6) {
           const res2 = await apiFetch('/api/auth/reset-password', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -4226,11 +5212,16 @@
     const el = $('#subscriptionContent');
     if (!el) return;
     if (!state.token) {
-      el.innerHTML = '<div class="card" style="padding:40px;text-align:center;">Please sign in to view subscription plans.</div>';
+      el.innerHTML = `<div style="text-align:center;padding:60px 20px;">
+        <i class="fas fa-crown" style="font-size:48px;color:var(--gold);margin-bottom:16px;display:block;opacity:0.6;"></i>
+        <h3 style="font-size:20px;font-weight:700;margin-bottom:8px;">Subscription Plans</h3>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:24px;">Sign in to view and manage your subscription.</p>
+        <button onclick="showAuthModal('login')" style="padding:12px 32px;background:var(--green);color:#000;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;">Sign In</button>
+      </div>`;
       return;
     }
 
-    el.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:24px;color:var(--blue);"></i></div>';
+    el.innerHTML = '<div style="text-align:center;padding:60px;"><div style="width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;"></div><p style="color:var(--muted);font-size:13px;margin-top:12px;">Loading plans...</p></div>';
 
     try {
       const [plans, current] = await Promise.all([
@@ -4238,89 +5229,214 @@
         apiFetch('/api/subscription', { headers: { 'Authorization': 'Bearer ' + state.token } })
       ]);
 
-      const currentPlan = current.plan || 'FREE';
+      const currentPlan = current.plan || 'BASIC';
       const planList = plans.plans || plans;
+      const planMeta = {
+        BASIC: { color: '#2979ff', gradient: 'linear-gradient(135deg, #2979ff, #448aff)', icon: 'fa-rocket', tagline: 'For active traders', price: '$19.99', period: '/month', jmd: 'J$3,100/mo (~US$20)', popular: false },
+        PRO: { color: '#ffd600', gradient: 'linear-gradient(135deg, #ffd600, #ffab00)', icon: 'fa-crown', tagline: 'For serious professionals', price: '$99.99', period: '/month', jmd: 'J$15,500/mo', popular: true },
+        ENTERPRISE: { color: '#00c853', gradient: 'linear-gradient(135deg, #00c853, #69f0ae)', icon: 'fa-building', tagline: 'For institutions & teams', price: 'Custom', period: '', jmd: 'Contact sales', popular: false },
+      };
 
+      // Header
       let html = `
-        <div class="card" style="padding:24px;">
-          <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">Current Plan: <span style="color:var(--green);">${currentPlan}</span></h3>
-          <p style="color:var(--muted);font-size:13px;">Upgrade to unlock more features and higher limits.</p>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;">`;
+        <div style="text-align:center;padding:20px 0 32px;">
+          <h2 style="font-size:26px;font-weight:800;margin-bottom:8px;">Choose Your Plan</h2>
+          <p style="color:var(--muted);font-size:14px;max-width:480px;margin:0 auto;">Professional-grade tools for the Caribbean markets. All plans include real-time JSE data, AI analysis, and US market access.</p>
+        </div>`;
 
-      const planColors = { FREE: 'var(--muted)', BASIC: 'var(--blue)', PRO: 'var(--gold)', ENTERPRISE: 'var(--green)' };
-      const planPrices = { FREE: '$0', BASIC: '$9.99/mo', PRO: '$29.99/mo', ENTERPRISE: '$99.99/mo' };
+      // Plan cards
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;align-items:start;">';
 
-      for (const plan of (Array.isArray(planList) ? planList : Object.entries(planList).map(([name, features]) => ({name, features})))) {
-        const name = plan.name || plan.plan;
-        const features = plan.features || plan.limits || {};
+      for (const plan of (Array.isArray(planList) ? planList : [])) {
+        const name = plan.plan || plan.name;
+        const features = plan.features || {};
+        const meta = planMeta[name] || planMeta.BASIC;
         const isActive = name === currentPlan;
-        const color = planColors[name] || 'var(--blue)';
+        const isPopular = meta.popular;
+
+        const featureList = [
+          { key: 'maxTrades', label: 'Trades per month', icon: 'fa-chart-bar' },
+          { key: 'maxWatchlists', label: 'Watchlists', icon: 'fa-eye' },
+          { key: 'maxAlerts', label: 'Price alerts', icon: 'fa-bell' },
+          { key: 'aiChats', label: 'AI chats per day', icon: 'fa-robot' },
+          { key: 'usStocks', label: 'US Market access', icon: 'fa-flag-usa' },
+          { key: 'advancedAnalytics', label: 'Advanced analytics', icon: 'fa-chart-pie' },
+          { key: 'mlPredictions', label: 'ML predictions', icon: 'fa-brain' },
+          { key: 'voiceAgent', label: 'AI Voice agent', icon: 'fa-microphone' },
+          { key: 'support', label: 'Support', icon: 'fa-headset' },
+        ];
 
         html += `
-          <div style="background:var(--glass);border:${isActive ? '2px' : '1px'} solid ${isActive ? color : 'var(--border)'};border-radius:16px;padding:24px;${isActive ? 'box-shadow:0 0 20px ' + color + '20;' : ''}">
-            <div style="font-size:13px;text-transform:uppercase;color:${color};font-weight:700;letter-spacing:1px;margin-bottom:8px;">${name}</div>
-            <div style="font-size:28px;font-weight:800;margin-bottom:16px;">${planPrices[name] || '$?'}</div>
-            <div style="display:grid;gap:8px;margin-bottom:20px;">`;
+          <div style="position:relative;background:var(--bg2);border:${isActive ? '2px' : '1px'} solid ${isActive ? meta.color : 'var(--border2)'};border-radius:20px;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;${isActive ? 'box-shadow:0 0 30px ' + meta.color + '18;' : ''}${isPopular && !isActive ? 'border-color:' + meta.color + '60;' : ''}"
+            onmouseenter="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,0,0,0.3)'"
+            onmouseleave="this.style.transform='';this.style.boxShadow='${isActive ? '0 0 30px ' + meta.color + '18' : 'none'}'">
+            ${isPopular ? `<div style="background:${meta.gradient};color:#000;text-align:center;padding:6px;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">Most Popular</div>` : ''}
+            ${isActive ? `<div style="background:${meta.color}20;color:${meta.color};text-align:center;padding:6px;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">Current Plan</div>` : ''}
+            <div style="padding:28px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+                <div style="width:40px;height:40px;border-radius:12px;background:${meta.color}15;display:flex;align-items:center;justify-content:center;">
+                  <i class="fas ${meta.icon}" style="color:${meta.color};font-size:16px;"></i>
+                </div>
+                <div>
+                  <div style="font-size:16px;font-weight:800;letter-spacing:0.5px;">${name}</div>
+                  <div style="font-size:11px;color:var(--muted);">${meta.tagline}</div>
+                </div>
+              </div>
 
-        const featureLabels = {
-          maxTrades: 'Trades/month', maxWatchlists: 'Watchlists', maxAlerts: 'Price alerts',
-          aiChats: 'AI chats/day', usStocks: 'US Stocks', advancedAnalytics: 'Advanced Analytics', mlPredictions: 'ML Predictions'
-        };
+              <div style="margin-bottom:24px;">
+                <div style="display:flex;align-items:baseline;gap:4px;">
+                  <span style="font-size:36px;font-weight:900;letter-spacing:-1px;">${meta.price}</span>
+                  <span style="font-size:14px;color:var(--muted);font-weight:500;">${meta.period}</span>
+                </div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px;">${meta.jmd}</div>
+              </div>
 
-        for (const [key, label] of Object.entries(featureLabels)) {
-          const val = features[key];
-          const display = val === -1 || val === 'unlimited' ? 'Unlimited' : typeof val === 'boolean' ? (val ? 'Yes' : 'No') : val;
-          const icon = (val === true || val === -1 || val === 'unlimited' || (typeof val === 'number' && val > 0)) ? 'fa-check' : 'fa-xmark';
-          const iconColor = icon === 'fa-check' ? 'var(--green)' : 'var(--red)';
-          html += `<div style="display:flex;align-items:center;gap:8px;font-size:13px;"><i class="fas ${icon}" style="color:${iconColor};width:16px;"></i> ${display} ${label}</div>`;
-        }
+              <div style="display:grid;gap:10px;margin-bottom:24px;">`;
 
-        html += `</div>`;
-        if (isActive) {
-          html += `<button disabled style="width:100%;padding:12px;border-radius:10px;border:1px solid ${color};background:transparent;color:${color};font-weight:700;">Current Plan</button>`;
-        } else {
-          html += `<button onclick="window.__upgradePlan('${name}')" style="width:100%;padding:12px;border-radius:10px;border:none;background:${color};color:#000;font-weight:700;cursor:pointer;">Upgrade to ${name}</button>`;
-        }
-        html += `</div>`;
-      }
-
-      html += `</div>`;
-
-      if (current.usage) {
-        html += `
-          <div class="card" style="padding:24px;">
-            <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">Usage This Period</h3>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">`;
-        for (const [key, val] of Object.entries(current.usage)) {
-          const limit = current.limits?.[key] || '?';
+        for (const f of featureList) {
+          const val = features[f.key];
+          if (val === undefined) continue;
+          const isOn = val === true || val === 'Unlimited' || (typeof val === 'string' && val !== 'No' && val !== 'false');
+          const display = typeof val === 'boolean' ? '' : val;
           html += `
-            <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">${key.replace(/([A-Z])/g, ' $1')}</div>
-              <div style="font-size:18px;font-weight:700;margin-top:4px;">${val} <span style="font-size:12px;color:var(--muted);">/ ${limit === -1 ? '∞' : limit}</span></div>
-            </div>`;
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;${!isOn ? 'opacity:0.4;' : ''}">
+                  <div style="width:22px;height:22px;border-radius:6px;background:${isOn ? meta.color + '15' : 'var(--glass)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas ${isOn ? 'fa-check' : 'fa-xmark'}" style="font-size:10px;color:${isOn ? meta.color : 'var(--muted)'};"></i>
+                  </div>
+                  <span>${display ? '<strong>' + escHtml(display) + '</strong> ' : ''}${escHtml(f.label)}</span>
+                </div>`;
         }
+
+        html += `</div>`;
+
+        // CTA button
+        if (isActive) {
+          html += `<button disabled style="width:100%;padding:14px;border-radius:12px;border:2px solid ${meta.color};background:transparent;color:${meta.color};font-weight:700;font-size:14px;cursor:default;opacity:0.7;">
+            <i class="fas fa-check-circle" style="margin-right:6px;"></i>Current Plan
+          </button>`;
+        } else if (name === 'ENTERPRISE') {
+          html += `<a href="mailto:sales@gothamfinancial.com?subject=Enterprise Plan Inquiry" style="display:block;width:100%;padding:14px;border-radius:12px;border:none;background:${meta.gradient};color:#000;font-weight:700;font-size:14px;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box;">
+            <i class="fas fa-envelope" style="margin-right:6px;"></i>Contact Sales
+          </a>`;
+        } else {
+          html += `<button onclick="window.__upgradePlan('${name}')" style="width:100%;padding:14px;border-radius:12px;border:none;background:${meta.gradient};color:#000;font-weight:700;font-size:14px;cursor:pointer;transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.9'" onmouseleave="this.style.opacity='1'">
+            <i class="fas fa-arrow-up" style="margin-right:6px;"></i>Upgrade to ${name}
+          </button>`;
+        }
+
         html += `</div></div>`;
       }
+      html += '</div>';
+
+      // Usage section
+      if (current.usage) {
+        const usageItems = [
+          { key: 'tradesThisMonth', label: 'Trades', icon: 'fa-chart-bar', color: '#2979ff', limitKey: 'tradesRemaining' },
+          { key: 'watchlists', label: 'Watchlists', icon: 'fa-eye', color: '#00c853', limitKey: 'watchlistsRemaining' },
+          { key: 'activeAlerts', label: 'Alerts', icon: 'fa-bell', color: '#ffd600', limitKey: 'alertsRemaining' },
+          { key: 'aiChatsToday', label: 'AI Chats', icon: 'fa-robot', color: '#e040fb', limitKey: 'aiChatsRemaining' },
+        ];
+
+        html += `
+          <div style="margin-top:32px;">
+            <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+              <i class="fas fa-chart-pie" style="color:var(--blue);"></i> Usage This Period
+            </h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">`;
+
+        for (const u of usageItems) {
+          const used = current.usage[u.key] ?? 0;
+          const remaining = current.usage[u.limitKey];
+          const limit = current.limits?.[u.key === 'tradesThisMonth' ? 'maxTrades' : u.key === 'watchlists' ? 'maxWatchlists' : u.key === 'activeAlerts' ? 'maxAlerts' : 'aiChats'];
+          const isUnlimited = remaining === 'Unlimited' || limit === 'Unlimited';
+          const total = isUnlimited ? 100 : (typeof limit === 'number' ? limit : 100);
+          const pct = isUnlimited ? Math.min(used * 2, 30) : Math.min((used / total) * 100, 100);
+
+          html += `
+              <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <i class="fas ${u.icon}" style="color:${u.color};font-size:14px;"></i>
+                    <span style="font-size:12px;font-weight:600;color:var(--text2);">${u.label}</span>
+                  </div>
+                  <span style="font-size:11px;color:var(--muted);">${isUnlimited ? 'Unlimited' : remaining + ' left'}</span>
+                </div>
+                <div style="font-size:24px;font-weight:800;margin-bottom:8px;">${used}</div>
+                <div style="height:4px;background:var(--glass);border-radius:2px;overflow:hidden;">
+                  <div style="height:100%;width:${pct}%;background:${u.color};border-radius:2px;transition:width 0.5s;"></div>
+                </div>
+              </div>`;
+        }
+
+        html += '</div></div>';
+      }
+
+      // Billing info
+      if (current.currentPeriodEnd) {
+        const endDate = new Date(current.currentPeriodEnd).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        html += `
+          <div style="margin-top:20px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Next billing date</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">${endDate}</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="window.__manageBilling()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">
+                <i class="fas fa-credit-card" style="margin-right:4px;"></i>Manage Billing
+              </button>
+            </div>
+          </div>`;
+      }
+
+      // Trade fee notice
+      html += `
+        <div style="margin-top:16px;padding:14px 18px;background:var(--glass);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;gap:12px;">
+          <i class="fas fa-info-circle" style="color:var(--blue);font-size:16px;flex-shrink:0;"></i>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;">
+            All plans include a <strong style="color:var(--text2);">1% service charge</strong> on JSE trades and <strong style="color:var(--text2);">0.5%</strong> on US market trades. This is applied per transaction at execution.
+          </div>
+        </div>`;
 
       el.innerHTML = html;
     } catch (e) {
-      el.innerHTML = `<div class="card" style="padding:24px;color:var(--red);">Error loading subscription: ${e.message}</div>`;
+      el.innerHTML = `<div style="text-align:center;padding:40px;"><i class="fas fa-exclamation-triangle" style="font-size:32px;color:var(--red);display:block;margin-bottom:12px;"></i><p style="color:var(--red);">Error loading subscription: ${escHtml(e.message)}</p><button onclick="loadSubscriptionView()" style="margin-top:12px;padding:8px 20px;background:var(--glass);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;font-family:inherit;">Retry</button></div>`;
     }
   }
 
   window.__upgradePlan = async function(plan) {
-    if (!state.token) return alert('Please sign in first');
-    if (!confirm(`Upgrade to ${plan}? (Payment integration coming soon — this will activate a trial.)`)) return;
+    if (!state.token) return showToast('Please sign in first', 'error');
+
+    // Try Stripe checkout first
+    try {
+      const res = await apiFetch('/api/payments/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
+        body: JSON.stringify({ plan })
+      });
+      if (res.checkoutUrl) {
+        window.location.href = res.checkoutUrl;
+        return;
+      }
+    } catch (_) {
+      // Stripe not configured — fall back to direct upgrade
+    }
+
+    // Fallback: direct upgrade (trial/demo mode)
+    if (!confirm(`Upgrade to ${plan}?\n\nStripe payments are being configured. This will activate a 30-day trial.`)) return;
     try {
       const res = await apiFetch('/api/subscription/upgrade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
         body: JSON.stringify({ plan })
       });
-      alert(res.message || `Upgraded to ${plan}!`);
+      showToast(res.message || `Upgraded to ${plan}!`, 'success');
+      if (state.user) state.user.subscriptionTier = plan;
       loadSubscriptionView();
-    } catch (e) { alert('Error: ' + e.message); }
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  };
+
+  window.__manageBilling = function() {
+    showToast('Billing management portal coming soon. Contact support@gothamfinancial.com for billing inquiries.', 'info');
   };
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -4786,6 +5902,711 @@
     if (state.user) setTimeout(checkAdminAccess, 500);
   };
 
+  // ── Theme Toggle ────────────────────────────────────────────────────────
+  function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('gotham_theme', next);
+    // Update icon
+    const icon = $('#themeToggleBtn i');
+    if (icon) icon.className = next === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+  }
+
+  function loadSavedTheme() {
+    const saved = localStorage.getItem('gotham_theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+      const icon = $('#themeToggleBtn i');
+      if (icon) icon.className = saved === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+  }
+
+  $('#themeToggleBtn')?.addEventListener('click', toggleTheme);
+
+  // ── Keyboard Shortcuts ─────────────────────────────────────────────────
+  function isKbShortcutsOpen() {
+    return $('#kbShortcutsOverlay')?.classList.contains('show');
+  }
+
+  function showKbShortcuts() {
+    $('#kbShortcutsOverlay')?.classList.add('show');
+  }
+
+  function hideKbShortcuts() {
+    $('#kbShortcutsOverlay')?.classList.remove('show');
+  }
+
+  // Dismiss shortcuts modal on click outside the card
+  $('#kbShortcutsOverlay')?.addEventListener('click', (e) => {
+    if (e.target === $('#kbShortcutsOverlay')) hideKbShortcuts();
+  });
+
+  function isAnyModalOpen() {
+    // Check all known modal overlays for .show class
+    const modals = $$('.modal-overlay.show, .wl-modal-overlay, .wallet-modal-overlay.show, .onboarding-modal.show');
+    return modals.length > 0;
+  }
+
+  document.addEventListener('keydown', (e) => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    const isTyping = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
+
+    // Escape always works: close shortcuts help, then close modals/search dropdown
+    if (e.key === 'Escape') {
+      if (isKbShortcutsOpen()) { hideKbShortcuts(); return; }
+      // Close search dropdown
+      const dd = $('#searchDropdown');
+      if (dd) dd.innerHTML = '';
+      // Close modals
+      $$('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+      $$('.wallet-modal-overlay.show').forEach(m => m.classList.remove('show'));
+      return;
+    }
+
+    // Don't trigger shortcuts while typing in form fields
+    if (isTyping) return;
+
+    // Don't trigger navigation shortcuts when a modal is open
+    if (isAnyModalOpen() || isKbShortcutsOpen()) return;
+
+    // Focus search: / or Ctrl+K
+    if (e.key === '/' || (e.ctrlKey && e.key === 'k')) {
+      e.preventDefault();
+      $('#searchInput')?.focus();
+      return;
+    }
+
+    // Show help: ?
+    if (e.key === '?') {
+      e.preventDefault();
+      showKbShortcuts();
+      return;
+    }
+
+    // Navigation shortcuts (case-insensitive)
+    const key = e.key.toUpperCase();
+    const navMap = {
+      'D': 'dashboard',
+      'W': 'watchlists',
+      'N': 'news',
+      'T': 'transactions',
+      'P': 'portfolio',
+      'C': 'chat',
+    };
+    if (navMap[key]) {
+      e.preventDefault();
+      navigateTo(navMap[key]);
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── Advanced Technical Analysis Chart ─────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  let taChart = null;          // main LightweightCharts instance
+  let taSubCharts = {};        // sub-panel chart instances { rsi, macd, stochastic, adx, cci, williamsR, obv }
+  let taSeries = {};           // all series references for toggling
+  let taData = null;           // last fetched /api/technicals response
+  let taSymbol = '';           // current symbol
+  let taChartType = 'candlestick';
+  let taActiveInds = new Set(['sma20', 'bollinger', 'volume', 'rsi']);
+  let taInitialized = false;
+
+  function initTechnicalAnalysis() {
+    if (!taInitialized) {
+      setupTAEventListeners();
+      taInitialized = true;
+    }
+    // Auto-load selected symbol or first stock
+    if (!taSymbol) {
+      taSymbol = state.selectedSymbol || (state.stocks[0]?.symbol) || 'NCBFG';
+    }
+    loadTechnicals(taSymbol);
+  }
+
+  function setupTAEventListeners() {
+    // Symbol search
+    const searchInput = $('#taSymbolSearch');
+    const autocomplete = $('#taAutocomplete');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        const q = searchInput.value.trim().toLowerCase();
+        if (!q) { autocomplete.style.display = 'none'; return; }
+        const results = fullStockData.filter(s =>
+          s.symbol.toLowerCase().includes(q) || (s.name || '').toLowerCase().includes(q)
+        ).slice(0, 8);
+        if (!results.length) { autocomplete.style.display = 'none'; return; }
+        autocomplete.innerHTML = results.map(s => `
+          <div class="search-result" data-symbol="${s.symbol}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;">
+            <strong>${s.symbol}</strong> <span style="color:var(--muted);margin-left:6px;">${s.name || ''}</span>
+          </div>
+        `).join('');
+        autocomplete.style.display = 'block';
+        autocomplete.querySelectorAll('.search-result').forEach(el => {
+          el.addEventListener('click', () => {
+            taSymbol = el.dataset.symbol;
+            searchInput.value = '';
+            autocomplete.style.display = 'none';
+            loadTechnicals(taSymbol);
+          });
+        });
+      });
+      searchInput.addEventListener('blur', () => setTimeout(() => { autocomplete.style.display = 'none'; }, 200));
+    }
+
+    // Timeframe buttons
+    $$('#taTimeframes .period-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $$('#taTimeframes .period-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (taData) renderTAChart();
+      });
+    });
+
+    // Chart type buttons
+    ['taCandleBtn', 'taLineBtn', 'taAreaBtn'].forEach(id => {
+      const btn = $('#' + id);
+      if (btn) btn.addEventListener('click', () => {
+        $$('[data-charttype]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        taChartType = btn.dataset.charttype;
+        if (taData) renderTAChart();
+      });
+    });
+
+    // Indicator toggle buttons
+    $$('.ta-ind-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ind = btn.dataset.ind;
+        btn.classList.toggle('active');
+        if (taActiveInds.has(ind)) taActiveInds.delete(ind);
+        else taActiveInds.add(ind);
+        if (taData) renderTAChart();
+      });
+    });
+  }
+
+  async function loadTechnicals(symbol) {
+    taSymbol = symbol;
+    // Show loading
+    $('#taSymName').textContent = symbol + ' — Loading...';
+    $('#taSymPrice').textContent = '';
+    $('#taSymChange').textContent = '';
+
+    try {
+      taData = await apiFetch(`/api/technicals/${symbol}`);
+      renderTAHeader();
+      renderTAChart();
+      renderTASignals();
+      renderTAFundamentals();
+      renderTAPatterns();
+    } catch (e) {
+      $('#taSymName').textContent = symbol + ' — Failed to load data';
+      console.error('TA load error:', e);
+    }
+  }
+
+  function renderTAHeader() {
+    if (!taData) return;
+    const d = taData;
+    $('#taSymName').textContent = `${d.symbol} — ${d.name || d.symbol}`;
+    $('#taSymPrice').textContent = `$${fmt(d.price)}`;
+    const chEl = $('#taSymChange');
+    const ch = d.change || 0;
+    chEl.textContent = `${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%`;
+    chEl.style.color = ch >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+
+  function getFilteredCandles() {
+    if (!taData?.candles?.length) return [];
+    const activeBtn = document.querySelector('#taTimeframes .period-btn.active');
+    const tf = activeBtn?.dataset?.tf || '3M';
+    const now = taData.candles[taData.candles.length - 1]?.time || Math.floor(Date.now() / 1000);
+    const tfMap = { '1W': 7, '1M': 30, '3M': 90, '6M': 180, '1Y': 365, 'ALL': 99999 };
+    const days = tfMap[tf] || 90;
+    const cutoff = now - days * 86400;
+    return taData.candles.filter(c => c.time >= cutoff);
+  }
+
+  function renderTAChart() {
+    if (!taData) return;
+    // Destroy old charts
+    destroyTACharts();
+
+    const candles = getFilteredCandles();
+    if (!candles.length) return;
+
+    const wrap = $('#taMainChartWrap');
+    if (!wrap) return;
+
+    // Create main chart
+    taChart = LightweightCharts.createChart(wrap, {
+      width: wrap.clientWidth,
+      height: 480,
+      layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#6b7a8d', fontSize: 11, fontFamily: 'Inter' },
+      grid: { vertLines: { color: 'rgba(255,255,255,0.03)' }, horzLines: { color: 'rgba(255,255,255,0.03)' } },
+      crosshair: { mode: 0, vertLine: { color: 'rgba(0,200,83,0.3)', labelBackgroundColor: '#00c853' }, horzLine: { color: 'rgba(0,200,83,0.3)', labelBackgroundColor: '#00c853' } },
+      rightPriceScale: { borderColor: 'rgba(255,255,255,0.06)', scaleMargins: { top: 0.05, bottom: 0.15 } },
+      timeScale: { borderColor: 'rgba(255,255,255,0.06)', timeVisible: true, secondsVisible: false },
+    });
+
+    new ResizeObserver(() => { if (taChart) taChart.applyOptions({ width: wrap.clientWidth }); }).observe(wrap);
+
+    // Main price series
+    if (taChartType === 'candlestick') {
+      taSeries.price = taChart.addCandlestickSeries({
+        upColor: '#00c853', downColor: '#ff1744',
+        borderUpColor: '#00c853', borderDownColor: '#ff1744',
+        wickUpColor: '#00c853', wickDownColor: '#ff1744',
+      });
+      taSeries.price.setData(candles);
+    } else if (taChartType === 'line') {
+      taSeries.price = taChart.addLineSeries({ color: '#00c853', lineWidth: 2 });
+      taSeries.price.setData(candles.map(c => ({ time: c.time, value: c.close })));
+    } else {
+      taSeries.price = taChart.addAreaSeries({
+        topColor: 'rgba(0,200,83,0.3)', bottomColor: 'rgba(0,200,83,0.02)',
+        lineColor: '#00c853', lineWidth: 2,
+      });
+      taSeries.price.setData(candles.map(c => ({ time: c.time, value: c.close })));
+    }
+
+    const ind = taData.indicators;
+    const totalCandles = taData.candles.length;
+    const startIdx = totalCandles - candles.length;
+
+    // ── Overlay indicators on main chart ──
+
+    // Volume (as histogram on main chart bottom)
+    if (taActiveInds.has('volume')) {
+      taSeries.volume = taChart.addHistogramSeries({
+        color: '#546e7a', priceFormat: { type: 'volume' },
+        priceScaleId: 'vol', scaleMargins: { top: 0.85, bottom: 0 },
+      });
+      taChart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
+      taSeries.volume.setData(candles.map(c => ({
+        time: c.time, value: c.volume,
+        color: c.close >= c.open ? 'rgba(0,200,83,0.3)' : 'rgba(255,23,68,0.3)',
+      })));
+    }
+
+    // SMA overlays
+    const smaColors = { sma20: '#ffab00', sma50: '#2979ff', sma200: '#e040fb' };
+    ['sma20', 'sma50', 'sma200'].forEach(key => {
+      if (taActiveInds.has(key) && ind[key]?.length) {
+        const offset = totalCandles - ind[key].length;
+        const data = ind[key].map((v, i) => ({ time: taData.candles[offset + i]?.time, value: v }))
+          .filter(d => d.time && candles[0] && d.time >= candles[0].time);
+        if (data.length) {
+          taSeries[key] = taChart.addLineSeries({ color: smaColors[key], lineWidth: 1, lineStyle: 0 });
+          taSeries[key].setData(data);
+        }
+      }
+    });
+
+    // EMA overlays
+    const emaColors = { ema12: '#00e5ff', ema26: '#76ff03', ema50: '#ff9100' };
+    ['ema12', 'ema26', 'ema50'].forEach(key => {
+      if (taActiveInds.has(key) && ind[key]?.length) {
+        const offset = totalCandles - ind[key].length;
+        const data = ind[key].map((v, i) => ({ time: taData.candles[offset + i]?.time, value: v }))
+          .filter(d => d.time && candles[0] && d.time >= candles[0].time);
+        if (data.length) {
+          taSeries[key] = taChart.addLineSeries({ color: emaColors[key], lineWidth: 1, lineStyle: 2 });
+          taSeries[key].setData(data);
+        }
+      }
+    });
+
+    // Bollinger Bands
+    if (taActiveInds.has('bollinger') && ind.bollinger?.length) {
+      const offset = totalCandles - ind.bollinger.length;
+      const bbData = ind.bollinger.map((b, i) => ({ time: taData.candles[offset + i]?.time, ...b }))
+        .filter(d => d.time && candles[0] && d.time >= candles[0].time);
+      if (bbData.length) {
+        taSeries.bbUpper = taChart.addLineSeries({ color: 'rgba(255,109,0,0.6)', lineWidth: 1, lineStyle: 2 });
+        taSeries.bbLower = taChart.addLineSeries({ color: 'rgba(255,109,0,0.6)', lineWidth: 1, lineStyle: 2 });
+        taSeries.bbMiddle = taChart.addLineSeries({ color: 'rgba(255,109,0,0.3)', lineWidth: 1, lineStyle: 1 });
+        taSeries.bbUpper.setData(bbData.map(d => ({ time: d.time, value: d.upper })));
+        taSeries.bbLower.setData(bbData.map(d => ({ time: d.time, value: d.lower })));
+        taSeries.bbMiddle.setData(bbData.map(d => ({ time: d.time, value: d.middle })));
+      }
+    }
+
+    // VWAP
+    if (taActiveInds.has('vwap') && ind.vwap?.length) {
+      const offset = totalCandles - ind.vwap.length;
+      const data = ind.vwap.map((v, i) => ({ time: taData.candles[offset + i]?.time, value: v }))
+        .filter(d => d.time && candles[0] && d.time >= candles[0].time);
+      if (data.length) {
+        taSeries.vwap = taChart.addLineSeries({ color: '#ff4081', lineWidth: 2, lineStyle: 0 });
+        taSeries.vwap.setData(data);
+      }
+    }
+
+    // Fibonacci levels as horizontal price lines
+    if (taActiveInds.has('fibonacci') && ind.fibonacci?.levels) {
+      const fibColors = { 0: '#ffd600', 0.236: '#ffab00', 0.382: '#ff9100', 0.5: '#ff6d00', 0.618: '#f4511e', 0.786: '#d84315', 1: '#bf360c' };
+      Object.entries(ind.fibonacci.levels).forEach(([level, price]) => {
+        if (taSeries.price?.createPriceLine) {
+          taSeries.price.createPriceLine({
+            price: price, color: fibColors[level] || '#ffd600',
+            lineWidth: 1, lineStyle: 2, axisLabelVisible: true,
+            title: `Fib ${(parseFloat(level) * 100).toFixed(1)}%`,
+          });
+        }
+      });
+    }
+
+    // Ichimoku Cloud
+    if (taActiveInds.has('ichimoku') && ind.ichimoku?.length) {
+      const offset = totalCandles - ind.ichimoku.length;
+      const iData = ind.ichimoku.map((d, i) => ({ time: taData.candles[offset + i]?.time, ...d }))
+        .filter(d => d.time && candles[0] && d.time >= candles[0].time);
+      if (iData.length) {
+        taSeries.ichConv = taChart.addLineSeries({ color: '#2962FF', lineWidth: 1 });
+        taSeries.ichBase = taChart.addLineSeries({ color: '#B71C1C', lineWidth: 1 });
+        taSeries.ichConv.setData(iData.filter(d => d.conversion != null).map(d => ({ time: d.time, value: d.conversion })));
+        taSeries.ichBase.setData(iData.filter(d => d.base != null).map(d => ({ time: d.time, value: d.base })));
+        if (iData.some(d => d.spanA != null)) {
+          taSeries.ichSpanA = taChart.addLineSeries({ color: 'rgba(76,175,80,0.5)', lineWidth: 1 });
+          taSeries.ichSpanA.setData(iData.filter(d => d.spanA != null).map(d => ({ time: d.time, value: d.spanA })));
+        }
+        if (iData.some(d => d.spanB != null)) {
+          taSeries.ichSpanB = taChart.addLineSeries({ color: 'rgba(244,67,54,0.5)', lineWidth: 1 });
+          taSeries.ichSpanB.setData(iData.filter(d => d.spanB != null).map(d => ({ time: d.time, value: d.spanB })));
+        }
+      }
+    }
+
+    taChart.timeScale().fitContent();
+
+    // ── Sub-panel indicator charts ──
+    renderSubPanel('rsi', 'taRsiPanel', ind.rsi, '#ffab00', 'RSI (14)', 0, 100, [
+      { value: 70, color: 'rgba(255,23,68,0.4)', lineStyle: 2 },
+      { value: 30, color: 'rgba(0,200,83,0.4)', lineStyle: 2 },
+    ]);
+
+    renderMACDPanel(ind.macd);
+    renderStochPanel(ind.stochastic);
+    renderSubPanel('adx', 'taAdxPanel', ind.adx?.map(d => d.adx), '#00e5ff', 'ADX (14)', 0, 80, [
+      { value: 25, color: 'rgba(255,255,255,0.2)', lineStyle: 2 },
+    ]);
+    renderSubPanel('cci', 'taCciPanel', ind.cci, '#76ff03', 'CCI (20)', -200, 200, [
+      { value: 100, color: 'rgba(255,23,68,0.3)', lineStyle: 2 },
+      { value: -100, color: 'rgba(0,200,83,0.3)', lineStyle: 2 },
+    ]);
+    renderSubPanel('williamsR', 'taWrPanel', ind.williamsR, '#ff4081', 'Williams %R', -100, 0, [
+      { value: -20, color: 'rgba(255,23,68,0.3)', lineStyle: 2 },
+      { value: -80, color: 'rgba(0,200,83,0.3)', lineStyle: 2 },
+    ]);
+    renderSubPanel('obv', 'taObvPanel', ind.obv, '#ff6d00', 'OBV', null, null, []);
+
+    // Sync all chart crosshairs
+    syncCrosshairs();
+  }
+
+  function renderSubPanel(key, containerId, values, color, title, minVal, maxVal, refLines) {
+    const container = $('#' + containerId);
+    if (!container) return;
+    if (!taActiveInds.has(key) || !values?.length) {
+      container.style.display = 'none';
+      if (taSubCharts[key]) { taSubCharts[key].remove(); taSubCharts[key] = null; }
+      return;
+    }
+    container.style.display = 'block';
+
+    const totalCandles = taData.candles.length;
+    const offset = totalCandles - values.length;
+    const candles = getFilteredCandles();
+    const data = values.map((v, i) => ({ time: taData.candles[offset + i]?.time, value: typeof v === 'number' ? v : 0 }))
+      .filter(d => d.time && candles[0] && d.time >= candles[0].time);
+
+    if (taSubCharts[key]) { taSubCharts[key].remove(); taSubCharts[key] = null; }
+
+    const chart = LightweightCharts.createChart(container, {
+      width: container.clientWidth, height: 120,
+      layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#6b7a8d', fontSize: 10, fontFamily: 'Inter' },
+      grid: { vertLines: { color: 'rgba(255,255,255,0.02)' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
+      rightPriceScale: { borderColor: 'rgba(255,255,255,0.06)', scaleMargins: { top: 0.1, bottom: 0.1 } },
+      timeScale: { visible: false },
+      crosshair: { mode: 0 },
+    });
+
+    new ResizeObserver(() => { if (chart) chart.applyOptions({ width: container.clientWidth }); }).observe(container);
+
+    const series = chart.addLineSeries({ color, lineWidth: 1.5, title });
+    series.setData(data);
+
+    refLines.forEach(rl => {
+      series.createPriceLine({ price: rl.value, color: rl.color, lineWidth: 1, lineStyle: rl.lineStyle, axisLabelVisible: false });
+    });
+
+    chart.timeScale().fitContent();
+    taSubCharts[key] = chart;
+  }
+
+  function renderMACDPanel(macdData) {
+    const container = $('#taMacdPanel');
+    if (!container) return;
+    if (!taActiveInds.has('macd') || !macdData?.length) {
+      container.style.display = 'none';
+      if (taSubCharts.macd) { taSubCharts.macd.remove(); taSubCharts.macd = null; }
+      return;
+    }
+    container.style.display = 'block';
+
+    const totalCandles = taData.candles.length;
+    const offset = totalCandles - macdData.length;
+    const candles = getFilteredCandles();
+    const data = macdData.map((d, i) => ({ time: taData.candles[offset + i]?.time, ...d }))
+      .filter(d => d.time && candles[0] && d.time >= candles[0].time);
+
+    if (taSubCharts.macd) { taSubCharts.macd.remove(); taSubCharts.macd = null; }
+
+    const chart = LightweightCharts.createChart(container, {
+      width: container.clientWidth, height: 120,
+      layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#6b7a8d', fontSize: 10, fontFamily: 'Inter' },
+      grid: { vertLines: { color: 'rgba(255,255,255,0.02)' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
+      rightPriceScale: { borderColor: 'rgba(255,255,255,0.06)' },
+      timeScale: { visible: false },
+      crosshair: { mode: 0 },
+    });
+
+    new ResizeObserver(() => { if (chart) chart.applyOptions({ width: container.clientWidth }); }).observe(container);
+
+    const macdLine = chart.addLineSeries({ color: '#2979ff', lineWidth: 1.5, title: 'MACD' });
+    const signalLine = chart.addLineSeries({ color: '#ff6d00', lineWidth: 1.5, title: 'Signal' });
+    const histogram = chart.addHistogramSeries({ title: 'Histogram' });
+
+    macdLine.setData(data.filter(d => d.MACD != null).map(d => ({ time: d.time, value: d.MACD })));
+    signalLine.setData(data.filter(d => d.signal != null).map(d => ({ time: d.time, value: d.signal })));
+    histogram.setData(data.filter(d => d.histogram != null).map(d => ({
+      time: d.time, value: d.histogram,
+      color: d.histogram >= 0 ? 'rgba(0,200,83,0.5)' : 'rgba(255,23,68,0.5)',
+    })));
+
+    chart.timeScale().fitContent();
+    taSubCharts.macd = chart;
+  }
+
+  function renderStochPanel(stochData) {
+    const container = $('#taStochPanel');
+    if (!container) return;
+    if (!taActiveInds.has('stochastic') || !stochData?.length) {
+      container.style.display = 'none';
+      if (taSubCharts.stochastic) { taSubCharts.stochastic.remove(); taSubCharts.stochastic = null; }
+      return;
+    }
+    container.style.display = 'block';
+
+    const totalCandles = taData.candles.length;
+    const offset = totalCandles - stochData.length;
+    const candles = getFilteredCandles();
+    const data = stochData.map((d, i) => ({ time: taData.candles[offset + i]?.time, ...d }))
+      .filter(d => d.time && candles[0] && d.time >= candles[0].time);
+
+    if (taSubCharts.stochastic) { taSubCharts.stochastic.remove(); taSubCharts.stochastic = null; }
+
+    const chart = LightweightCharts.createChart(container, {
+      width: container.clientWidth, height: 120,
+      layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#6b7a8d', fontSize: 10, fontFamily: 'Inter' },
+      grid: { vertLines: { color: 'rgba(255,255,255,0.02)' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
+      rightPriceScale: { borderColor: 'rgba(255,255,255,0.06)' },
+      timeScale: { visible: false },
+      crosshair: { mode: 0 },
+    });
+
+    new ResizeObserver(() => { if (chart) chart.applyOptions({ width: container.clientWidth }); }).observe(container);
+
+    const kLine = chart.addLineSeries({ color: '#e040fb', lineWidth: 1.5, title: '%K' });
+    const dLine = chart.addLineSeries({ color: '#00bcd4', lineWidth: 1.5, title: '%D' });
+
+    kLine.setData(data.filter(d => d.k != null).map(d => ({ time: d.time, value: d.k })));
+    dLine.setData(data.filter(d => d.d != null).map(d => ({ time: d.time, value: d.d })));
+
+    // Overbought/oversold lines
+    kLine.createPriceLine({ price: 80, color: 'rgba(255,23,68,0.3)', lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
+    kLine.createPriceLine({ price: 20, color: 'rgba(0,200,83,0.3)', lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
+
+    chart.timeScale().fitContent();
+    taSubCharts.stochastic = chart;
+  }
+
+  function syncCrosshairs() {
+    // Sync time scales across all charts so scrolling/zooming stays in sync
+    if (!taChart) return;
+    const allCharts = [taChart, ...Object.values(taSubCharts).filter(Boolean)];
+    let isSyncing = false;
+    allCharts.forEach(chart => {
+      chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+        if (isSyncing || !range) return;
+        isSyncing = true;
+        allCharts.forEach(other => {
+          if (other !== chart) {
+            try { other.timeScale().setVisibleLogicalRange(range); } catch (_) {}
+          }
+        });
+        isSyncing = false;
+      });
+    });
+  }
+
+  function destroyTACharts() {
+    if (taChart) { taChart.remove(); taChart = null; }
+    Object.keys(taSubCharts).forEach(k => {
+      if (taSubCharts[k]) { taSubCharts[k].remove(); taSubCharts[k] = null; }
+    });
+    taSeries = {};
+  }
+
+  function renderTASignals() {
+    if (!taData?.signals) return;
+    const s = taData.signals;
+
+    // Overall signal
+    const overallEl = $('#taOverallSignal');
+    const colors = { 'STRONG BUY': '#00c853', 'BUY': '#69f0ae', 'NEUTRAL': '#78909c', 'SELL': '#ff8a80', 'STRONG SELL': '#ff1744' };
+    overallEl.textContent = s.overall;
+    overallEl.style.color = colors[s.overall] || '#78909c';
+
+    $('#taSignalCounts').innerHTML = `
+      <span style="color:#00c853;font-weight:700;">${s.buys} Buy</span> &middot;
+      <span style="color:#78909c;font-weight:700;">${s.neutrals} Neutral</span> &middot;
+      <span style="color:#ff1744;font-weight:700;">${s.sells} Sell</span>
+    `;
+
+    // Signal list
+    const list = $('#taSignalList');
+    list.innerHTML = s.signals.map(sig => `
+      <div class="ta-signal-row">
+        <span>${sig.name}</span>
+        <span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;">${sig.value}</span>
+        <span class="ta-signal-badge ${sig.signal}">${sig.signal}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderTAFundamentals() {
+    const f = taData?.fundamentals;
+    const el = $('#taFundamentals');
+    if (!el) return;
+    if (!f) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;grid-column:1/-1;text-align:center;padding:20px;">Fundamental data not available for this stock</div>'; return; }
+
+    const items = [
+      { label: 'P/E Ratio', value: f.pe ? f.pe.toFixed(1) : '--' },
+      { label: 'Forward P/E', value: f.forwardPE ? f.forwardPE.toFixed(1) : '--' },
+      { label: 'P/B Ratio', value: f.pb ? f.pb.toFixed(2) : '--' },
+      { label: 'EPS', value: f.eps ? '$' + f.eps.toFixed(2) : '--' },
+      { label: 'Div Yield', value: f.dividendYield ? (f.dividendYield * 100).toFixed(2) + '%' : '--' },
+      { label: 'Market Cap', value: f.marketCap ? fmtLargeNum(f.marketCap) : '--' },
+      { label: 'Revenue', value: f.revenue ? fmtLargeNum(f.revenue) : '--' },
+      { label: 'Profit Margin', value: f.profitMargin ? (f.profitMargin * 100).toFixed(1) + '%' : '--' },
+      { label: 'ROE', value: f.roe ? (f.roe * 100).toFixed(1) + '%' : '--' },
+      { label: 'Debt/Equity', value: f.debtToEquity ? f.debtToEquity.toFixed(1) : '--' },
+      { label: 'Current Ratio', value: f.currentRatio ? f.currentRatio.toFixed(2) : '--' },
+      { label: 'Beta', value: f.beta ? f.beta.toFixed(2) : '--' },
+      { label: 'Target Price', value: f.targetPrice ? '$' + f.targetPrice.toFixed(2) : '--' },
+      { label: 'Recommendation', value: f.recommendation || '--' },
+      { label: 'Rev Growth', value: f.revenueGrowth ? (f.revenueGrowth * 100).toFixed(1) + '%' : '--' },
+      { label: 'Earn Growth', value: f.earningsGrowth ? (f.earningsGrowth * 100).toFixed(1) + '%' : '--' },
+    ];
+
+    el.innerHTML = items.map(item => {
+      let valueColor = '';
+      if (item.label === 'Recommendation') {
+        const rec = (item.value || '').toUpperCase();
+        if (rec.includes('BUY') || rec.includes('STRONG')) valueColor = 'color:#00c853;';
+        else if (rec.includes('SELL') || rec.includes('UNDER')) valueColor = 'color:#ff1744;';
+      }
+      return `<div class="ta-fund-item"><div class="label">${item.label}</div><div class="value" style="${valueColor}">${item.value}</div></div>`;
+    }).join('');
+  }
+
+  function fmtLargeNum(n) {
+    if (!n) return '--';
+    if (n >= 1e12) return '$' + (n / 1e12).toFixed(1) + 'T';
+    if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+    return '$' + n;
+  }
+
+  function renderTAPatterns() {
+    const patternsEl = $('#taPatterns');
+    const fibEl = $('#taFibLevels');
+    if (!patternsEl || !fibEl) return;
+
+    // Patterns
+    const patterns = taData?.indicators?.patterns || [];
+    const bullishPatterns = ['bullishEngulfing', 'hammer', 'morningstar', 'threeWhiteSoldiers', 'bullishHarami', 'piercingLine', 'tweezerbottom'];
+    const bearishPatterns = ['bearishEngulfing', 'hangingMan', 'shootingStar', 'eveningstar', 'threeBlackCrows', 'bearishHarami', 'darkCloudCover', 'tweezertop'];
+
+    if (patterns.length) {
+      patternsEl.innerHTML = '<div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--muted);">Detected Candlestick Patterns:</div>' +
+        patterns.map(p => {
+          const isBull = bullishPatterns.includes(p);
+          const isBear = bearishPatterns.includes(p);
+          const cls = isBull ? 'bullish' : isBear ? 'bearish' : 'neutral';
+          const icon = isBull ? '<i class="fas fa-arrow-up" style="margin-right:4px;"></i>' : isBear ? '<i class="fas fa-arrow-down" style="margin-right:4px;"></i>' : '';
+          const label = p.replace(/([A-Z])/g, ' $1').trim();
+          return `<span class="ta-pattern-tag ${cls}">${icon}${label}</span>`;
+        }).join('');
+    } else {
+      patternsEl.innerHTML = '<div style="color:var(--muted);font-size:12px;">No candlestick patterns detected in recent candles</div>';
+    }
+
+    // Fibonacci levels
+    const fib = taData?.indicators?.fibonacci;
+    if (fib?.levels) {
+      fibEl.innerHTML = '<div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--muted);margin-top:16px;">Fibonacci Retracement (90-day):</div>' +
+        Object.entries(fib.levels).map(([level, price]) => {
+          const pct = (parseFloat(level) * 100).toFixed(1);
+          const currentPrice = taData.price || 0;
+          const isNear = Math.abs(price - currentPrice) / currentPrice < 0.02;
+          return `<div class="ta-fib-row" style="${isNear ? 'font-weight:700;color:var(--green);' : ''}">
+            <span>${pct}%</span>
+            <span style="font-family:'JetBrains Mono',monospace;">$${price.toFixed(2)}</span>
+            ${isNear ? '<span style="font-size:10px;background:var(--green);color:#000;padding:1px 6px;border-radius:3px;">NEAR</span>' : ''}
+          </div>`;
+        }).join('');
+    } else {
+      fibEl.innerHTML = '';
+    }
+  }
+
+  // Allow opening chart from stock detail modal or stock table
+  window.jseApp = window.jseApp || {};
+  window.jseApp.openTechnicals = (symbol) => {
+    taSymbol = symbol;
+    navigateTo('technicals');
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── End Technical Analysis ────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // Load theme on startup
+  loadSavedTheme();
+
   boot();
 
 })();
+
+// ── Global: show/hide password toggle (used by login & signup forms) ────────
+function togglePw(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const icon = btn.querySelector('i');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fas fa-eye-slash';
+    btn.title = 'Hide password';
+  } else {
+    input.type = 'password';
+    icon.className = 'fas fa-eye';
+    btn.title = 'Show password';
+  }
+}

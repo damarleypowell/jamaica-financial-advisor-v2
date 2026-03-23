@@ -196,7 +196,7 @@
     }
 
     function planBadge(plan) {
-      const map = { FREE: 'muted', BASIC: 'blue', PRO: 'gold', ENTERPRISE: 'purple' };
+      const map = { BASIC: 'blue', PRO: 'gold', ENTERPRISE: 'purple' };
       return `<span class="badge ${map[plan] || 'muted'}">${plan}</span>`;
     }
 

@@ -14,7 +14,9 @@ function signJWT(payload, expiresIn = "24h") {
   const header = Buffer.from(
     JSON.stringify({ alg: "HS256", typ: "JWT" })
   ).toString("base64url");
-  const expMs = expiresIn === "24h" ? 24 * 3600000 : 3600000;
+  const expMs = expiresIn === "24h" ? 24 * 3600000
+    : expiresIn === "5m" ? 5 * 60000
+    : 3600000;
   const jti = crypto.randomUUID();
   const body = Buffer.from(
     JSON.stringify({

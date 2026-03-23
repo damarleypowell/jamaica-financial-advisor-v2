@@ -28,6 +28,13 @@ const config = {
   priceRefreshInterval: 30 * 1000, // 30 seconds
   enrichInterval: 10 * 60 * 1000, // 10 minutes
   newsRefreshInterval: 10 * 60 * 1000, // 10 minutes
+
+  // ── SMTP / Email ──────────────────────────────────────────────────────────
+  smtpHost: process.env.SMTP_HOST || process.env.EMAIL_HOST || null,
+  smtpPort: parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT, 10) || 587,
+  smtpUser: process.env.SMTP_USER || process.env.EMAIL_USER || null,
+  smtpPass: process.env.SMTP_PASS || process.env.EMAIL_PASS || null,
+  appUrl: process.env.APP_URL || "http://localhost:3000",
 };
 
 module.exports = config;

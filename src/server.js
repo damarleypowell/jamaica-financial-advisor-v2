@@ -38,6 +38,8 @@ const subscriptionRoutes = require("./routes/subscription.routes");
 const adminRoutes = require("./routes/admin.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const kycRoutes = require("./routes/kyc.routes");
+const watchlistRoutes = require("./routes/watchlist.routes");
+const docsRoutes = require("./routes/docs.routes");
 
 // ── Services ─────────────────────────────────────────────────────────────────
 const marketService = require("./services/market.service");
@@ -87,8 +89,10 @@ app.use(subscriptionRoutes);
 app.use(adminRoutes);
 app.use(paymentRoutes);
 app.use(kycRoutes);
+app.use(watchlistRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/us", usStocksRoutes);
+app.use(docsRoutes);
 
 // Health check
 app.get("/health", (_req, res) =>
@@ -169,6 +173,15 @@ async function start() {
     console.log(`  POST /api/compare             — stock comparison`);
     console.log(`  GET  /api/forex               — live forex rates`);
     console.log(`  GET  /api/global-markets      — global indices & commodities`);
+    console.log(`  GET  /api/currency-impact     — USD/JMD impact analysis`);
+    console.log(`  GET  /api/dividends           — dividend calendar`);
+    console.log(`  ── Watchlists ──`);
+    console.log(`  GET  /api/watchlists          — list watchlists`);
+    console.log(`  POST /api/watchlists          — create watchlist`);
+    console.log(`  PUT  /api/watchlists/:id      — update watchlist`);
+    console.log(`  DEL  /api/watchlists/:id      — delete watchlist`);
+    console.log(`  POST /api/watchlists/:id/sym  — add symbol`);
+    console.log(`  DEL  /api/watchlists/:id/sym  — remove symbol`);
     console.log(`  ── AI Services ──`);
     console.log(`  POST /analyze                 — AI stock analysis`);
     console.log(`  POST /api/chat                — AI chat assistant`);

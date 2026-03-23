@@ -105,10 +105,15 @@ model User {
   kycStatus       KycStatus @default(NONE)
   riskProfile     String?
   settings        Json      @default("{}")
-  twoFactorSecret String?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  emailVerified    Boolean   @default(false)
+  verifyToken      String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   wallets            Wallet[]
   portfolioPositions PortfolioPosition[]
