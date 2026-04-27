@@ -12,7 +12,7 @@ export async function getPlans(): Promise<Record<string, unknown>[]> {
 }
 
 export async function subscribe(plan: string): Promise<{ url?: string; subscription?: Subscription }> {
-  const { data } = await api.post('/api/subscription', { plan });
+  const { data } = await api.post('/api/subscription/upgrade', { plan });
   return data;
 }
 

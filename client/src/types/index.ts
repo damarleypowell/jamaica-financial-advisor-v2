@@ -352,8 +352,50 @@ export interface TierConfig {
   name: string;
   plan: SubscriptionPlan;
   price: string;
+  priceUSD: string;
   priceAmount: number;
+  priceAmountUSD: number;
   currency: string;
   features: string[];
   highlighted?: boolean;
+  contactSales?: boolean;
+}
+
+// ── Finnhub OHLCV Bar ──────────────────────────────────────────────────────
+
+export interface HistoryBar {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export interface StockHistoryResponse {
+  symbol: string;
+  candles: HistoryBar[];
+  noData?: boolean;
+}
+
+export interface CompanyProfile {
+  symbol: string;
+  name: string;
+  logo: string | null;
+  industry: string | null;
+  exchange: string | null;
+  marketCap: number | null;
+  ipo: string | null;
+  weburl: string | null;
+  fundamentals: {
+    pe: number | null;
+    pb: number | null;
+    eps: number | null;
+    dividendYield: number | null;
+    revenue: number | null;
+    roe: number | null;
+    beta: number | null;
+    week52High: number | null;
+    week52Low: number | null;
+  };
 }

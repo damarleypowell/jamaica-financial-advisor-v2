@@ -99,7 +99,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuthStore();
   const isConnected = useMarketStore((s) => s.isConnected);
   const userTier: SubscriptionTier = user?.subscriptionTier ?? 'FREE';
-  const isAdmin = false; // TODO: derive from user role when admin field added
+  const isAdmin = userTier === 'ENTERPRISE';
   const navigate = useNavigate();
   const [clock, setClock] = useState(new Date());
 
@@ -147,8 +147,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Brand */}
         <div className="px-5 pt-5 pb-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-green/20 flex items-center justify-center">
-              <i className="fa-solid fa-chart-line text-green text-sm" />
+            <div className="w-8 h-8 flex-shrink-0">
+              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                <rect width="32" height="32" rx="7" fill="rgba(0,200,83,0.12)"/>
+                <rect width="32" height="32" rx="7" stroke="#00c853" strokeWidth="0.75" strokeOpacity="0.4"/>
+                <path d="M7 22 L11 17 L15 19.5 L20 14 L25 10" stroke="#00c853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="25" cy="10" r="2.5" fill="#00c853"/>
+              </svg>
             </div>
             <div>
               <h1 className="text-base font-bold tracking-wide text-green leading-none">
@@ -250,8 +255,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Brand */}
         <div className="px-5 pt-5 pb-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-green/20 flex items-center justify-center">
-              <i className="fa-solid fa-chart-line text-green text-sm" />
+            <div className="w-8 h-8 flex-shrink-0">
+              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                <rect width="32" height="32" rx="7" fill="rgba(0,200,83,0.12)"/>
+                <rect width="32" height="32" rx="7" stroke="#00c853" strokeWidth="0.75" strokeOpacity="0.4"/>
+                <path d="M7 22 L11 17 L15 19.5 L20 14 L25 10" stroke="#00c853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="25" cy="10" r="2.5" fill="#00c853"/>
+              </svg>
             </div>
             <div>
               <h1 className="text-base font-bold tracking-wide text-green leading-none">

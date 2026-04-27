@@ -69,15 +69,18 @@ export default function Dashboard() {
           lineColor: (stock.change ?? 0) >= 0 ? '#00c853' : '#ff1744',
           lineWidth: 2,
         });
-        // Generate intraday-style data from the stock's OHLC
+        // Generate intraday-style data from the stock's price
+        // Uses seeded PRNG for deterministic rendering (no flicker)
         const now = Math.floor(Date.now() / 1000);
         const base = stock.previousClose || stock.price * 0.99;
         const points = 78; // ~6.5 hours of trading
         const data = [];
+        let seed = stock.symbol.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+        const seededRandom = () => { seed = (seed * 16807 + 0) % 2147483647; return (seed & 0x7fffffff) / 0x7fffffff; };
         for (let i = 0; i < points; i++) {
           const t = now - (points - i) * 300;
           const progress = i / points;
-          const price = base + (stock.price - base) * progress + (Math.random() - 0.5) * (stock.price * 0.005);
+          const price = base + (stock.price - base) * progress + (seededRandom() - 0.5) * (stock.price * 0.005);
           data.push({ time: t as unknown as string, value: price });
         }
         series.setData(data);

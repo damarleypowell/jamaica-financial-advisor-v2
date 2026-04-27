@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const { fetchAllNews } = require("../../news-scraper");
 const marketService = require("../services/market.service");
+const finnhub = require("../services/finnhub.service");
 
 const router = Router();
 
@@ -85,6 +86,90 @@ router.get("/api/history/:symbol", (req, res) => {
   const hist = marketService.priceHistory[sym];
   if (!hist) return res.status(404).json({ error: "Not found" });
   res.json({ symbol: sym, history: hist });
+});
+
+// ── OHLCV candles for US stocks (Alpaca primary, Finnhub fallback) ──────────
+
+router.get("/api/stocks/:symbol/history", async (req, res) => {
+  const sym = req.params.symbol.toUpperCase();
+  const { resolution = "D", from, to } = req.query;
+
+  // Map resolution to Alpaca timeframe
+  const resMap = { "1": "1Min", "5": "5Min", "15": "15Min", "30": "30Min", "60": "1Hour", "D": "1Day", "W": "1Week", "M": "1Month" };
+  const alpacaTimeframe = resMap[resolution] || "1Day";
+  const limit = 365;
+
+  // Try Alpaca first (it has US stock candles on free tier)
+  try {
+    const alpaca = require("../services/alpaca.service");
+    if (alpaca.isConfigured()) {
+      const bars = await alpaca.getUSStockBars(sym, alpacaTimeframe, limit);
+      if (bars && bars.length > 0) {
+        const candles = bars.map(b => ({
+          time: Math.floor(new Date(b.timestamp).getTime() / 1000),
+          open: b.open,
+          high: b.high,
+          low: b.low,
+          close: b.close,
+          volume: b.volume,
+        }));
+        return res.json({ symbol: sym, candles, source: "alpaca" });
+      }
+    }
+  } catch (err) {
+    console.warn(`[alpaca candles] ${sym}:`, err.message);
+  }
+
+  // Fallback: Finnhub (requires paid plan for US candles, but works for some data)
+  if (finnhub.isConfigured()) {
+    const now = Math.floor(Date.now() / 1000);
+    const fromTs = from ? parseInt(from) : now - 365 * 86400;
+    const toTs = to ? parseInt(to) : now;
+    try {
+      const data = await finnhub.getCandles(sym, resolution, fromTs, toTs);
+      return res.json(data);
+    } catch (err) {
+      console.warn(`[finnhub candles] ${sym}:`, err.message);
+    }
+  }
+
+  res.status(502).json({ error: "No candle data source available for " + sym });
+});
+
+// ── Finnhub company profile + fundamentals ──────────────────────────────────
+
+router.get("/api/stocks/:symbol/profile", async (req, res) => {
+  if (!finnhub.isConfigured()) {
+    return res.status(503).json({ error: "Finnhub not configured" });
+  }
+  const sym = req.params.symbol.toUpperCase();
+  try {
+    const [profile, metrics] = await Promise.all([
+      finnhub.getCompanyProfile(sym),
+      finnhub.getFinancials(sym),
+    ]);
+    res.json({ profile, metrics: metrics.metric || {} });
+  } catch (err) {
+    console.error(`[finnhub profile] ${sym}:`, err.message);
+    res.status(502).json({ error: "Failed to fetch company profile" });
+  }
+});
+
+// ── Finnhub symbol search ───────────────────────────────────────────────────
+
+router.get("/api/search", async (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.status(400).json({ error: "Query required (?q=...)" });
+
+  if (!finnhub.isConfigured()) {
+    return res.status(503).json({ error: "Finnhub not configured" });
+  }
+  try {
+    const data = await finnhub.searchSymbol(q);
+    res.json(data.result || []);
+  } catch (err) {
+    res.status(502).json({ error: "Search failed" });
+  }
 });
 
 // ── SSE — push real prices to connected clients ─────────────────────────────
@@ -472,8 +557,52 @@ router.get("/api/forex", async (_req, res) => {
   const now = Date.now();
   if (forexCache && now - forexCacheTime < FOREX_TTL) return res.json(forexCache);
 
+  // Try Finnhub first (primary), then fall back to Yahoo
+  if (finnhub.isConfigured()) {
+    try {
+      const fhData = await finnhub.getForexRates();
+      if (fhData && fhData.quote) {
+        const fhQuote = fhData.quote;
+        const rates = FOREX_PAIRS.map(p => {
+          // Finnhub returns rates keyed by currency code
+          const toCurrency = p.to;
+          const fromCurrency = p.from;
+          // Build rate from USD base
+          let rate = null;
+          if (fromCurrency === "USD" && fhQuote[toCurrency]) {
+            rate = fhQuote[toCurrency];
+          } else if (toCurrency === "USD" && fhQuote[fromCurrency]) {
+            rate = 1 / fhQuote[fromCurrency];
+          } else if (fromCurrency === "JMD" && fhQuote["JMD"]) {
+            rate = fhQuote[toCurrency] ? (1 / fhQuote["JMD"]) * (fhQuote[toCurrency] || 1) : null;
+          }
+          if (!rate) return null;
+          return {
+            pair: `${p.from}/${p.to}`,
+            name: p.name,
+            rate: +rate.toFixed(6),
+            change: null,
+            dayHigh: null,
+            dayLow: null,
+            prevClose: null,
+            source: "finnhub",
+          };
+        }).filter(Boolean);
+
+        if (rates.length > 0) {
+          forexCache = { rates, updatedAt: new Date().toISOString(), source: "finnhub" };
+          forexCacheTime = now;
+          return res.json(forexCache);
+        }
+      }
+    } catch (e) {
+      console.warn("Finnhub forex failed, falling back to Yahoo:", e.message);
+    }
+  }
+
+  // Fallback: Yahoo Finance
   if (!marketService.yahooFinance) {
-    return res.status(503).json({ error: "Yahoo Finance not available" });
+    return res.status(503).json({ error: "No forex data source available" });
   }
 
   try {
@@ -490,10 +619,11 @@ router.get("/api/forex", async (_req, res) => {
         dayHigh: q.regularMarketDayHigh || null,
         dayLow: q.regularMarketDayLow || null,
         prevClose: q.regularMarketPreviousClose || null,
+        source: "yahoo",
       };
     }).filter(Boolean);
 
-    forexCache = { rates, updatedAt: new Date().toISOString() };
+    forexCache = { rates, updatedAt: new Date().toISOString(), source: "yahoo" };
     forexCacheTime = now;
     res.json(forexCache);
   } catch (e) {
@@ -591,7 +721,30 @@ function scoreSentiment(text) {
 router.get("/api/news", async (req, res) => {
   const { sector, symbol } = req.query;
   try {
-    let news = await fetchAllNews();
+    // Fetch from both sources in parallel
+    const [scraperNews, finnhubNews] = await Promise.allSettled([
+      fetchAllNews(),
+      finnhub.isConfigured() ? finnhub.getNews("general") : Promise.resolve([]),
+    ]);
+
+    let news = scraperNews.status === "fulfilled" ? scraperNews.value : [];
+
+    // Merge Finnhub news (different format: { headline, url, source, datetime, summary, image })
+    if (finnhubNews.status === "fulfilled" && Array.isArray(finnhubNews.value)) {
+      const fhArticles = finnhubNews.value.slice(0, 20).map((a) => ({
+        title: a.headline,
+        description: a.summary || "",
+        url: a.url,
+        source: a.source || "Finnhub",
+        publishedAt: a.datetime ? new Date(a.datetime * 1000).toISOString() : new Date().toISOString(),
+        imageUrl: a.image || null,
+        sector: null,
+        symbol: null,
+        dataSource: "finnhub",
+      }));
+      news = [...news, ...fhArticles];
+    }
+
     if (sector) news = news.filter((n) => n.sector === sector);
     if (symbol) news = news.filter((n) => n.symbol === symbol);
 
@@ -602,6 +755,9 @@ router.get("/api/news", async (req, res) => {
       );
       return { ...article, sentiment, sentimentScore: score };
     });
+
+    // Sort by date descending
+    enriched.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0));
 
     res.json(enriched);
   } catch (e) {

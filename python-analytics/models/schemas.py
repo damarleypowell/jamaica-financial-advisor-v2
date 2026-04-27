@@ -53,6 +53,7 @@ class OptimizeResponse(BaseModel):
     minVariancePortfolio: dict[str, float]
     maxSharpePortfolio: dict[str, float]
     efficientFrontier: list[EfficientFrontierPoint]
+    dataQuality: str = "synthetic"  # "real" | "synthetic"
 
 
 # ---------------------------------------------------------------------------
@@ -188,6 +189,8 @@ class PredictResponse(BaseModel):
     modelAgreement: float
     modelBreakdown: dict[str, list[float]]
     lastPrice: float
+    dataSource: str = "provided"  # "provided" | "finnhub"
+    modelConfidence: float = 0.0  # 0-1 based on validation performance
 
 
 # ---------------------------------------------------------------------------

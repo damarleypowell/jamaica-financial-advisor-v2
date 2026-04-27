@@ -7,10 +7,26 @@ that each router stays thin and focused on request/response logic.
 
 from __future__ import annotations
 
+import os
+import time
 import numpy as np
 import pandas as pd
 import httpx
 from typing import Optional
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Finnhub configuration
+# ---------------------------------------------------------------------------
+
+FINNHUB_API_KEY = os.getenv("FINNHUB_API", "")
+FINNHUB_BASE = "https://finnhub.io/api/v1"
+DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR.mkdir(exist_ok=True)
+
+# Simple in-memory cache for Finnhub candle data
+_candle_cache: dict[str, tuple[float, dict]] = {}  # key -> (timestamp, data)
+_CANDLE_CACHE_TTL = 300  # 5 minutes
 
 
 # ---------------------------------------------------------------------------
@@ -139,3 +155,141 @@ def safe_float(value, default: float = 0.0) -> float:
         return v
     except (TypeError, ValueError):
         return default
+
+
+# ---------------------------------------------------------------------------
+# Finnhub data fetching
+# ---------------------------------------------------------------------------
+
+async def fetch_finnhub_candles(
+    symbol: str,
+    resolution: str = "D",
+    from_ts: Optional[int] = None,
+    to_ts: Optional[int] = None,
+    timeout: float = 15.0,
+) -> Optional[dict]:
+    """
+    Fetch OHLCV candle data from Finnhub for a US stock.
+
+    Returns dict with keys: open, high, low, close, volume, timestamps
+    or None if unavailable.
+    """
+    if not FINNHUB_API_KEY:
+        return None
+
+    now = int(time.time())
+    if to_ts is None:
+        to_ts = now
+    if from_ts is None:
+        from_ts = now - 365 * 86400  # 1 year default
+
+    cache_key = f"{symbol}:{resolution}:{from_ts}:{to_ts}"
+    cached = _candle_cache.get(cache_key)
+    if cached and (time.time() - cached[0]) < _CANDLE_CACHE_TTL:
+        return cached[1]
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.get(
+                f"{FINNHUB_BASE}/stock/candle",
+                params={
+                    "symbol": symbol.upper(),
+                    "resolution": resolution,
+                    "from": from_ts,
+                    "to": to_ts,
+                    "token": FINNHUB_API_KEY,
+                },
+            )
+            if resp.status_code != 200:
+                return None
+            data = resp.json()
+            if data.get("s") == "no_data" or not data.get("c"):
+                return None
+
+            result = {
+                "open": data["o"],
+                "high": data["h"],
+                "low": data["l"],
+                "close": data["c"],
+                "volume": data["v"],
+                "timestamps": data["t"],
+            }
+            _candle_cache[cache_key] = (time.time(), result)
+            return result
+    except Exception:
+        return None
+
+
+async def fetch_finnhub_quote(symbol: str, timeout: float = 10.0) -> Optional[dict]:
+    """Fetch real-time quote from Finnhub. Returns {c, d, dp, h, l, o, pc, t}."""
+    if not FINNHUB_API_KEY:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.get(
+                f"{FINNHUB_BASE}/quote",
+                params={"symbol": symbol.upper(), "token": FINNHUB_API_KEY},
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("c", 0) > 0:
+                    return data
+    except Exception:
+        pass
+    return None
+
+
+async def fetch_training_data(
+    symbols: list[str],
+    lookback_days: int = 365,
+) -> dict[str, list[float]]:
+    """
+    Fetch 1 year of daily closing prices for multiple US stocks from Finnhub.
+    Returns {symbol: [close_prices]} for symbols that returned data.
+    Also caches to CSV in python-analytics/data/.
+    """
+    now = int(time.time())
+    from_ts = now - lookback_days * 86400
+    result: dict[str, list[float]] = {}
+
+    for sym in symbols:
+        # Check CSV cache first
+        csv_path = DATA_DIR / f"{sym}_daily.csv"
+        if csv_path.exists():
+            try:
+                df = pd.read_csv(csv_path)
+                # Use cache if less than 1 day old
+                if len(df) > 30:
+                    file_age = time.time() - csv_path.stat().st_mtime
+                    if file_age < 86400:
+                        result[sym] = df["close"].tolist()
+                        continue
+            except Exception:
+                pass
+
+        # Fetch from Finnhub
+        candles = await fetch_finnhub_candles(sym, "D", from_ts, now)
+        if candles and len(candles["close"]) > 30:
+            result[sym] = candles["close"]
+            # Save CSV cache
+            try:
+                df = pd.DataFrame({
+                    "timestamp": candles["timestamps"],
+                    "open": candles["open"],
+                    "high": candles["high"],
+                    "low": candles["low"],
+                    "close": candles["close"],
+                    "volume": candles["volume"],
+                })
+                df.to_csv(csv_path, index=False)
+            except Exception:
+                pass
+
+    return result
+
+
+# Default training symbols (diverse US sectors)
+DEFAULT_TRAINING_SYMBOLS = [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
+    "JPM", "BAC", "JNJ", "PFE", "XOM",
+]

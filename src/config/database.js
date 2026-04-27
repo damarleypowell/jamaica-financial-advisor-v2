@@ -24,13 +24,22 @@ if (process.env.NODE_ENV === 'production') {
  * Connect to the database and log success/failure.
  * Call this once during server startup.
  */
-async function connectDatabase() {
-  try {
-    await prisma.$connect();
-    console.log('[DB] Connected to PostgreSQL');
-  } catch (err) {
-    console.error('[DB] Failed to connect to PostgreSQL:', err.message);
-    process.exit(1);
+async function connectDatabase({ retries = 5, delayMs = 5000 } = {}) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await prisma.$connect();
+      console.log('[DB] Connected to PostgreSQL');
+      return;
+    } catch (err) {
+      console.error(`[DB] Connection attempt ${attempt}/${retries} failed: ${err.message}`);
+      if (attempt < retries) {
+        console.log(`[DB] Retrying in ${delayMs / 1000}s (Neon may be waking up)...`);
+        await new Promise(r => setTimeout(r, delayMs));
+      } else {
+        console.error('[DB] All connection attempts failed. Exiting.');
+        process.exit(1);
+      }
+    }
   }
 }
 

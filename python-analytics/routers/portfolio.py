@@ -17,7 +17,8 @@ from models.schemas import (
     RiskMetricsRequest, RiskMetricsResponse,
 )
 from services.data_service import (
-    calculate_returns, safe_float,
+    calculate_returns, calculate_covariance_matrix, calculate_mean_returns,
+    safe_float, fetch_finnhub_candles,
 )
 
 router = APIRouter(prefix="/api", tags=["portfolio"])
@@ -29,36 +30,58 @@ TRADING_DAYS = 252
 # helpers
 # ======================================================================
 
-def _build_matrices(positions):
+async def _build_matrices(positions, price_histories: dict[str, list[float]] | None = None):
     """
     From a list of PositionItem build:
       - symbols list
       - mean annual returns vector  (mu)
       - annual covariance matrix    (Sigma)
       - current weights vector      (w0)
-    Uses each position's price series (avgCost -> currentPrice as a single
-    return proxy) when full history is unavailable.  For real data the caller
-    should supply external price histories; here we synthesise from inputs.
+
+    If *price_histories* is provided (or fetched from Finnhub), uses real
+    return statistics.  Falls back to synthetic estimation only when real
+    data is unavailable.
     """
     symbols = [p.symbol for p in positions]
     n = len(symbols)
 
-    # Per-position simple annualised return estimate
-    mu = np.array([
-        ((p.currentPrice / p.avgCost) - 1.0) if p.avgCost > 0 else 0.0
-        for p in positions
-    ], dtype=np.float64)
+    # Try to fetch real price histories from Finnhub for each symbol
+    real_prices: dict[str, list[float]] = price_histories or {}
+    data_quality = "real"
 
-    # Build a synthetic daily-return matrix so we can get a covariance
-    # Generate 252 synthetic daily returns whose mean matches mu/252
-    # and whose std is proportional to |mu|+0.05 (a simple heuristic).
-    rng = np.random.default_rng(42)
-    daily_mu = mu / TRADING_DAYS
-    daily_sigma = (np.abs(mu) + 0.05) / np.sqrt(TRADING_DAYS)
-    sim_returns = rng.normal(
-        loc=daily_mu, scale=daily_sigma, size=(TRADING_DAYS, n)
-    )
-    cov = np.cov(sim_returns, rowvar=False) * TRADING_DAYS
+    if not real_prices:
+        for p in positions:
+            candles = await fetch_finnhub_candles(p.symbol, "D")
+            if candles and len(candles["close"]) >= 60:
+                real_prices[p.symbol] = candles["close"]
+
+    # Check if we have real data for all positions
+    have_real = all(s in real_prices and len(real_prices[s]) >= 60 for s in symbols)
+
+    if have_real:
+        # Use real covariance and mean returns
+        cov, cov_symbols = calculate_covariance_matrix(real_prices)
+        mu_arr, mu_symbols = calculate_mean_returns(real_prices)
+        # Reorder to match positions order
+        sym_to_idx = {s: i for i, s in enumerate(cov_symbols)}
+        idx_order = [sym_to_idx[s] for s in symbols]
+        mu = mu_arr[idx_order]
+        cov = cov[np.ix_(idx_order, idx_order)]
+    else:
+        # Fallback: synthetic estimation from avgCost -> currentPrice
+        data_quality = "synthetic"
+        mu = np.array([
+            ((p.currentPrice / p.avgCost) - 1.0) if p.avgCost > 0 else 0.0
+            for p in positions
+        ], dtype=np.float64)
+
+        rng = np.random.default_rng(42)
+        daily_mu = mu / TRADING_DAYS
+        daily_sigma = (np.abs(mu) + 0.05) / np.sqrt(TRADING_DAYS)
+        sim_returns = rng.normal(
+            loc=daily_mu, scale=daily_sigma, size=(TRADING_DAYS, n)
+        )
+        cov = np.cov(sim_returns, rowvar=False) * TRADING_DAYS
 
     # Regularise to avoid singular matrix
     cov += np.eye(n) * 1e-8
@@ -68,7 +91,7 @@ def _build_matrices(positions):
     total = mv.sum()
     w0 = mv / total if total > 0 else np.ones(n) / n
 
-    return symbols, mu, cov, w0, total
+    return symbols, mu, cov, w0, total, data_quality
 
 
 def _portfolio_stats(w, mu, cov, rf):
@@ -96,7 +119,7 @@ async def optimize_portfolio(req: OptimizeRequest):
     if len(req.positions) < 2:
         raise HTTPException(400, "At least 2 positions are required for optimisation.")
 
-    symbols, mu, cov, w0, total_value = _build_matrices(req.positions)
+    symbols, mu, cov, w0, total_value, data_quality = await _build_matrices(req.positions)
     n = len(symbols)
     rf = req.riskFreeRate
 
@@ -174,6 +197,7 @@ async def optimize_portfolio(req: OptimizeRequest):
         minVariancePortfolio={s: round(float(w), 6) for s, w in zip(symbols, w_minvar)},
         maxSharpePortfolio={s: round(float(w), 6) for s, w in zip(symbols, w_maxsharpe)},
         efficientFrontier=frontier,
+        dataQuality=data_quality,
     )
 
 
@@ -195,7 +219,7 @@ async def risk_metrics(req: RiskMetricsRequest):
     if not req.positions:
         raise HTTPException(400, "At least 1 position is required.")
 
-    symbols, mu, cov, w0, total_value = _build_matrices(req.positions)
+    symbols, mu, cov, w0, total_value, data_quality = await _build_matrices(req.positions)
     n = len(symbols)
     rf = req.riskFreeRate
     alpha = 1 - req.confidenceLevel  # e.g. 0.05

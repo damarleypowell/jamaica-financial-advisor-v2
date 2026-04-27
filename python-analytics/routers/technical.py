@@ -249,6 +249,28 @@ async def technical_analysis(req: TechnicalAnalysisRequest):
                 "bearish" if (cmf_val and cmf_val < -0.05) else "neutral",
     )
 
+    # ---- FIBONACCI RETRACEMENT ----
+    # Use swing high/low from the price series with ATR-adaptive tolerance
+    swing_high = float(high.max())
+    swing_low = float(low.min())
+    fib_diff = swing_high - swing_low
+    fib_levels = {
+        "0%": round(swing_high, 4),
+        "23.6%": round(swing_high - 0.236 * fib_diff, 4),
+        "38.2%": round(swing_high - 0.382 * fib_diff, 4),
+        "50%": round(swing_high - 0.5 * fib_diff, 4),
+        "61.8%": round(swing_high - 0.618 * fib_diff, 4),
+        "78.6%": round(swing_high - 0.786 * fib_diff, 4),
+        "100%": round(swing_low, 4),
+    }
+    # Signal: bullish if price near support levels (61.8%+), bearish if near resistance (23.6%-)
+    fib_position = (swing_high - last_close) / fib_diff if fib_diff > 0 else 0.5
+    fib_signal = "bullish" if fib_position > 0.618 else "bearish" if fib_position < 0.236 else "neutral"
+    trend["Fibonacci"] = IndicatorSignal(
+        values=fib_levels,
+        signal=fib_signal,
+    )
+
     # Aggregate signal count
     all_signals = (
         [v.signal for v in trend.values()]

@@ -7,6 +7,7 @@
 
 const { Router } = require("express");
 const alpaca = require("../services/alpaca.service");
+const finnhub = require("../services/finnhub.service");
 const rateLimit = require("../middleware/rateLimit");
 
 const router = Router();
@@ -60,15 +61,48 @@ router.get("/quote/:symbol", rateLimit(60000, 60), async (req, res) => {
   }
 });
 
-/** GET /api/us/bars/:symbol — Historical OHLCV bars */
+/** GET /api/us/bars/:symbol — Historical OHLCV bars (Alpaca primary, Finnhub fallback) */
 router.get("/bars/:symbol", rateLimit(60000, 30), async (req, res) => {
+  const sym = req.params.symbol.toUpperCase();
+  const { timeframe = "1Day", limit = "100" } = req.query;
+
+  // Try Alpaca first
   try {
-    const { timeframe = "1Day", limit = "100" } = req.query;
-    const bars = await alpaca.getUSStockBars(req.params.symbol, timeframe, parseInt(limit));
-    res.json({ symbol: req.params.symbol.toUpperCase(), bars });
+    const bars = await alpaca.getUSStockBars(sym, timeframe, parseInt(limit));
+    if (bars && bars.length > 0) {
+      return res.json({ symbol: sym, bars, source: "alpaca" });
+    }
   } catch (err) {
-    res.status(err.statusCode || 500).json({ error: err.message });
+    console.warn(`Alpaca bars failed for ${sym}, trying Finnhub:`, err.message);
   }
+
+  // Fallback to Finnhub candles
+  if (finnhub.isConfigured()) {
+    try {
+      // Map Alpaca timeframes to Finnhub resolutions
+      const resMap = { "1Min": "1", "5Min": "5", "15Min": "15", "30Min": "30", "1Hour": "60", "1Day": "D", "1Week": "W", "1Month": "M" };
+      const resolution = resMap[timeframe] || "D";
+      const now = Math.floor(Date.now() / 1000);
+      const from = now - parseInt(limit) * (resolution === "D" ? 86400 : resolution === "W" ? 604800 : 86400);
+      const data = await finnhub.getCandles(sym, resolution, from, now);
+      if (data.candles && data.candles.length > 0) {
+        const bars = data.candles.map(c => ({
+          timestamp: new Date(c.time * 1000).toISOString(),
+          open: c.open,
+          high: c.high,
+          low: c.low,
+          close: c.close,
+          volume: c.volume,
+          vwap: 0,
+        }));
+        return res.json({ symbol: sym, bars, source: "finnhub" });
+      }
+    } catch (err2) {
+      console.warn(`Finnhub bars also failed for ${sym}:`, err2.message);
+    }
+  }
+
+  res.status(502).json({ error: "No bar data available from any source" });
 });
 
 /** POST /api/us/quotes — Multiple stock quotes */
@@ -99,6 +133,44 @@ router.get("/search", rateLimit(60000, 20), async (req, res) => {
     res.json(results);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+/** GET /api/us/profile/:symbol — Company profile from Finnhub */
+router.get("/profile/:symbol", rateLimit(60000, 30), async (req, res) => {
+  const sym = req.params.symbol.toUpperCase();
+  if (!finnhub.isConfigured()) {
+    return res.status(503).json({ error: "Finnhub not configured" });
+  }
+  try {
+    const [profile, metrics] = await Promise.all([
+      finnhub.getCompanyProfile(sym),
+      finnhub.getFinancials(sym),
+    ]);
+    const m = metrics.metric || {};
+    res.json({
+      symbol: sym,
+      name: profile.name || sym,
+      logo: profile.logo || null,
+      industry: profile.finnhubIndustry || null,
+      exchange: profile.exchange || null,
+      marketCap: profile.marketCapitalization || null,
+      ipo: profile.ipo || null,
+      weburl: profile.weburl || null,
+      fundamentals: {
+        pe: m["peBasicExclExtraTTM"] || null,
+        pb: m["pbAnnual"] || null,
+        eps: m["epsBasicExclExtraItemsTTM"] || null,
+        dividendYield: m["dividendYieldIndicatedAnnual"] || null,
+        revenue: m["revenuePerShareTTM"] || null,
+        roe: m["roeTTM"] || null,
+        beta: m["beta"] || null,
+        week52High: m["52WeekHigh"] || null,
+        week52Low: m["52WeekLow"] || null,
+      },
+    });
+  } catch (err) {
+    res.status(502).json({ error: "Failed to fetch company profile" });
   }
 });
 

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { searchUSStocks, getUSQuote, placeUSOrder, getUSOrders, cancelUSOrder, getUSPositions, closeUSPosition } from '@/api/us-stocks';
+import { searchUSStocks, getUSQuote, getUSBars, placeUSOrder, getUSOrders, cancelUSOrder, getUSPositions, closeUSPosition } from '@/api/us-stocks';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import PaywallModal from '@/components/common/PaywallModal';
@@ -8,7 +8,7 @@ import { fmt, fmtUSD, fmtPercent, fmtInt, fmtLargeNum, fmtDateTime, changeColor,
 import { SkeletonTable } from '@/components/common/LoadingSpinner';
 import type { USQuote, Order, Position } from '@/types';
 import toast from 'react-hot-toast';
-import { useEffect } from 'react';
+import { createChart, type IChartApi } from 'lightweight-charts';
 
 type Tab = 'search' | 'positions' | 'orders';
 
@@ -25,6 +25,10 @@ export default function USStocks() {
   const [orderSide, setOrderSide] = useState<'buy' | 'sell'>('buy');
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
   const [orderLimit, setOrderLimit] = useState('');
+  const [chartTimeframe, setChartTimeframe] = useState<'1Day' | '1Week' | '1Month'>('1Day');
+  const [chartStyle, setChartStyle] = useState<'area' | 'candlestick'>('area');
+  const priceChartRef = useRef<HTMLDivElement>(null);
+  const priceChartInstance = useRef<IChartApi | null>(null);
 
   useEffect(() => { requireTier('PRO'); }, [requireTier]);
 
@@ -52,6 +56,69 @@ export default function USStocks() {
     queryFn: getUSOrders,
     enabled: isAuthenticated,
   });
+
+  // Price chart bars
+  const barsLimit = chartTimeframe === '1Day' ? 30 : chartTimeframe === '1Week' ? 52 : 12;
+  const { data: priceBars } = useQuery({
+    queryKey: ['us-price-bars', selectedSymbol, chartTimeframe, barsLimit],
+    queryFn: () => getUSBars(selectedSymbol, chartTimeframe, barsLimit),
+    enabled: !!selectedSymbol,
+  });
+
+  // Render price chart
+  useEffect(() => {
+    if (!priceChartRef.current || !priceBars) return;
+    if (priceChartInstance.current) { priceChartInstance.current.remove(); priceChartInstance.current = null; }
+
+    const rawBars = Array.isArray(priceBars) ? priceBars : (priceBars as Record<string, unknown>).bars as Array<Record<string, unknown>> || [];
+    if (rawBars.length === 0) return;
+
+    const chart = createChart(priceChartRef.current, {
+      width: priceChartRef.current.clientWidth,
+      height: 250,
+      layout: { background: { color: 'transparent' }, textColor: '#8892a0' },
+      grid: { vertLines: { color: 'rgba(255,255,255,0.03)' }, horzLines: { color: 'rgba(255,255,255,0.03)' } },
+      rightPriceScale: { borderColor: 'rgba(255,255,255,0.06)' },
+      timeScale: { borderColor: 'rgba(255,255,255,0.06)', timeVisible: true },
+    });
+    priceChartInstance.current = chart;
+
+    const bars = rawBars.map((b: Record<string, unknown>) => ({
+      time: (typeof b.timestamp === 'string' ? Math.floor(new Date(b.timestamp as string).getTime() / 1000) : b.t) as unknown as string,
+      open: (b.open as number) || (b.o as number) || 0,
+      high: (b.high as number) || (b.h as number) || 0,
+      low: (b.low as number) || (b.l as number) || 0,
+      close: (b.close as number) || (b.c as number) || 0,
+    }));
+
+    const isUp = bars.length >= 2 ? bars[bars.length - 1].close >= bars[0].close : true;
+
+    if (chartStyle === 'candlestick') {
+      const series = chart.addCandlestickSeries({
+        upColor: '#00c853', downColor: '#ff1744',
+        borderUpColor: '#00c853', borderDownColor: '#ff1744',
+        wickUpColor: '#00c85380', wickDownColor: '#ff174480',
+      });
+      series.setData(bars);
+    } else {
+      const series = chart.addAreaSeries({
+        topColor: isUp ? 'rgba(0,200,83,0.25)' : 'rgba(255,23,68,0.25)',
+        bottomColor: 'transparent',
+        lineColor: isUp ? '#00c853' : '#ff1744',
+        lineWidth: 2,
+      });
+      series.setData(bars.map(b => ({ time: b.time, value: b.close })));
+    }
+    chart.timeScale().fitContent();
+
+    const handleResize = () => {
+      if (priceChartRef.current && priceChartInstance.current) {
+        priceChartInstance.current.applyOptions({ width: priceChartRef.current.clientWidth });
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => { window.removeEventListener('resize', handleResize); chart.remove(); priceChartInstance.current = null; };
+  }, [priceBars, chartStyle, chartTimeframe]);
 
   const placeMut = useMutation({
     mutationFn: placeUSOrder,
@@ -185,6 +252,32 @@ export default function USStocks() {
                 ) : (
                   <div className="py-4 text-center text-text-muted text-xs">No quote data</div>
                 )}
+              </div>
+            )}
+
+            {/* Price Chart */}
+            {selectedSymbol && (
+              <div className="glass-card p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-text-primary">Price Chart</h3>
+                  <div className="flex gap-1">
+                    {(['area', 'candlestick'] as const).map(s => (
+                      <button key={s} onClick={() => setChartStyle(s)}
+                        className={`px-2 py-1 rounded text-[10px] font-semibold capitalize ${chartStyle === s ? 'bg-gf-green/20 text-gf-green' : 'bg-white/5 text-text-muted'}`}>
+                        {s === 'candlestick' ? 'Candle' : 'Area'}
+                      </button>
+                    ))}
+                    <span className="w-px bg-white/10 mx-1" />
+                    {([['1Day', '1D'], ['1Week', '1W'], ['1Month', '1M']] as const).map(([val, lbl]) => (
+                      <button key={val} onClick={() => setChartTimeframe(val as '1Day' | '1Week' | '1Month')}
+                        className={`px-2 py-1 rounded text-[10px] font-semibold ${chartTimeframe === val ? 'bg-gf-green/20 text-gf-green' : 'bg-white/5 text-text-muted'}`}>
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div ref={priceChartRef} />
+                {!priceBars && <div className="py-8 text-center text-text-muted text-xs">Loading chart...</div>}
               </div>
             )}
           </div>

@@ -86,7 +86,7 @@ export default function Subscription() {
         <h2 className="text-lg font-bold text-text-primary text-center mb-2">Choose Your Plan</h2>
         <p className="text-xs text-text-secondary text-center mb-6">Unlock premium features to power your investments</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {TIER_CONFIGS.map(config => {
             const isCurrentPlan = tier === config.plan;
             const isHighlighted = config.highlighted;
@@ -94,7 +94,7 @@ export default function Subscription() {
             return (
               <div
                 key={config.plan}
-                className={`glass-card p-6 relative transition-all ${
+                className={`glass-card p-6 relative transition-all flex flex-col ${
                   isHighlighted ? 'border-gf-green/30 scale-[1.02]' : ''
                 } ${isCurrentPlan ? 'ring-1 ring-gf-green/50' : ''}`}
               >
@@ -113,10 +113,19 @@ export default function Subscription() {
 
                 <div className="text-center mb-5">
                   <h3 className="text-lg font-bold text-text-primary">{config.name}</h3>
-                  <p className="text-2xl font-bold gradient-text mt-2">{config.price}</p>
+                  {config.contactSales ? (
+                    <p className="text-xl font-bold text-gf-gold mt-2">Contact Sales</p>
+                  ) : config.priceAmount === 0 ? (
+                    <p className="text-2xl font-bold gradient-text mt-2">Free</p>
+                  ) : (
+                    <div className="mt-2">
+                      <p className="text-2xl font-bold gradient-text">{config.price}</p>
+                      <p className="text-xs text-text-muted mt-0.5">{config.priceUSD} USD</p>
+                    </div>
+                  )}
                 </div>
 
-                <ul className="space-y-2.5 mb-6">
+                <ul className="space-y-2.5 mb-6 flex-1">
                   {config.features.map(f => (
                     <li key={f} className="flex items-start gap-2 text-xs text-text-secondary">
                       <i className="fas fa-check text-gf-green mt-0.5 text-[10px] shrink-0" />
@@ -129,6 +138,13 @@ export default function Subscription() {
                   <button disabled className="w-full py-2.5 rounded-lg bg-white/5 text-text-muted text-sm font-semibold cursor-default">
                     Current Plan
                   </button>
+                ) : config.contactSales ? (
+                  <a
+                    href="mailto:sales@jselive.com"
+                    className="w-full py-2.5 rounded-lg bg-gf-gold/10 text-gf-gold text-sm font-bold text-center block hover:bg-gf-gold/20 transition-colors"
+                  >
+                    Contact Sales
+                  </a>
                 ) : (
                   <button
                     onClick={() => {

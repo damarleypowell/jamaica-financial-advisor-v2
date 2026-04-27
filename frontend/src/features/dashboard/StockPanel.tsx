@@ -52,31 +52,31 @@ function formatVolume(n: number): string {
 /* ------------------------------------------------------------------ */
 
 function StockRow({ stock, onSelect }: { stock: Stock; onSelect: (s: string) => void }) {
-  const changeColor = stock.pctChange > 0 ? 'text-emerald-400' : stock.pctChange < 0 ? 'text-red-400' : 'text-zinc-400';
+  const changeColor = stock.pctChange > 0 ? 'text-green' : stock.pctChange < 0 ? 'text-red' : 'text-muted';
 
   return (
     <button
       onClick={() => onSelect(stock.symbol)}
-      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-800/50 rounded-lg transition group text-left"
+      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-glass rounded-lg transition group text-left"
     >
       {/* Symbol badge */}
-      <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-zinc-800 border border-zinc-700/50 flex items-center justify-center">
-        <span className="text-[10px] font-bold text-zinc-300">
+      <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-bg3 border border-border flex items-center justify-center">
+        <span className="text-[10px] font-bold text-text2">
           {stock.symbol.slice(0, 3)}
         </span>
       </div>
 
       {/* Name + symbol */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white truncate group-hover:text-emerald-400 transition">
+        <p className="text-sm font-medium text-text truncate group-hover:text-green transition">
           {stock.symbol}
         </p>
-        <p className="text-[11px] text-zinc-500 truncate">{stock.name}</p>
+        <p className="text-[11px] text-muted truncate">{stock.name}</p>
       </div>
 
       {/* Price + change */}
       <div className="text-right flex-shrink-0">
-        <p className="text-sm font-mono text-white">${formatPrice(stock.price)}</p>
+        <p className="text-sm font-mono text-text">${formatPrice(stock.price)}</p>
         <p className={`text-[11px] font-medium ${changeColor}`}>
           {formatChange(stock.pctChange)}
         </p>
@@ -100,17 +100,17 @@ export default function StockPanel() {
   );
 
   return (
-    <div className="rounded-xl border border-zinc-700/50 bg-zinc-900/60 backdrop-blur-sm flex flex-col h-full">
+    <div className="rounded-xl border border-border bg-card backdrop-blur-sm flex flex-col h-full">
       {/* Tabs */}
-      <div className="flex border-b border-zinc-800/60">
+      <div className="flex border-b border-border">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setMode(tab.key)}
             className={`flex-1 py-2.5 text-xs font-medium transition ${
               mode === tab.key
-                ? 'text-emerald-400 border-b-2 border-emerald-400'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'text-green border-b-2 border-green'
+                : 'text-muted hover:text-text2'
             }`}
           >
             {tab.label}
@@ -121,7 +121,7 @@ export default function StockPanel() {
       {/* List */}
       <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
         {sorted.length === 0 ? (
-          <div className="flex items-center justify-center h-32 text-zinc-600 text-sm">
+          <div className="flex items-center justify-center h-32 text-muted text-sm">
             No stock data available
           </div>
         ) : (
@@ -132,7 +132,7 @@ export default function StockPanel() {
       </div>
 
       {/* Footer count */}
-      <div className="px-3 py-2 border-t border-zinc-800/60 text-[11px] text-zinc-600">
+      <div className="px-3 py-2 border-t border-border text-[11px] text-muted">
         {stocks.length} stocks tracked
         {mode === 'active' && sorted.length > 0 && (
           <span className="ml-2">

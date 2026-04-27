@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.ts';
 import { useMarketStore } from '../../stores/market.ts';
+import { useUIStore } from '../../stores/ui.ts';
 
 /* ---------- page titles by route ---------- */
 const PAGE_TITLES: Record<string, { title: string; subtitle?: string }> = {
@@ -32,13 +33,13 @@ const PAGE_TITLES: Record<string, { title: string; subtitle?: string }> = {
 
 interface HeaderProps {
   onToggleSidebar: () => void;
-  onOpenAuth: (mode: 'login' | 'signup') => void;
 }
 
-export default function Header({ onToggleSidebar, onOpenAuth }: HeaderProps) {
+export default function Header({ onToggleSidebar }: HeaderProps) {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuthStore();
   const stocks = useMarketStore((s) => s.stocks);
+  const openAuthModal = useUIStore((s) => s.openAuthModal);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -69,10 +70,7 @@ export default function Header({ onToggleSidebar, onOpenAuth }: HeaderProps) {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setSearchOpen(false);
       }
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(e.target as Node)
-      ) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
       }
     }
@@ -130,12 +128,8 @@ export default function Header({ onToggleSidebar, onOpenAuth }: HeaderProps) {
                 className="flex items-center justify-between px-4 py-2.5 hover:bg-glass transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-green font-semibold text-sm">
-                    {stock.symbol}
-                  </span>
-                  <span className="text-text2 text-sm truncate max-w-[180px]">
-                    {stock.name}
-                  </span>
+                  <span className="text-green font-semibold text-sm">{stock.symbol}</span>
+                  <span className="text-text2 text-sm truncate max-w-[180px]">{stock.name}</span>
                 </div>
                 <div className="text-right">
                   <span className="font-mono text-sm text-text">
@@ -163,17 +157,12 @@ export default function Header({ onToggleSidebar, onOpenAuth }: HeaderProps) {
             {/* Wallet balance */}
             <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 glass rounded-lg">
               <i className="fa-solid fa-wallet text-green text-xs" />
-              <span className="font-mono text-xs text-text">
-                J$0.00
-              </span>
+              <span className="font-mono text-xs text-text">J$0.00</span>
             </div>
 
-            {/* Notification bell */}
+            {/* Notification bell — badge hidden when count is 0 */}
             <button className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-glass text-muted hover:text-text transition-colors">
               <i className="fa-solid fa-bell text-sm" />
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red rounded-full text-[10px] font-bold text-white flex items-center justify-center">
-                0
-              </span>
             </button>
 
             {/* User dropdown */}
@@ -182,7 +171,7 @@ export default function Header({ onToggleSidebar, onOpenAuth }: HeaderProps) {
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-glass transition-colors"
               >
-                <div className="w-8 h-8 rounded-full bg-green/20 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-green/20 flex items-center justify-center ring-1 ring-green/30">
                   <span className="text-green font-semibold text-sm">
                     {user.name.charAt(0).toUpperCase()}
                   </span>
@@ -190,69 +179,46 @@ export default function Header({ onToggleSidebar, onOpenAuth }: HeaderProps) {
                 <span className="hidden md:block text-sm text-text">
                   {user.name.split(' ')[0]}
                 </span>
-                <i className="fa-solid fa-chevron-down text-[10px] text-muted" />
+                <i
+                  className={`fa-solid fa-chevron-down text-[10px] text-muted transition-transform duration-200 ${
+                    userMenuOpen ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
 
               {userMenuOpen && (
-                <div className="absolute top-full right-0 mt-1 w-56 bg-bg2 border border-border rounded-lg shadow-xl z-50 py-1">
+                <div className="absolute top-full right-0 mt-1 w-56 bg-bg2 border border-border rounded-xl shadow-2xl z-50 py-1 animate-fade-in">
                   <div className="px-4 py-3 border-b border-border">
-                    <p className="text-sm font-medium text-text">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-muted">{user.email}</p>
-                    <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-green/15 text-green border border-green/30">
+                    <p className="text-sm font-semibold text-text">{user.name}</p>
+                    <p className="text-xs text-muted truncate">{user.email}</p>
+                    <span
+                      className={`inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
+                        user.subscriptionTier === 'PRO'
+                          ? 'bg-gold/10 text-gold border-gold/30'
+                          : user.subscriptionTier === 'ENTERPRISE'
+                          ? 'bg-purple/10 text-purple border-purple/30'
+                          : user.subscriptionTier === 'BASIC'
+                          ? 'bg-blue/10 text-blue border-blue/30'
+                          : 'bg-green/10 text-green border-green/30'
+                      }`}
+                    >
                       {user.subscriptionTier}
                     </span>
                   </div>
-                  <UserMenuItem
-                    icon="fa-solid fa-user"
-                    label="Profile"
-                    to="/settings"
-                    onClick={() => setUserMenuOpen(false)}
-                  />
-                  <UserMenuItem
-                    icon="fa-solid fa-gear"
-                    label="Settings"
-                    to="/settings"
-                    onClick={() => setUserMenuOpen(false)}
-                  />
-                  <UserMenuItem
-                    icon="fa-solid fa-crown"
-                    label="Subscription"
-                    to="/subscription"
-                    onClick={() => setUserMenuOpen(false)}
-                  />
-                  <UserMenuItem
-                    icon="fa-solid fa-wallet"
-                    label="Wallet"
-                    to="/settings"
-                    onClick={() => setUserMenuOpen(false)}
-                  />
-                  <UserMenuItem
-                    icon="fa-solid fa-bell"
-                    label="Alerts"
-                    to="/settings"
-                    onClick={() => setUserMenuOpen(false)}
-                  />
-                  <UserMenuItem
-                    icon="fa-solid fa-shield"
-                    label="Security"
-                    to="/settings"
-                    onClick={() => setUserMenuOpen(false)}
-                  />
-                  <UserMenuItem
-                    icon="fa-solid fa-id-card"
-                    label="KYC Verification"
-                    to="/settings"
-                    onClick={() => setUserMenuOpen(false)}
-                  />
+                  <UserMenuItem icon="fa-solid fa-user" label="Profile" to="/settings" onClick={() => setUserMenuOpen(false)} />
+                  <UserMenuItem icon="fa-solid fa-gear" label="Settings" to="/settings" onClick={() => setUserMenuOpen(false)} />
+                  <UserMenuItem icon="fa-solid fa-crown" label="Subscription" to="/subscription" onClick={() => setUserMenuOpen(false)} />
+                  <UserMenuItem icon="fa-solid fa-wallet" label="Wallet" to="/settings" onClick={() => setUserMenuOpen(false)} />
+                  <UserMenuItem icon="fa-solid fa-bell" label="Alerts" to="/settings" onClick={() => setUserMenuOpen(false)} />
+                  <UserMenuItem icon="fa-solid fa-shield" label="Security" to="/settings" onClick={() => setUserMenuOpen(false)} />
+                  <UserMenuItem icon="fa-solid fa-id-card" label="KYC Verification" to="/settings" onClick={() => setUserMenuOpen(false)} />
                   <div className="border-t border-border mt-1 pt-1">
                     <button
                       onClick={() => {
                         setUserMenuOpen(false);
                         logout();
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red hover:bg-glass transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red hover:bg-red/5 transition-colors"
                     >
                       <i className="fa-solid fa-arrow-right-from-bracket text-xs w-4 text-center" />
                       Sign Out
@@ -265,13 +231,13 @@ export default function Header({ onToggleSidebar, onOpenAuth }: HeaderProps) {
         ) : (
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onOpenAuth('login')}
+              onClick={() => openAuthModal('login')}
               className="px-4 py-2 text-sm font-medium text-text hover:text-green border border-border rounded-lg hover:border-green/50 transition-colors"
             >
               Log In
             </button>
             <button
-              onClick={() => onOpenAuth('signup')}
+              onClick={() => openAuthModal('signup')}
               className="px-4 py-2 text-sm font-medium text-bg bg-green rounded-lg hover:bg-green/90 transition-colors"
             >
               Sign Up

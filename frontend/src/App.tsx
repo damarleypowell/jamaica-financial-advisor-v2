@@ -1,8 +1,10 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from './components/layout/Layout.tsx';
 import ProtectedRoute from './components/ui/ProtectedRoute.tsx';
+import AuthModal from './components/modals/AuthModal.tsx';
+import StockDetailModal from './components/modals/StockDetailModal.tsx';
 import { useMarketStore } from './stores/market.ts';
 import { useAuthStore } from './stores/auth.ts';
 
@@ -56,11 +58,6 @@ function PageLoader() {
 
 /* ---------- App ---------- */
 export default function App() {
-  const [authModal, setAuthModal] = useState<{
-    open: boolean;
-    mode: 'login' | 'signup';
-  }>({ open: false, mode: 'login' });
-
   const connectSSE = useMarketStore((s) => s.connectSSE);
   const disconnectSSE = useMarketStore((s) => s.disconnectSSE);
   const loadUser = useAuthStore((s) => s.loadUser);
@@ -74,21 +71,11 @@ export default function App() {
     };
   }, [connectSSE, disconnectSSE, loadUser]);
 
-  function openAuth(mode: 'login' | 'signup') {
-    setAuthModal({ open: true, mode });
-  }
-
-  function closeAuth() {
-    setAuthModal((prev) => ({ ...prev, open: false }));
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route
-            element={<Layout onOpenAuth={openAuth} />}
-          >
+          <Route element={<Layout />}>
             {/* FREE routes */}
             <Route
               index
@@ -321,83 +308,10 @@ export default function App() {
           </Route>
         </Routes>
 
-        {/* Global AuthModal - rendered outside routes */}
-        {authModal.open && (
-          <AuthModalPlaceholder
-            mode={authModal.mode}
-            onClose={closeAuth}
-            onSwitchMode={(mode) =>
-              setAuthModal({ open: true, mode })
-            }
-          />
-        )}
+        {/* Global modals — rendered outside the route tree */}
+        <AuthModal />
+        <StockDetailModal />
       </BrowserRouter>
     </QueryClientProvider>
-  );
-}
-
-/* ---------- AuthModal placeholder ---------- */
-/* This will be replaced by the real AuthModal component once built. */
-function AuthModalPlaceholder({
-  mode,
-  onClose,
-  onSwitchMode,
-}: {
-  mode: 'login' | 'signup';
-  onClose: () => void;
-  onSwitchMode: (mode: 'login' | 'signup') => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60">
-      <div className="glass-strong rounded-2xl p-8 w-full max-w-md mx-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-text">
-            {mode === 'login' ? 'Welcome Back' : 'Create Account'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-glass text-muted hover:text-text transition-colors flex items-center justify-center"
-          >
-            <i className="fa-solid fa-xmark" />
-          </button>
-        </div>
-        <p className="text-muted text-sm mb-6">
-          {mode === 'login'
-            ? 'Sign in to your Gotham Financial account.'
-            : 'Join Gotham Financial to start trading.'}
-        </p>
-        <div className="space-y-4">
-          <div className="h-10 skeleton rounded-lg" />
-          <div className="h-10 skeleton rounded-lg" />
-          {mode === 'signup' && <div className="h-10 skeleton rounded-lg" />}
-          <button className="w-full py-3 bg-green text-bg font-semibold rounded-lg hover:bg-green/90 transition-colors">
-            {mode === 'login' ? 'Sign In' : 'Create Account'}
-          </button>
-        </div>
-        <p className="text-center text-sm text-muted mt-4">
-          {mode === 'login' ? (
-            <>
-              Don't have an account?{' '}
-              <button
-                onClick={() => onSwitchMode('signup')}
-                className="text-green hover:underline"
-              >
-                Sign Up
-              </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{' '}
-              <button
-                onClick={() => onSwitchMode('login')}
-                className="text-green hover:underline"
-              >
-                Sign In
-              </button>
-            </>
-          )}
-        </p>
-      </div>
-    </div>
   );
 }

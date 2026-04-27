@@ -25,7 +25,16 @@ export default function PaywallModal({ requiredTier, onClose }: Props) {
         </div>
 
         <div className="mb-5">
-          <p className="text-xl font-bold gradient-text text-center mb-3">{tierConfig.price}</p>
+          {tierConfig.contactSales ? (
+            <p className="text-xl font-bold text-gf-gold text-center mb-3">Contact Sales</p>
+          ) : tierConfig.priceAmount === 0 ? (
+            <p className="text-xl font-bold gradient-text text-center mb-3">Free</p>
+          ) : (
+            <div className="text-center mb-3">
+              <p className="text-xl font-bold gradient-text">{tierConfig.price}</p>
+              <p className="text-xs text-text-muted mt-0.5">{tierConfig.priceUSD} USD</p>
+            </div>
+          )}
           <ul className="space-y-2">
             {tierConfig.features.map((f) => (
               <li key={f} className="flex items-start gap-2 text-xs text-text-secondary">

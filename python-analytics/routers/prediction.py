@@ -23,7 +23,9 @@ from models.schemas import (
     PredictRequest, PredictResponse, PredictionDay, FeatureImportance,
     BacktestRequest, BacktestResponse, TradeRecord,
 )
-from services.data_service import calculate_returns, safe_float
+from services.data_service import (
+    calculate_returns, safe_float, fetch_finnhub_candles,
+)
 
 router = APIRouter(prefix="/api", tags=["prediction"])
 
@@ -99,13 +101,26 @@ async def predict(req: PredictRequest):
 
     Confidence intervals are derived from the ensemble residual standard
     deviation:  CI = predicted +/- z * sigma_residual * sqrt(day).
+
+    If fewer than 60 prices are provided, attempts to fetch real historical
+    data from Finnhub for the given symbol.
     """
-    prices = np.asarray(req.prices, dtype=np.float64)
+    prices_input = list(req.prices)
+    volumes_input = list(req.volumes) if req.volumes else []
+
+    # Auto-fetch from Finnhub if not enough data provided
+    if len(prices_input) < 60 and req.symbol:
+        candles = await fetch_finnhub_candles(req.symbol, "D")
+        if candles and len(candles["close"]) >= 60:
+            prices_input = candles["close"]
+            volumes_input = candles["volume"]
+
+    prices = np.asarray(prices_input, dtype=np.float64)
     if len(prices) < 60:
         raise HTTPException(400, "At least 60 price points are required for prediction.")
 
-    volumes = np.asarray(req.volumes, dtype=np.float64) if req.volumes and len(req.volumes) == len(prices) else None
-    horizon = req.horizon
+    volumes = np.asarray(volumes_input, dtype=np.float64) if volumes_input and len(volumes_input) == len(prices) else None
+    horizon = min(req.horizon, 30)  # Cap at 30 days
     last_price = float(prices[-1])
 
     X, feat_names = _build_features(prices, volumes)
@@ -141,13 +156,28 @@ async def predict(req: PredictRequest):
     fi = [FeatureImportance(feature=feat_names[i], importance=round(float(importances[i]), 6))
           for i in np.argsort(importances)[::-1]]
 
-    # -- ARIMA (statsmodels) --
+    # -- ARIMA (auto order selection via AIC grid search) --
     arima_preds_val = np.zeros(len(y_val))
     arima_mse = 1e-2  # fallback
+    best_arima_order = (2, 0, 2)
     try:
         from statsmodels.tsa.arima.model import ARIMA
         log_returns = np.diff(np.log(prices[:split]))
-        model = ARIMA(log_returns, order=(2, 0, 2))
+
+        # Auto order selection: test common orders, pick lowest AIC
+        best_aic = float("inf")
+        for p in [1, 2, 3]:
+            for q in [0, 1, 2]:
+                try:
+                    m = ARIMA(log_returns, order=(p, 0, q))
+                    f = m.fit()
+                    if f.aic < best_aic:
+                        best_aic = f.aic
+                        best_arima_order = (p, 0, q)
+                except Exception:
+                    continue
+
+        model = ARIMA(log_returns, order=best_arima_order)
         fit = model.fit()
         arima_forecast = fit.forecast(steps=len(y_val))
         arima_preds_val = np.asarray(arima_forecast)
@@ -168,11 +198,11 @@ async def predict(req: PredictRequest):
     current_features = X[-1:].copy()
     log_price = np.log(last_price)
 
-    # ARIMA forecast for full horizon
+    # ARIMA forecast for full horizon (using best order from grid search)
     try:
         from statsmodels.tsa.arima.model import ARIMA
         log_rets_full = np.diff(np.log(prices))
-        arima_model = ARIMA(log_rets_full, order=(2, 0, 2))
+        arima_model = ARIMA(log_rets_full, order=best_arima_order)
         arima_fit = arima_model.fit()
         arima_horizon = arima_fit.forecast(steps=horizon)
     except Exception:
@@ -228,6 +258,16 @@ async def predict(req: PredictRequest):
     model_spread = float(np.std(model_final) / np.mean(model_final)) if np.mean(model_final) > 0 else 0
     agreement = round(max(0.0, 1.0 - model_spread * 5), 4)
 
+    # Model confidence: based on validation R² (clamped 0-1)
+    val_ensemble = w[0] * lr_val_pred + w[1] * rf_val_pred + w[2] * arima_preds_val
+    ss_res = float(np.sum((val_ensemble - y_val) ** 2))
+    ss_tot = float(np.sum((y_val - np.mean(y_val)) ** 2)) + 1e-10
+    r2 = max(0.0, 1.0 - ss_res / ss_tot)
+    model_confidence = round(min(r2, 1.0), 4)
+
+    # Determine data source
+    data_source = "finnhub" if (len(req.prices) < 60 and len(prices) >= 60) else "provided"
+
     return PredictResponse(
         predictions=predictions,
         featureImportance=fi,
@@ -238,6 +278,8 @@ async def predict(req: PredictRequest):
             "arima": [round(last_price * np.exp(sum(arima_preds[:d + 1])), 4) for d in range(horizon)],
         },
         lastPrice=last_price,
+        dataSource=data_source,
+        modelConfidence=model_confidence,
     )
 
 
@@ -332,8 +374,18 @@ async def backtest(req: BacktestRequest):
     Simulates a simple long/flat strategy: buy signal -> go 100% long,
     sell signal -> exit to cash.  Computes standard performance metrics
     and compares against buy-and-hold.
+
+    If fewer than 30 prices provided, auto-fetches from Finnhub.
     """
-    prices = np.asarray(req.prices, dtype=np.float64)
+    prices_input = list(req.prices)
+
+    # Auto-fetch from Finnhub if insufficient data
+    if len(prices_input) < 30 and req.symbol:
+        candles = await fetch_finnhub_candles(req.symbol, "D")
+        if candles and len(candles["close"]) >= 30:
+            prices_input = candles["close"]
+
+    prices = np.asarray(prices_input, dtype=np.float64)
     if len(prices) < 30:
         raise HTTPException(400, "At least 30 price points required for backtest.")
 

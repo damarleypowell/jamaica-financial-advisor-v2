@@ -65,3 +65,28 @@ export async function getGlobalMarkets(): Promise<Record<string, unknown>> {
   const { data } = await api.get('/api/global-markets');
   return data;
 }
+
+// ── Finnhub-powered endpoints ───────────────────────────────────────────────
+
+export async function getStockHistory(
+  symbol: string,
+  resolution = 'D',
+  from?: number,
+  to?: number
+): Promise<import('@/types').StockHistoryResponse> {
+  const params: Record<string, string> = { resolution };
+  if (from) params.from = String(from);
+  if (to) params.to = String(to);
+  const { data } = await api.get(`/api/stocks/${symbol}/history`, { params });
+  return data;
+}
+
+export async function getCompanyProfile(symbol: string): Promise<import('@/types').CompanyProfile> {
+  const { data } = await api.get(`/api/stocks/${symbol}/profile`);
+  return data;
+}
+
+export async function searchSymbols(query: string): Promise<{ symbol: string; description: string }[]> {
+  const { data } = await api.get('/api/search', { params: { q: query } });
+  return data;
+}

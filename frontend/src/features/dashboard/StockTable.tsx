@@ -40,9 +40,9 @@ function formatVolume(n: number): string {
 }
 
 function changeColor(v: number): string {
-  if (v > 0) return 'text-emerald-400';
-  if (v < 0) return 'text-red-400';
-  return 'text-zinc-400';
+  if (v > 0) return 'text-green';
+  if (v < 0) return 'text-red';
+  return 'text-muted';
 }
 
 function changePrefix(v: number): string {
@@ -56,13 +56,13 @@ function changePrefix(v: number): string {
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   if (!active) {
     return (
-      <svg className="w-3 h-3 text-zinc-600 ml-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="w-3 h-3 text-muted ml-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
       </svg>
     );
   }
   return (
-    <svg className="w-3 h-3 text-emerald-400 ml-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className="w-3 h-3 text-green ml-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       {dir === 'asc' ? (
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
       ) : (
@@ -124,13 +124,13 @@ export default function StockTable() {
   };
 
   return (
-    <div className="rounded-xl border border-zinc-700/50 bg-zinc-900/60 backdrop-blur-sm overflow-hidden">
+    <div className="rounded-xl border border-border bg-card backdrop-blur-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/60">
-        <h3 className="text-sm font-semibold text-white">All Stocks</h3>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h3 className="text-sm font-semibold text-text">All Stocks</h3>
         <div className="relative">
           <svg
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -147,7 +147,7 @@ export default function StockTable() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search stocks..."
-            className="w-48 rounded-lg border border-zinc-700 bg-zinc-800/60 pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 transition"
+            className="w-48 rounded-lg border border-border bg-glass pl-8 pr-3 py-1.5 text-xs text-text placeholder-muted outline-none focus:border-green/50 focus:ring-1 focus:ring-green/20 transition"
           />
         </div>
       </div>
@@ -156,12 +156,12 @@ export default function StockTable() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-800/60">
+            <tr className="border-b border-border">
               {COLUMNS.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => handleSort(col.key)}
-                  className={`px-4 py-2.5 text-xs font-medium text-zinc-500 uppercase tracking-wide cursor-pointer hover:text-zinc-300 transition select-none ${
+                  className={`px-4 py-2.5 text-xs font-medium text-muted uppercase tracking-wide cursor-pointer hover:text-text2 transition select-none ${
                     col.align === 'right' ? 'text-right' : 'text-left'
                   }`}
                 >
@@ -174,7 +174,7 @@ export default function StockTable() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={COLUMNS.length} className="px-4 py-8 text-center text-zinc-600 text-sm">
+                <td colSpan={COLUMNS.length} className="px-4 py-8 text-center text-muted text-sm">
                   {search ? 'No stocks match your search' : 'No stock data available'}
                 </td>
               </tr>
@@ -183,11 +183,11 @@ export default function StockTable() {
                 <tr
                   key={stock.symbol}
                   onClick={() => handleRowClick(stock)}
-                  className="border-b border-zinc-800/30 hover:bg-zinc-800/40 cursor-pointer transition"
+                  className="border-b border-border/30 hover:bg-glass cursor-pointer transition"
                 >
-                  <td className="px-4 py-2.5 font-medium text-white">{stock.symbol}</td>
-                  <td className="px-4 py-2.5 text-zinc-400 truncate max-w-[200px]">{stock.name}</td>
-                  <td className="px-4 py-2.5 text-right font-mono text-white">
+                  <td className="px-4 py-2.5 font-medium text-text">{stock.symbol}</td>
+                  <td className="px-4 py-2.5 text-text2 truncate max-w-[200px]">{stock.name}</td>
+                  <td className="px-4 py-2.5 text-right font-mono text-text">
                     ${formatPrice(stock.price)}
                   </td>
                   <td className={`px-4 py-2.5 text-right font-mono ${changeColor(stock.dollarChange)}`}>
@@ -198,7 +198,7 @@ export default function StockTable() {
                     {changePrefix(stock.pctChange)}
                     {stock.pctChange.toFixed(2)}%
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-zinc-400">
+                  <td className="px-4 py-2.5 text-right font-mono text-muted">
                     {formatVolume(stock.volume)}
                   </td>
                 </tr>
@@ -209,7 +209,7 @@ export default function StockTable() {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2 border-t border-zinc-800/60 text-[11px] text-zinc-600">
+      <div className="px-4 py-2 border-t border-border text-[11px] text-muted">
         {filtered.length} of {stocks.length} stocks
       </div>
     </div>
