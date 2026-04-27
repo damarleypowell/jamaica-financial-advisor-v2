@@ -14,8 +14,18 @@ if (missing.length > 0) {
 }
 
 // ── Data directory ────────────────────────────────────────────────────────────
-const DATA_DIR = path.join(__dirname, "..", "..", "data");
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+// Vercel (and other serverless platforms) have a read-only filesystem.
+// Only /tmp is writable on Vercel. Fall back to /tmp when VERCEL is set.
+const DATA_DIR = process.env.VERCEL
+  ? "/tmp/gotham-data"
+  : path.join(__dirname, "..", "..", "data");
+
+try {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+} catch (err) {
+  // On read-only filesystems the app will rely entirely on DATABASE_URL.
+  console.warn(`[env] Could not create data dir ${DATA_DIR}: ${err.message}`);
+}
 
 // ── Config object ─────────────────────────────────────────────────────────────
 const config = {
