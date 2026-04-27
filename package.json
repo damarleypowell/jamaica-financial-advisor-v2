@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "dev:all": "concurrently -n API,UI -c green,cyan \"node --watch src/server.js\" \"node --watch frontend-server.js\"",
     "legacy": "node server.legacy.js",
     "frontend": "node frontend-server.js",
     "frontend:dev": "node --watch frontend-server.js",
@@ -38,6 +39,7 @@
     "zod": "^3.22.0"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "prisma": "^6.0.0"
   }
 }
