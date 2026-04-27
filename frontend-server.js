@@ -5,11 +5,11 @@ const path    = require("path");
 const app  = express();
 const PORT = process.env.FRONTEND_PORT || 3001;
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public-react")));
 
 // Fallback to index.html for any unmatched route
 app.get("*", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(__dirname, "public-react", "index.html"));
 });
 
 app.listen(PORT, () => {

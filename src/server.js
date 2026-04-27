@@ -76,8 +76,8 @@ app.use(protectBody);
 app.use(sanitizeBody);
 app.use(auditMiddleware);
 
-// Static files
-app.use(express.static(path.join(__dirname, "..", "public")));
+// Static files — serve the new React frontend (public-react/)
+app.use(express.static(path.join(__dirname, "..", "public-react")));
 
 // ── Mount routes ─────────────────────────────────────────────────────────────
 app.use(authRoutes);
@@ -105,7 +105,7 @@ app.get("/health", (_req, res) =>
 
 // SPA fallback
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "public", "index.html"));
+  res.sendFile(path.join(__dirname, "..", "public-react", "index.html"));
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
