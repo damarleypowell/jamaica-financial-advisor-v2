@@ -10,8 +10,14 @@ const winston = require("winston");
 const path = require("path");
 const fs = require("fs");
 
-const LOG_DIR = path.join(__dirname, "..", "..", "logs");
-if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
+const LOG_DIR = process.env.VERCEL
+  ? "/tmp/gotham-logs"
+  : path.join(__dirname, "..", "..", "logs");
+try {
+  if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
+} catch (err) {
+  console.warn(`[audit] Could not create log dir ${LOG_DIR}: ${err.message}`);
+}
 
 // ─── Winston Logger ──────────────────────────────────────
 

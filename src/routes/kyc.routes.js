@@ -15,10 +15,14 @@ const USE_DB = !!(process.env.DATABASE_URL && prisma);
 
 const router = Router();
 
-// Ensure uploads directory exists
-const UPLOADS_DIR = path.join(__dirname, "..", "..", "uploads", "kyc");
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+// Ensure uploads directory exists (use /tmp on Vercel — read-only filesystem)
+const UPLOADS_DIR = process.env.VERCEL
+  ? "/tmp/gotham-uploads/kyc"
+  : path.join(__dirname, "..", "..", "uploads", "kyc");
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+} catch (err) {
+  console.warn(`[kyc] Could not create uploads dir ${UPLOADS_DIR}: ${err.message}`);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
