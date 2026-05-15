@@ -68,7 +68,7 @@ export default function Header({ title, onMenuClick, onLoginClick }: HeaderProps
             >
               <i className="fas fa-bell" />
               {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-gf-red text-white text-[9px] rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-gf-red text-white text-[10px] rounded-full flex items-center justify-center font-bold">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}

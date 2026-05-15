@@ -33,7 +33,10 @@ export interface User {
   emailVerified: boolean;
   kycStatus: KycStatus;
   accountType: AccountType;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
+  complianceAccepted?: boolean;
+  complianceVersion?: string;
+  onboardingCompleted?: boolean;
 }
 
 export interface AuthResponse {
@@ -145,9 +148,9 @@ export interface TechnicalData {
   change: number;
   volume: number;
   candles: Candle[];
-  indicators: Record<string, any>;
+  indicators: Record<string, unknown>;
   signals: Signal[];
-  fundamentals?: Record<string, any>;
+  fundamentals?: Record<string, unknown>;
 }
 
 export interface WalletBalance {
@@ -169,12 +172,20 @@ export interface ChatMessage {
 }
 
 export interface NewsItem {
+  id?: number;
   title: string;
-  summary: string;
+  summary?: string;
   source: string;
   url: string;
-  date: string;
+  date?: string;
+  time?: string;
   sentiment?: string;
+  score?: number;
+  sector?: string;
+  symbol?: string;
+  dataSource?: string;
+  image?: string;
+  scrapedAt?: string;
 }
 
 export interface SectorData {

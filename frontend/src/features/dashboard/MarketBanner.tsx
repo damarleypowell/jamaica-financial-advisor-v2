@@ -4,127 +4,95 @@ import { useMarketStore } from '../../stores/market';
 
 export default function MarketBanner() {
   const [clock, setClock] = useState(new Date());
-  const stocks = useMarketStore((s) => s.stocks);
-  const isConnected = useMarketStore((s) => s.isConnected);
+  const stocks    = useMarketStore(s => s.stocks);
+  const isConn    = useMarketStore(s => s.isConnected);
 
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const jamaicaTimeStr = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Jamaica',
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+  const jamTime = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Jamaica', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+  }).format(clock);
+  const jamDate = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Jamaica', weekday: 'short', month: 'short', day: 'numeric',
   }).format(clock);
 
-  const jamaicaDateStr = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Jamaica',
-    weekday: 'short', month: 'short', day: 'numeric',
-  }).format(clock);
+  const local   = new Date(clock.toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
+  const d = local.getDay(), m = local.getHours() * 60 + local.getMinutes();
+  const open = d >= 1 && d <= 5 && m >= 570 && m < 810;
 
-  const local = new Date(clock.toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
-  const day = local.getDay();
-  const mins = local.getHours() * 60 + local.getMinutes();
-  const isOpen = day >= 1 && day <= 5 && mins >= 570 && mins < 810;
+  const gainers = stocks.filter(s => (s.pctChange ?? 0) > 0).length;
+  const losers  = stocks.filter(s => (s.pctChange ?? 0) < 0).length;
+  const flat    = stocks.length - gainers - losers;
 
-  const gainers = stocks.filter((s) => s.pctChange > 0).length;
-  const losers = stocks.filter((s) => s.pctChange < 0).length;
-  const total = stocks.length;
-
-  const topGainer = stocks.length
-    ? [...stocks].sort((a, b) => b.pctChange - a.pctChange)[0]
-    : null;
-  const topLoser = stocks.length
-    ? [...stocks].sort((a, b) => a.pctChange - b.pctChange)[0]
-    : null;
+  const topG = stocks.length ? [...stocks].sort((a, b) => (b.pctChange ?? 0) - (a.pctChange ?? 0))[0] : null;
+  const topL = stocks.length ? [...stocks].sort((a, b) => (a.pctChange ?? 0) - (b.pctChange ?? 0))[0] : null;
 
   return (
-    <div className="rounded-xl border border-border bg-card backdrop-blur-sm overflow-hidden">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-5 py-4 flex-wrap">
-
-        {/* Status + clock */}
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className={`relative flex items-center justify-center w-9 h-9 rounded-xl ${isOpen ? 'bg-green/10' : 'bg-glass2'}`}>
-              <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? 'bg-green animate-pulse' : isConnected ? 'bg-gold' : 'bg-red/70'}`} />
-              {isOpen && <span className="absolute inset-0 rounded-xl animate-ping opacity-20 bg-green" />}
-            </div>
-            <div>
-              <p className={`text-sm font-bold leading-none ${isOpen ? 'text-green' : 'text-text2'}`}>
-                {isOpen ? 'Market Open' : 'Market Closed'}
-              </p>
-              <p className="text-[11px] text-muted mt-0.5 leading-none">
-                JSE &middot; {isOpen ? 'Closes 1:30 PM' : 'Opens 9:30 AM'}
-              </p>
-            </div>
-          </div>
-
-          <div className="w-px h-8 bg-border hidden sm:block" />
-
-          <div>
-            <p className="text-sm font-mono font-semibold text-text leading-none">{jamaicaTimeStr}</p>
-            <p className="text-[11px] text-muted mt-0.5 leading-none">{jamaicaDateStr} &middot; Jamaica</p>
-          </div>
+    <div style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 14, padding: '11px 18px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 20px' }}>
+      {/* Status */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: open ? 'rgba(0,230,118,.1)' : 'rgba(255,255,255,.04)', border: `1px solid ${open ? 'rgba(0,230,118,.2)' : 'var(--color-border)'}` }}>
+          <span style={{ display: 'block', width: 8, height: 8, borderRadius: '50%', background: open ? '#00e676' : isConn ? '#ffd740' : 'rgba(255,255,255,.2)' }} className={open ? 'animate-pulse-dot' : ''} />
         </div>
+        <div>
+          <p style={{ margin: 0, fontSize: 12, fontWeight: 800, lineHeight: 1, color: open ? '#00e676' : 'var(--color-text2)' }}>{open ? 'JSE Open' : 'JSE Closed'}</p>
+          <p style={{ margin: 0, fontSize: 9.5, lineHeight: 1, marginTop: 1, color: 'var(--color-muted)' }}>{open ? 'Closes 1:30 PM' : 'Opens 9:30 AM'}</p>
+        </div>
+      </div>
 
-        {/* Breadth pills */}
-        {total > 0 && (
-          <>
-            <div className="w-px h-8 bg-border hidden sm:block" />
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green/10 border border-green/20 text-xs font-semibold text-green">
-                <i className="fa-solid fa-arrow-up text-[10px]" />
-                {gainers} Gainers
-              </span>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red/10 border border-red/20 text-xs font-semibold text-red">
-                <i className="fa-solid fa-arrow-down text-[10px]" />
-                {losers} Losers
-              </span>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-glass2 border border-border text-xs text-muted">
-                {total} Securities
-              </span>
-            </div>
-          </>
+      <div style={{ width: 1, height: 22, background: 'var(--color-border)', flexShrink: 0 }} className="hidden sm:block" />
+
+      {/* Clock */}
+      <div style={{ flexShrink: 0 }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', lineHeight: 1, color: 'var(--color-text)' }}>{jamTime}</p>
+        <p style={{ margin: 0, fontSize: 9.5, lineHeight: 1, marginTop: 1, color: 'var(--color-muted)' }}>{jamDate} · JAM</p>
+      </div>
+
+      {/* Breadth */}
+      {stocks.length > 0 && (
+        <>
+          <div style={{ width: 1, height: 22, background: 'var(--color-border)', flexShrink: 0 }} className="hidden sm:block" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span className="badge badge-green"><i className="fa-solid fa-arrow-up" style={{ fontSize: 7 }} />{gainers}</span>
+            <span className="badge badge-red"><i className="fa-solid fa-arrow-down" style={{ fontSize: 7 }} />{losers}</span>
+            <span className="badge badge-muted">{flat} flat</span>
+          </div>
+        </>
+      )}
+
+      {/* Top movers */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginLeft: 'auto' }}>
+        {topG && (topG.pctChange ?? 0) > 0 && (
+          <div className="hidden md:block">
+            <p style={{ margin: 0, fontSize: 9, textTransform: 'uppercase', letterSpacing: '.12em', fontWeight: 600, color: 'var(--color-muted)' }}>Top Gainer</p>
+            <p style={{ margin: 0, fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#00e676' }}>
+              {topG.symbol} <span style={{ opacity: .65 }}>+{(topG.pctChange ?? 0).toFixed(2)}%</span>
+            </p>
+          </div>
         )}
-
-        {/* Top movers + quick links */}
-        <div className="flex items-center gap-4 ml-auto flex-wrap">
-          {topGainer && topGainer.pctChange > 0 && (
-            <div className="text-right hidden md:block">
-              <p className="text-[10px] text-muted uppercase tracking-wider leading-none">Top Gainer</p>
-              <p className="text-xs font-bold text-green mt-0.5">
-                {topGainer.symbol}
-                <span className="font-normal text-muted ml-1">+{topGainer.pctChange.toFixed(2)}%</span>
-              </p>
-            </div>
-          )}
-          {topLoser && topLoser.pctChange < 0 && (
-            <div className="text-right hidden md:block">
-              <p className="text-[10px] text-muted uppercase tracking-wider leading-none">Top Loser</p>
-              <p className="text-xs font-bold text-red mt-0.5">
-                {topLoser.symbol}
-                <span className="font-normal text-muted ml-1">{topLoser.pctChange.toFixed(2)}%</span>
-              </p>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <Link
-              to="/screener"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-glass hover:bg-glass2 text-xs font-medium text-text2 hover:text-text transition-colors"
-            >
-              <i className="fa-solid fa-filter text-[10px]" />
-              Screener
-            </Link>
-            <Link
-              to="/watchlists"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-glass hover:bg-glass2 text-xs font-medium text-text2 hover:text-text transition-colors"
-            >
-              <i className="fa-solid fa-eye text-[10px]" />
-              Watchlist
-            </Link>
+        {topL && (topL.pctChange ?? 0) < 0 && (
+          <div className="hidden md:block">
+            <p style={{ margin: 0, fontSize: 9, textTransform: 'uppercase', letterSpacing: '.12em', fontWeight: 600, color: 'var(--color-muted)' }}>Top Loser</p>
+            <p style={{ margin: 0, fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#ff5252' }}>
+              {topL.symbol} <span style={{ opacity: .65 }}>{(topL.pctChange ?? 0).toFixed(2)}%</span>
+            </p>
           </div>
+        )}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <Link to="/screener" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', transition: 'all 150ms' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,230,118,.3)'; (e.currentTarget as HTMLElement).style.color = '#00e676'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text2)'; }}>
+            <i className="fa-solid fa-filter" style={{ fontSize: 9 }} />Screener
+          </Link>
+          <Link to="/watchlists" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', transition: 'all 150ms' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,230,118,.3)'; (e.currentTarget as HTMLElement).style.color = '#00e676'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text2)'; }}>
+            <i className="fa-solid fa-eye" style={{ fontSize: 9 }} />Watchlist
+          </Link>
         </div>
-
       </div>
     </div>
   );

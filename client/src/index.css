@@ -8,9 +8,9 @@
   --color-bg: #060810;
   --color-bg2: #0c1017;
   --color-bg3: #111822;
-  --color-card: rgba(255, 255, 255, 0.03);
-  --color-card-border: rgba(255, 255, 255, 0.06);
-  --color-card-hover: rgba(255, 255, 255, 0.06);
+  --color-card: rgba(255, 255, 255, 0.06);
+  --color-card-border: rgba(255, 255, 255, 0.08);
+  --color-card-hover: rgba(255, 255, 255, 0.09);
   --color-gf-green: #00c853;
   --color-gf-gold: #ffd600;
   --color-gf-red: #ff1744;
@@ -34,6 +34,7 @@ html {
 
 body {
   margin: 0;
+  font-size: 13px;
   background: var(--color-bg);
   color: var(--color-text-primary);
   overflow-x: hidden;

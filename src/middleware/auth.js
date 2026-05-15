@@ -142,34 +142,81 @@ function hashPassword(password, salt) {
   return { hash, salt };
 }
 
+// ── Clerk token verification (lazy — only if CLERK_SECRET_KEY is set) ──────────
+
+async function verifyClerkToken(token) {
+  const secretKey = process.env.CLERK_SECRET_KEY;
+  if (!secretKey) return null;
+  try {
+    const { createClerkClient } = require("@clerk/backend");
+    const clerk = createClerkClient({ secretKey });
+    const payload = await clerk.verifyToken(token);
+    return payload; // { sub: clerkUserId, ... }
+  } catch {
+    return null;
+  }
+}
+
 // ── Auth middleware ────────────────────────────────────────────────────────────
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith("Bearer "))
     return res.status(401).json({ error: "Authentication required" });
 
   const rawToken = auth.slice(7);
 
-  // Check in-memory revocation set (lazy-loaded to avoid circular deps)
+  // Try Clerk token first (if configured)
+  if (process.env.CLERK_SECRET_KEY) {
+    const clerkPayload = await verifyClerkToken(rawToken);
+    if (clerkPayload) {
+      // Fetch our user record keyed by Clerk user ID
+      const clerkUserId = clerkPayload.sub;
+      let ourUser = null;
+
+      // Try DB first
+      if (process.env.USE_DB === "true") {
+        try {
+          const { PrismaClient } = require("@prisma/client");
+          const prisma = new PrismaClient();
+          ourUser = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+          await prisma.$disconnect();
+        } catch { /* fall through to file */ }
+      }
+
+      // Fall back to file store
+      if (!ourUser) {
+        const users = getUsersDB();
+        ourUser = users.find(u => u.clerkId === clerkUserId);
+      }
+
+      if (ourUser) {
+        req.user = { id: ourUser.id, email: ourUser.email, name: ourUser.name, subscriptionTier: ourUser.subscriptionTier };
+        req.clerkUserId = clerkUserId;
+        return next();
+      }
+
+      // Clerk user exists but no local record yet — allow through with basic identity
+      req.user = { id: clerkUserId, clerkUserId, subscriptionTier: "FREE" };
+      req.clerkUserId = clerkUserId;
+      return next();
+    }
+  }
+
+  // Fall back to custom JWT
   try {
     const { isTokenRevoked } = require("../routes/auth.routes");
     if (isTokenRevoked && isTokenRevoked(rawToken)) {
       return res.status(401).json({ error: "Token has been revoked" });
     }
-  } catch (_) {
-    // auth.routes not yet loaded — skip revocation check during startup
-  }
+  } catch (_) { /* startup race */ }
 
   const user = verifyJWT(rawToken);
   if (!user)
     return res.status(401).json({ error: "Invalid or expired token" });
 
-  // IP binding check (warn only — IPs can change due to mobile/VPN)
   if (user.ip && user.ip !== req.ip) {
-    console.warn(
-      `[auth] IP mismatch for user ${user.id}: token=${user.ip}, request=${req.ip}`
-    );
+    console.warn(`[auth] IP mismatch for user ${user.id}: token=${user.ip}, request=${req.ip}`);
   }
 
   req.user = user;

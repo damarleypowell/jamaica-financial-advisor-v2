@@ -227,6 +227,12 @@ module.exports = {
   get livePrices() {
     return livePrices;
   },
+  get jseIndex() {
+    return 0; // Will be populated when JSE composite index scraper is active
+  },
+  get jseIndexChange() {
+    return 0;
+  },
   get priceHistory() {
     return priceHistory;
   },

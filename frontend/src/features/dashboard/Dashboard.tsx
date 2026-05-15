@@ -1,68 +1,432 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useMarketStore } from '../../stores/market';
-import { useSSE } from '../../hooks/useSSE';
-import StatsGrid from './StatsGrid';
+import { useAuthStore } from '../../stores/auth';
+import { apiGet } from '../../lib/api';
 import MainChart from './MainChart';
 import StockPanel from './StockPanel';
-import Heatmap from './Heatmap';
 import StockTable from './StockTable';
-import MarketBanner from './MarketBanner';
 
-export default function Dashboard() {
-  const selectedSymbol = useMarketStore((s) => s.selectedSymbol);
-  const stocks = useMarketStore((s) => s.stocks);
-  const selectSymbol = useMarketStore((s) => s.selectSymbol);
+interface Overview {
+  jseIndex?: number; jseIndexChange?: number; totalVolume?: number;
+  totalMarketCap?: number; advancers?: number; decliners?: number;
+}
 
-  useSSE();
+const SYNE = "'Syne', 'Inter', sans-serif";
+const MONO = "'JetBrains Mono', monospace";
+const SANS = "'DM Sans', 'Inter', sans-serif";
 
+function fmt(n?: number, dp = 2) {
+  return (n ?? 0).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+}
+function fmtVol(n?: number) {
+  const v = n ?? 0;
+  if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+  return v.toLocaleString();
+}
+function greet() {
+  const h = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Jamaica' })).getHours();
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}
+
+type MoverTab = 'gainers' | 'losers' | 'active';
+const MOVER_TABS: { key: MoverTab; label: string; icon: string; color: string; glow: string }[] = [
+  { key: 'gainers', label: 'Gainers', icon: 'fa-arrow-trend-up',   color: '#00e676', glow: 'rgba(0,230,118,.18)' },
+  { key: 'losers',  label: 'Losers',  icon: 'fa-arrow-trend-down', color: '#ff5252', glow: 'rgba(255,82,82,.18)'  },
+  { key: 'active',  label: 'Active',  icon: 'fa-bolt',             color: '#ffd740', glow: 'rgba(255,215,64,.18)' },
+];
+
+/* ── Noise grain overlay SVG ─────────────────────────────────── */
+function Grain({ opacity = 0.032 }: { opacity?: number }) {
+  return (
+    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity, pointerEvents: 'none', borderRadius: 'inherit' }}>
+      <filter id="grain-d"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter>
+      <rect width="100%" height="100%" filter="url(#grain-d)" />
+    </svg>
+  );
+}
+
+/* ── Animated counter ────────────────────────────────────────── */
+function Counter({ value, decimals = 0 }: { value: number; decimals?: number }) {
+  const [display, setDisplay] = useState(value);
+  const prev = useRef(value);
   useEffect(() => {
-    if (!selectedSymbol && stocks.length > 0) {
-      selectSymbol(stocks[0].symbol);
-    }
-  }, [selectedSymbol, stocks, selectSymbol]);
+    if (prev.current === value) return;
+    const start = prev.current;
+    const end = value;
+    const dur = 800;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const p = Math.min((now - t0) / dur, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setDisplay(start + (end - start) * ease);
+      if (p < 1) requestAnimationFrame(step);
+      else { setDisplay(end); prev.current = end; }
+    };
+    requestAnimationFrame(step);
+    prev.current = value;
+  }, [value]);
+  return <>{display.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</>;
+}
+
+/* ── Hero market status card ─────────────────────────────────── */
+function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, advCount, decCount, total }: {
+  jse: number; jseΔ: number; volume: number; firstName: string;
+  jamTime: string; mktOpen: boolean; isConn: boolean;
+  advCount: number; decCount: number; total: number;
+}) {
+  const pos = jseΔ >= 0;
+  const flat = total - advCount - decCount;
 
   return (
-    <div className="relative min-h-screen text-text">
-      {/* Ambient glows */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
-        <div className="absolute -top-32 left-1/4 w-[700px] h-[500px] rounded-full bg-green/[0.05] blur-[140px]" />
-        <div className="absolute top-10 right-1/3 w-[500px] h-[400px] rounded-full bg-blue/[0.03] blur-[120px]" />
-        <div className="absolute bottom-0 left-1/2 w-[400px] h-[300px] rounded-full bg-purple/[0.03] blur-[120px]" />
+    <div style={{
+      position: 'relative', overflow: 'hidden', borderRadius: 20,
+      background: 'linear-gradient(135deg, #050c0a 0%, #060e0c 50%, #040908 100%)',
+      border: '1px solid rgba(0,230,118,.1)',
+      boxShadow: mktOpen ? '0 0 80px rgba(0,230,118,.06), 0 4px 32px rgba(0,0,0,.5)' : '0 4px 32px rgba(0,0,0,.5)',
+      padding: '28px 32px',
+    }}>
+      {/* Grid background */}
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(0,230,118,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,230,118,.018) 1px,transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
+      {/* Top accent line */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(0,230,118,.5) 40%, transparent)' }} />
+      {/* Glow blob */}
+      <div style={{ position: 'absolute', top: -100, left: '30%', width: 400, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,230,118,.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <Grain />
+
+      <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'start', gap: 24 }}>
+        {/* Left: greeting + index */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <span style={{ fontSize: 12, color: 'rgba(0,230,118,.7)', fontFamily: SANS, fontWeight: 600, letterSpacing: '.05em', textTransform: 'uppercase' }}>
+                {greet()},
+              </span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,.8)', fontFamily: SANS, fontWeight: 700 }}>{firstName}</span>
+              <span style={{ width: 1, height: 12, background: 'rgba(255,255,255,.1)', display: 'inline-block' }} />
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,.28)', fontFamily: MONO }}>{jamTime} · JA</span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
+              {jse > 0 ? (
+                <>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: SANS, marginBottom: 4 }}>JSE Composite Index</div>
+                    <div style={{ fontSize: 36, fontWeight: 800, fontFamily: SYNE, letterSpacing: '-0.03em', lineHeight: 1, color: '#fff' }}>
+                      <Counter value={jse} decimals={0} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingBottom: 6 }}>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8,
+                      background: pos ? 'rgba(0,230,118,.1)' : 'rgba(255,82,82,.1)',
+                      border: `1px solid ${pos ? 'rgba(0,230,118,.22)' : 'rgba(255,82,82,.22)'}`,
+                    }}>
+                      <i className={`fa-solid ${pos ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'}`} style={{ fontSize: 10, color: pos ? '#00e676' : '#ff5252' }} />
+                      <span style={{ fontSize: 13, fontWeight: 800, fontFamily: MONO, color: pos ? '#00e676' : '#ff5252' }}>
+                        {pos ? '+' : ''}{jseΔ.toFixed(2)}%
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,.25)', fontFamily: SANS }}>today</span>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: SANS, marginBottom: 8 }}>Jamaica Stock Exchange</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, fontFamily: SYNE, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                    {total > 0 ? `${total} Securities` : 'Loading market…'}
+                  </div>
+                  {total > 0 && <div style={{ fontSize: 12, color: 'rgba(0,230,118,.6)', fontFamily: MONO, marginTop: 6 }}>Real-time JSE data</div>}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Breadth visual */}
+          {total > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 480 }}>
+              <div style={{ display: 'flex', gap: 3, height: 6, borderRadius: 99, overflow: 'hidden' }}>
+                {advCount > 0 && <div style={{ flex: advCount, background: '#00e676', borderRadius: '99px 0 0 99px', transition: 'flex .6s ease', boxShadow: '0 0 8px rgba(0,230,118,.5)' }} />}
+                {flat > 0 && <div style={{ flex: flat, background: 'rgba(255,255,255,.1)', transition: 'flex .6s ease' }} />}
+                {decCount > 0 && <div style={{ flex: decCount, background: '#ff5252', borderRadius: '0 99px 99px 0', transition: 'flex .6s ease' }} />}
+              </div>
+              <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                {advCount > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#00e676', fontFamily: MONO }}>↑ {advCount} up</span>}
+                {flat > 0 && <span style={{ fontSize: 11, color: 'rgba(255,255,255,.28)', fontFamily: MONO }}>{flat} flat</span>}
+                {decCount > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#ff5252', fontFamily: MONO }}>↓ {decCount} down</span>}
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.2)', fontFamily: SANS, marginLeft: 'auto' }}>{total} securities</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right: status + volume */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
+          {/* Status pill */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 99,
+            background: mktOpen ? 'rgba(0,230,118,.12)' : 'rgba(255,255,255,.05)',
+            border: `1px solid ${mktOpen ? 'rgba(0,230,118,.3)' : 'rgba(255,255,255,.08)'}`,
+            boxShadow: mktOpen ? '0 0 24px rgba(0,230,118,.15)' : 'none',
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: '50%', display: 'block',
+              background: mktOpen ? '#00e676' : isConn ? '#ffd740' : 'rgba(255,255,255,.2)',
+              boxShadow: mktOpen ? '0 0 10px rgba(0,230,118,.8)' : 'none',
+            }} className={mktOpen ? 'animate-pulse-dot' : ''} />
+            <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.08em', fontFamily: SANS, color: mktOpen ? '#00e676' : 'rgba(255,255,255,.4)', textTransform: 'uppercase' }}>
+              {mktOpen ? 'Live' : 'Closed'}
+            </span>
+          </div>
+
+          {volume > 0 && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.28)', letterSpacing: '.1em', textTransform: 'uppercase', fontFamily: SANS }}>Volume</div>
+              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: SYNE, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                {fmtVol(volume)}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── KPI tile ─────────────────────────────────────────────────── */
+function KPITile({ label, value, sub, icon, accent, delay = 0 }: {
+  label: string; value: string; sub?: string; icon: string; accent: string; delay?: number;
+}) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div style={{
+      position: 'relative', overflow: 'hidden', borderRadius: 16,
+      background: `linear-gradient(145deg, ${accent}08 0%, transparent 60%), #080d18`,
+      border: `1px solid ${hov ? accent + '30' : 'rgba(255,255,255,.055)'}`,
+      padding: '20px 22px',
+      transition: 'border-color .2s, box-shadow .2s, transform .2s',
+      boxShadow: hov ? `0 8px 32px rgba(0,0,0,.4), 0 0 0 1px ${accent}14` : '0 2px 12px rgba(0,0,0,.3)',
+      transform: hov ? 'translateY(-2px)' : 'none',
+      cursor: 'default',
+      animation: `fadeUp .4s cubic-bezier(.4,0,.2,1) ${delay}ms both`,
+    }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      {/* top accent */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${accent}80, ${accent}00)`, opacity: hov ? 1 : 0.5, transition: 'opacity .2s' }} />
+      <Grain />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.3)', textTransform: 'uppercase', letterSpacing: '.1em', fontFamily: SANS }}>{label}</span>
+          <div style={{ width: 30, height: 30, borderRadius: 9, background: accent + '14', border: `1px solid ${accent}28`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className={`fa-solid ${icon}`} style={{ fontSize: 11, color: accent }} />
+          </div>
+        </div>
+        <div style={{ fontSize: 26, fontWeight: 800, fontFamily: SYNE, letterSpacing: "-0.025em", lineHeight: 1, color: '#fff' }}>{value}</div>
+        {sub && <div style={{ fontSize: 11, color: accent, fontFamily: MONO, marginTop: 6, fontWeight: 600 }}>{sub}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ── Section label ────────────────────────────────────────────── */
+function SectionLabel({ children, count, right }: { children: React.ReactNode; count?: number; right?: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 3, height: 14, borderRadius: 99, background: '#00e676' }} />
+        <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,.55)', textTransform: 'uppercase', letterSpacing: '.12em', fontFamily: SANS }}>{children}</span>
+        {count !== undefined && (
+          <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.2)', fontFamily: MONO }}>{count}</span>
+        )}
+      </div>
+      {right}
+    </div>
+  );
+}
+
+/* ── Mover card ───────────────────────────────────────────────── */
+function MoverCard({ s, isSelected, onSelect, accentColor, moverTab }: {
+  s: { symbol: string; price?: number; pctChange?: number; volume?: number };
+  isSelected: boolean; onSelect: () => void; accentColor: string; moverTab: MoverTab;
+}) {
+  const [hov, setHov] = useState(false);
+  const pos = (s.pctChange ?? 0) >= 0;
+  const chgColor = moverTab === 'gainers' ? '#00e676' : moverTab === 'losers' ? '#ff5252' : '#ffd740';
+  const active = isSelected || hov;
+
+  return (
+    <button onClick={onSelect}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8,
+        padding: '12px 14px', borderRadius: 14, minWidth: 120, cursor: 'pointer', textAlign: 'left',
+        background: isSelected ? chgColor + '14' : hov ? chgColor + '09' : 'rgba(255,255,255,.025)',
+        border: `1px solid ${active ? chgColor + '40' : 'rgba(255,255,255,.05)'}`,
+        transition: 'all .15s',
+        boxShadow: isSelected ? `0 4px 20px ${chgColor}18` : 'none',
+        position: 'relative', overflow: 'hidden',
+      }}>
+      {isSelected && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: chgColor, opacity: 0.7 }} />}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+        <span style={{ fontSize: 12, fontWeight: 800, color: '#fff', fontFamily: MONO }}>{s.symbol}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: pos ? '#00e676' : '#ff5252', fontFamily: MONO }}>
+          {pos ? '+' : ''}{(s.pctChange ?? 0).toFixed(2)}%
+        </span>
+      </div>
+      <span style={{ fontSize: 16, fontWeight: 800, fontFamily: SYNE, color: 'rgba(255,255,255,.9)', letterSpacing: '-0.01em' }}>
+        ${fmt(s.price)}
+      </span>
+      {s.volume != null && (
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,.22)', fontFamily: MONO }}>
+          Vol: {fmtVol(s.volume)}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+
+export default function Dashboard() {
+  const { user } = useAuthStore();
+  const stocks = useMarketStore(s => s.stocks);
+  const isConn = useMarketStore(s => s.isConnected);
+  const selectedSymbol = useMarketStore(s => s.selectedSymbol);
+  const selectSymbol = useMarketStore(s => s.selectSymbol);
+
+  const [moverTab, setMoverTab] = useState<MoverTab>('gainers');
+  const [clock, setClock] = useState(new Date());
+
+  useEffect(() => {
+    if (!selectedSymbol && stocks.length > 0) selectSymbol(stocks[0].symbol);
+  }, [selectedSymbol, stocks, selectSymbol]);
+
+  useEffect(() => {
+    const id = setInterval(() => setClock(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const { data: overview } = useQuery<Overview>({
+    queryKey: ['market-overview'],
+    queryFn: () => apiGet<Overview>('/api/market-overview'),
+    refetchInterval: 30_000, retry: 1,
+  });
+
+  const jamTime = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Jamaica', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+  }).format(clock);
+  const local = new Date(clock.toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
+  const d = local.getDay(), m = local.getHours() * 60 + local.getMinutes();
+  const mktOpen = d >= 1 && d <= 5 && m >= 570 && m < 810;
+
+  const jse = overview?.jseIndex ?? 0;
+  const jseΔ = overview?.jseIndexChange ?? 0;
+  const jsePos = jseΔ >= 0;
+
+  const advCount = useMemo(() => stocks.filter(s => (s.pctChange ?? 0) > 0).length, [stocks]);
+  const decCount = useMemo(() => stocks.filter(s => (s.pctChange ?? 0) < 0).length, [stocks]);
+
+  const movers = useMemo(() => ({
+    gainers: [...stocks].sort((a, b) => (b.pctChange ?? 0) - (a.pctChange ?? 0)).slice(0, 20),
+    losers:  [...stocks].sort((a, b) => (a.pctChange ?? 0) - (b.pctChange ?? 0)).slice(0, 20),
+    active:  [...stocks].sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0)).slice(0, 20),
+  }), [stocks]);
+
+  const currentMovers = movers[moverTab];
+  const activeTabDef = MOVER_TABS.find(t => t.key === moverTab)!;
+  const firstName = user?.name?.split(' ')[0] ?? 'Investor';
+
+  return (
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* ── 1. Hero ─────────────────────────────────────────────── */}
+      <HeroCard
+        jse={jse} jseΔ={jseΔ} volume={overview?.totalVolume ?? 0}
+        firstName={firstName} jamTime={jamTime}
+        mktOpen={mktOpen} isConn={isConn}
+        advCount={advCount} decCount={decCount} total={stocks.length}
+      />
+
+      {/* ── 2. KPI tiles ────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+        {jse > 0 && <KPITile label="JSE Index" value={jse.toLocaleString('en-US', { maximumFractionDigits: 0 })} sub={`${jsePos ? '+' : ''}${jseΔ.toFixed(2)}% today`} icon="fa-chart-line" accent="#00e676" delay={0} />}
+        {(overview?.totalVolume ?? 0) > 0 && <KPITile label="Volume" value={fmtVol(overview?.totalVolume)} icon="fa-bars-progress" accent="#40c4ff" delay={60} />}
+        <KPITile label="Securities" value={String(stocks.length)} icon="fa-list" accent="#ce93d8" delay={80} />
+        <KPITile label="Advancers" value={String(advCount)} icon="fa-arrow-trend-up" accent="#00e676" delay={120} />
+        <KPITile label="Decliners" value={String(decCount)} icon="fa-arrow-trend-down" accent="#ff5252" delay={180} />
       </div>
 
-      <div className="relative z-10 max-w-[1600px] mx-auto px-4 py-5 space-y-5">
+      {/* ── 3. Movers strip ─────────────────────────────────────── */}
+      <div>
+        <SectionLabel count={stocks.length}
+          right={
+            <div style={{ display: 'flex', gap: 2, padding: '3px', borderRadius: 12, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)' }}>
+              {MOVER_TABS.map(tab => (
+                <button key={tab.key} onClick={() => setMoverTab(tab.key)} style={{
+                  display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9,
+                  fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer',
+                  fontFamily: SANS, letterSpacing: '.02em',
+                  background: moverTab === tab.key ? tab.color + '18' : 'transparent',
+                  color: moverTab === tab.key ? tab.color : 'rgba(255,255,255,.3)',
+                  transition: 'all .15s',
+                  boxShadow: moverTab === tab.key ? `0 0 12px ${tab.glow}` : 'none',
+                }}>
+                  <i className={`fa-solid ${tab.icon}`} style={{ fontSize: 9 }} />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          }
+        >
+          {activeTabDef.label}
+        </SectionLabel>
 
-        {/* Market status banner */}
-        <MarketBanner />
+        <div className="scroll-x" style={{ display: 'flex', gap: 10, paddingBottom: 4 }}>
+          {stocks.length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 4px', color: 'rgba(255,255,255,.2)', fontSize: 12, fontFamily: SANS }}>
+              <i className="fa-solid fa-satellite-dish" style={{ fontSize: 16, opacity: .3 }} />
+              Connecting to live market data…
+            </div>
+          ) : currentMovers.map(s => (
+            <MoverCard
+              key={s.symbol} s={s}
+              isSelected={s.symbol === selectedSymbol}
+              onSelect={() => selectSymbol(s.symbol)}
+              accentColor={activeTabDef.color}
+              moverTab={moverTab}
+            />
+          ))}
+        </div>
+      </div>
 
-        {/* Stats row */}
-        <StatsGrid />
-
-        {/* Chart + movers */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
-          <MainChart symbol={selectedSymbol} />
-          <div className="lg:min-h-[430px]">
+      {/* ── 4. Chart + Panel ────────────────────────────────────── */}
+      <div>
+        <SectionLabel>Chart &amp; Analysis</SectionLabel>
+        <div className="dashboard-grid">
+          <div style={{
+            borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)',
+            background: '#080d18', boxShadow: '0 4px 32px rgba(0,0,0,.4)',
+          }}>
+            <MainChart symbol={selectedSymbol} />
+          </div>
+          <div style={{
+            borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)',
+            background: '#080d18',
+          }}>
             <StockPanel />
           </div>
         </div>
+      </div>
 
-        {/* Heatmap (collapsible) */}
-        <Heatmap />
-
-        {/* All securities table */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1 h-5 rounded-full bg-green" />
-            <h2 className="text-sm font-semibold text-text">All Securities</h2>
-            {stocks.length > 0 && (
-              <span className="text-xs text-muted bg-glass border border-border rounded-full px-2 py-0.5">
-                {stocks.length} listed
-              </span>
-            )}
-          </div>
-          <StockTable />
-        </div>
-
+      {/* ── 5. All Securities table ─────────────────────────────── */}
+      <div>
+        <SectionLabel count={stocks.length}>All Securities</SectionLabel>
+        <StockTable />
       </div>
     </div>
   );

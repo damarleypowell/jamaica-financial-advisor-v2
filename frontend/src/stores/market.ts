@@ -1,6 +1,16 @@
 import { create } from 'zustand';
 import type { Stock } from '../types';
 
+function normalizeStock(s: Stock): Stock {
+  return {
+    ...s,
+    price: s.price ?? 0,
+    pctChange: s.pctChange ?? 0,
+    dollarChange: s.dollarChange ?? 0,
+    volume: s.volume ?? 0,
+  };
+}
+
 interface MarketState {
   stocks: Stock[];
   selectedSymbol: string;
@@ -16,7 +26,8 @@ interface MarketActions {
 
 type MarketStore = MarketState & MarketActions;
 
-const SSE_URL = '/api/stream/prices';
+const API_BASE = (import.meta.env.VITE_API_URL as string) ?? '';
+const SSE_URL = `${API_BASE}/api/stream/prices`;
 const RECONNECT_DELAY = 3000;
 
 let eventSource: EventSource | null = null;
@@ -29,7 +40,7 @@ export const useMarketStore = create<MarketStore>((set, get) => ({
   isConnected: false,
 
   /* ---- actions ---- */
-  setStocks: (stocks) => set({ stocks }),
+  setStocks: (stocks) => set({ stocks: stocks.map(normalizeStock) }),
 
   selectSymbol: (symbol) => set({ selectedSymbol: symbol }),
 
@@ -54,16 +65,17 @@ export const useMarketStore = create<MarketStore>((set, get) => ({
 
         if (Array.isArray(data)) {
           // Full snapshot
-          set({ stocks: data });
+          set({ stocks: data.map(normalizeStock) });
         } else {
           // Single stock update — merge into existing list
-          const idx = stocks.findIndex((s) => s.symbol === data.symbol);
+          const normalized = normalizeStock(data);
+          const idx = stocks.findIndex((s) => s.symbol === normalized.symbol);
           if (idx >= 0) {
             const next = [...stocks];
-            next[idx] = data;
+            next[idx] = normalized;
             set({ stocks: next });
           } else {
-            set({ stocks: [...stocks, data] });
+            set({ stocks: [...stocks, normalized] });
           }
         }
       } catch {

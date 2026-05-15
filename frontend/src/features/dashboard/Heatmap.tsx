@@ -3,124 +3,97 @@ import { useMarketStore } from '../../stores/market';
 import { useUIStore } from '../../stores/ui';
 import type { Stock } from '../../types';
 
-function changeToColor(pct: number): string {
-  if (pct === 0) return 'bg-glass2';
-  const clamped = Math.max(-10, Math.min(10, pct));
-  const intensity = Math.abs(clamped) / 10;
+function tileStyle(pct: number): React.CSSProperties {
+  if (pct === 0) return { background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)' };
+  const c = Math.max(-10, Math.min(10, pct));
+  const t = Math.abs(c) / 10;
   if (pct > 0) {
-    if (intensity > 0.7) return 'bg-green/70';
-    if (intensity > 0.4) return 'bg-green/40';
-    if (intensity > 0.15) return 'bg-green/20';
-    return 'bg-green/10';
+    const g = `rgba(0,230,118,${t > .7 ? .55 : t > .4 ? .32 : t > .15 ? .16 : .07})`;
+    const b = `rgba(0,230,118,${t > .4 ? .3 : .12})`;
+    return { background: g, border: `1px solid ${b}` };
   } else {
-    if (intensity > 0.7) return 'bg-red/70';
-    if (intensity > 0.4) return 'bg-red/40';
-    if (intensity > 0.15) return 'bg-red/20';
-    return 'bg-red/10';
+    const r = `rgba(255,82,82,${t > .7 ? .55 : t > .4 ? .32 : t > .15 ? .16 : .07})`;
+    const b = `rgba(255,82,82,${t > .4 ? .3 : .12})`;
+    return { background: r, border: `1px solid ${b}` };
   }
 }
 
-function formatChange(n: number): string {
-  const prefix = n > 0 ? '+' : '';
-  return `${prefix}${n.toFixed(2)}%`;
-}
-
-function HeatmapTile({ stock }: { stock: Stock }) {
+function Tile({ stock }: { stock: Stock }) {
   const selectSymbol = useMarketStore((s) => s.selectSymbol);
   const openStockDetail = useUIStore((s) => s.openStockDetail);
-  const bg = changeToColor(stock.pctChange);
-  const textColor = stock.pctChange > 0 ? 'text-green' : stock.pctChange < 0 ? 'text-red' : 'text-text2';
+  const pos = (stock.pctChange ?? 0) > 0, neg = (stock.pctChange ?? 0) < 0;
 
   return (
     <button
       onClick={() => { selectSymbol(stock.symbol); openStockDetail(stock.symbol); }}
-      className={`${bg} rounded-lg p-2.5 flex flex-col items-center justify-center gap-0.5 border border-border hover:border-border2 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer min-h-[72px]`}
+      style={{ ...tileStyle(stock.pctChange ?? 0), borderRadius: 12, minHeight: 66 }}
+      className="flex flex-col items-center justify-center gap-1 p-2 transition-transform hover:scale-[1.05] active:scale-[.97] cursor-pointer"
     >
-      <span className="text-xs font-bold text-text leading-tight">{stock.symbol}</span>
-      <span className={`text-[11px] font-mono font-semibold ${textColor}`}>
-        {formatChange(stock.pctChange)}
+      <span className="text-[11px] font-black num leading-none" style={{ color: 'var(--color-text)' }}>{stock.symbol}</span>
+      <span className="text-[10px] font-bold num leading-none"
+        style={{ color: pos ? 'var(--color-green)' : neg ? 'var(--color-red)' : 'var(--color-muted)' }}>
+        {pos ? '+' : ''}{(stock.pctChange ?? 0).toFixed(2)}%
       </span>
     </button>
   );
 }
 
-const STORAGE_KEY = 'gotham_heatmap_collapsed';
+const KEY = 'gotham_heatmap_v2';
 
 export default function Heatmap() {
   const stocks = useMarketStore((s) => s.stocks);
-
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    try { return localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return false; }
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(KEY) === 'true'; } catch { return false; }
   });
-
-  const toggle = () => {
-    setCollapsed((v) => {
-      const next = !v;
-      try { localStorage.setItem(STORAGE_KEY, String(next)); } catch {}
-      return next;
-    });
-  };
-
-  const sorted = useMemo(
-    () => [...stocks].sort((a, b) => Math.abs(b.pctChange) - Math.abs(a.pctChange)),
-    [stocks],
-  );
-
-  const gainers = stocks.filter((s) => s.pctChange > 0).length;
-  const losers = stocks.filter((s) => s.pctChange < 0).length;
+  const toggle = () => setCollapsed(v => { const n = !v; try { localStorage.setItem(KEY, String(n)); } catch {} return n; });
+  const sorted = useMemo(() => [...stocks].sort((a, b) => Math.abs(b.pctChange ?? 0) - Math.abs(a.pctChange ?? 0)), [stocks]);
+  const gainers = stocks.filter(s => (s.pctChange ?? 0) > 0).length;
+  const losers = stocks.filter(s => (s.pctChange ?? 0) < 0).length;
 
   return (
-    <div className="rounded-xl border border-border bg-card backdrop-blur-sm overflow-hidden">
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-glass/40 transition-colors"
-        onClick={toggle}
-      >
+    <div className="card overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3.5 cursor-pointer select-none transition-colors hover:bg-white/[0.02]"
+        style={{ borderBottom: collapsed ? 'none' : '1px solid var(--color-border)' }}
+        onClick={toggle}>
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-green/10 flex items-center justify-center">
-            <i className="fa-solid fa-fire text-green text-xs" />
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,230,118,.1)' }}>
+            <i className="fa-solid fa-fire text-sm" style={{ color: 'var(--color-green)' }} />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-text leading-none">Market Heatmap</h3>
-            <p className="text-[11px] text-muted mt-0.5">
-              {gainers} gaining &middot; {losers} falling &middot; {stocks.length} total
+            <h3 className="text-sm font-bold" style={{ color: 'var(--color-text)' }}>Market Heatmap</h3>
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-muted)' }}>
+              {gainers} gaining · {losers} falling · {stocks.length} total
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-3 text-[10px] text-muted">
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-sm bg-red/50" /> Loss
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-sm bg-glass2 border border-border" /> Flat
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-sm bg-green/50" /> Gain
-            </span>
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-3 text-[9px] font-semibold" style={{ color: 'var(--color-muted)' }}>
+            {[['rgba(255,82,82,.45)', 'Loss'],['rgba(255,255,255,.1)','Flat'],['rgba(0,230,118,.45)','Gain']].map(([bg, label]) => (
+              <span key={label} className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm" style={{ background: bg }} />
+                {label}
+              </span>
+            ))}
           </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); toggle(); }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-glass hover:bg-glass2 text-xs text-muted hover:text-text transition-colors"
-            aria-label={collapsed ? 'Show heatmap' : 'Hide heatmap'}
-          >
-            <i className={`fa-solid fa-chevron-${collapsed ? 'down' : 'up'} text-[10px]`} />
-            {collapsed ? 'Show' : 'Hide'}
+          <button onClick={e => { e.stopPropagation(); toggle(); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all hover:opacity-80"
+            style={{ background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)' }}>
+            <i className={`fa-solid fa-chevron-${collapsed ? 'down' : 'up'} text-[9px]`} />
+            {collapsed ? 'Expand' : 'Collapse'}
           </button>
         </div>
       </div>
 
-      {/* Body */}
       {!collapsed && (
-        <div className="p-3 border-t border-border">
+        <div className="p-4">
           {sorted.length === 0 ? (
-            <div className="text-sm text-muted text-center py-8">No stock data available</div>
+            <div className="flex flex-col items-center justify-center py-10 gap-2" style={{ color: 'var(--color-muted)' }}>
+              <i className="fa-solid fa-satellite-dish text-2xl opacity-20" />
+              <span className="text-sm">Awaiting market data</span>
+            </div>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(88px,1fr))] gap-1.5">
-              {sorted.map((stock) => (
-                <HeatmapTile key={stock.symbol} stock={stock} />
-              ))}
+            <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(82px, 1fr))' }}>
+              {sorted.map(s => <Tile key={s.symbol} stock={s} />)}
             </div>
           )}
         </div>

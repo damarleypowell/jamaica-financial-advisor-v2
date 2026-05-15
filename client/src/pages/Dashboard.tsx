@@ -239,7 +239,7 @@ export default function Dashboard() {
           {heatmapStocks.map(s => {
             const pct = s.changePercent ?? 0;
             const size = Math.max(60, Math.min(120, Math.sqrt((s.marketCap ?? s.volume ?? 1000) / 1e6) * 10));
-            const bg = pct > 2 ? 'bg-green-600/80' : pct > 0 ? 'bg-green-800/60' : pct < -2 ? 'bg-red-600/80' : pct < 0 ? 'bg-red-800/60' : 'bg-gray-700/50';
+            const bg = pct > 2 ? 'bg-gf-green/70' : pct > 0 ? 'bg-gf-green/30' : pct < -2 ? 'bg-gf-red/70' : pct < 0 ? 'bg-gf-red/30' : 'bg-white/10';
             return (
               <button
                 key={s.symbol}
@@ -339,15 +339,24 @@ export default function Dashboard() {
   );
 }
 
+const COLOR_BG: Record<string, string> = {
+  'text-gf-green': 'bg-gf-green/10',
+  'text-gf-blue': 'bg-gf-blue/10',
+  'text-gf-gold': 'bg-gf-gold/10',
+  'text-gf-purple': 'bg-gf-purple/10',
+  'text-gf-red': 'bg-gf-red/10',
+};
+
 function StatCard({ label, value, icon, color }: { label: string; value: string; icon: string; color: string }) {
+  const iconBg = COLOR_BG[color] ?? 'bg-white/10';
   return (
     <div className="glass-card p-4">
       <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-lg ${color} bg-current/10 flex items-center justify-center`}>
+        <div className={`w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
           <i className={`fas ${icon} ${color} text-sm`} />
         </div>
         <div>
-          <p className="text-[10px] text-text-muted uppercase tracking-wider">{label}</p>
+          <p className="text-[11px] text-text-muted uppercase tracking-wider">{label}</p>
           <p className="text-lg font-bold text-text-primary font-num">{value}</p>
         </div>
       </div>

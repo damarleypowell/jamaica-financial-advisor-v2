@@ -1,10 +1,11 @@
-import { lazy, Suspense, useEffect } from 'react';
+﻿import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from './components/layout/Layout.tsx';
 import ProtectedRoute from './components/ui/ProtectedRoute.tsx';
-import AuthModal from './components/modals/AuthModal.tsx';
 import StockDetailModal from './components/modals/StockDetailModal.tsx';
+import ComplianceModal from './components/modals/ComplianceModal.tsx';
+import AuthModal from './components/modals/AuthModal.tsx';
 import { useMarketStore } from './stores/market.ts';
 import { useAuthStore } from './stores/auth.ts';
 
@@ -20,7 +21,7 @@ const Dividends = lazy(() => import('./features/dividends/Dividends.tsx'));
 const Portfolio = lazy(() => import('./features/portfolio/Portfolio.tsx'));
 const Orders = lazy(() => import('./features/orders/Orders.tsx'));
 const Calculators = lazy(() => import('./features/calculators/Calculators.tsx'));
-const USStocks = lazy(() => import('./features/us-stocks/USStocks.tsx'));
+const USStocks    = lazy(() => import('./features/us-stocks/USStocks.tsx'));
 const Forex = lazy(() => import('./features/forex/Forex.tsx'));
 const GlobalMarkets = lazy(() => import('./features/global-markets/GlobalMarkets.tsx'));
 const CurrencyImpact = lazy(() => import('./features/currency-impact/CurrencyImpact.tsx'));
@@ -30,8 +31,10 @@ const AIChat = lazy(() => import('./features/chat/AIChat.tsx'));
 const AIAnalysis = lazy(() => import('./features/analysis/AIAnalysis.tsx'));
 const Learn = lazy(() => import('./features/learn/Learn.tsx'));
 const Settings = lazy(() => import('./features/settings/Settings.tsx'));
+const Alerts = lazy(() => import('./features/alerts/Alerts.tsx'));
 const Subscription = lazy(() => import('./features/subscription/Subscription.tsx'));
 const Admin = lazy(() => import('./features/admin/Admin.tsx'));
+const Onboarding = lazy(() => import('./features/onboarding/Onboarding.tsx'));
 
 /* ---------- Query client ---------- */
 const queryClient = new QueryClient({
@@ -62,19 +65,27 @@ export default function App() {
   const disconnectSSE = useMarketStore((s) => s.disconnectSSE);
   const loadUser = useAuthStore((s) => s.loadUser);
 
-  // Bootstrap: connect to market SSE + load user on mount
   useEffect(() => {
     connectSSE();
     loadUser();
-    return () => {
-      disconnectSSE();
-    };
+    return () => disconnectSSE();
   }, [connectSSE, disconnectSSE, loadUser]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <AuthModal />
         <Routes>
+          {/* Onboarding â€” full-screen, no sidebar layout */}
+          <Route
+            path="onboarding"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Onboarding />
+              </Suspense>
+            }
+          />
+
           <Route element={<Layout />}>
             {/* FREE routes */}
             <Route
@@ -130,6 +141,14 @@ export default function App() {
               element={
                 <Suspense fallback={<PageLoader />}>
                   <Settings />
+                </Suspense>
+              }
+            />
+            <Route
+              path="alerts"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Alerts />
                 </Suspense>
               }
             />
@@ -308,10 +327,11 @@ export default function App() {
           </Route>
         </Routes>
 
-        {/* Global modals — rendered outside the route tree */}
-        <AuthModal />
+        {/* Global modals â€” rendered outside the route tree */}
         <StockDetailModal />
+        <ComplianceModal />
       </BrowserRouter>
     </QueryClientProvider>
   );
 }
+

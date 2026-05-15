@@ -68,6 +68,7 @@ function MiniChart({ data }: { data: { time: string; value: number }[] }) {
       lineColor: '#00c853',
       lineWidth: 2,
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- lightweight-charts type mismatch
     series.setData(data as any);
     chart.timeScale().fitContent();
     chartRef.current = chart;
@@ -116,6 +117,13 @@ export default function StockDetailModal() {
   const [alertSending, setAlertSending] = useState(false);
   const [alertMsg, setAlertMsg] = useState('');
 
+  const [tradeMode, setTradeMode] = useState<'BUY' | 'SELL' | null>(null);
+  const [tradeQty, setTradeQty] = useState('1');
+  const [tradeOrderType, setTradeOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
+  const [tradeLimitPrice, setTradeLimitPrice] = useState('');
+  const [tradePlacing, setTradePlacing] = useState(false);
+  const [tradeMsg, setTradeMsg] = useState('');
+
   const { data: research, isLoading } = useQuery<StockResearch>({
     queryKey: ['research', stockDetailSymbol],
     queryFn: () => apiGet<StockResearch>(`/api/research/${stockDetailSymbol}`),
@@ -140,11 +148,41 @@ export default function StockDetailModal() {
     return () => window.removeEventListener('keydown', handler);
   }, [stockDetailSymbol, closeStockDetail]);
 
-  // Reset alert state when symbol changes
+  // Reset state when symbol changes
   useEffect(() => {
     setAlertPrice('');
     setAlertMsg('');
+    setTradeMode(null);
+    setTradeMsg('');
+    setTradeQty('1');
+    setTradeLimitPrice('');
+    setTradeOrderType('MARKET');
   }, [stockDetailSymbol]);
+
+  const handleTrade = async () => {
+    const qty = parseInt(tradeQty, 10);
+    if (!qty || qty <= 0) { setTradeMsg('Enter a valid quantity.'); return; }
+    if (tradeOrderType === 'LIMIT' && (!tradeLimitPrice || parseFloat(tradeLimitPrice) <= 0)) {
+      setTradeMsg('Enter a valid limit price.'); return;
+    }
+    setTradePlacing(true);
+    setTradeMsg('');
+    try {
+      await apiPost('/api/orders', {
+        symbol: stockDetailSymbol,
+        side: tradeMode,
+        type: tradeOrderType,
+        quantity: qty,
+        ...(tradeOrderType === 'LIMIT' ? { limitPrice: parseFloat(tradeLimitPrice) } : {}),
+      });
+      setTradeMsg(`${tradeMode} order placed successfully.`);
+      setTradeMode(null);
+    } catch (err) {
+      setTradeMsg((err as Error)?.message ?? 'Failed to place order.');
+    } finally {
+      setTradePlacing(false);
+    }
+  };
 
   if (!stockDetailSymbol) return null;
 
@@ -167,8 +205,8 @@ export default function StockDetailModal() {
       });
       setAlertMsg('Alert set successfully.');
       setAlertPrice('');
-    } catch (err: any) {
-      setAlertMsg(err?.message ?? 'Failed to set alert.');
+    } catch (err) {
+      setAlertMsg((err as Error)?.message ?? 'Failed to set alert.');
     } finally {
       setAlertSending(false);
     }
@@ -275,11 +313,17 @@ export default function StockDetailModal() {
 
             {/* Action buttons */}
             <div className="px-6 py-4 border-b border-border">
-              <div className="flex flex-wrap gap-2">
-                <button className="rounded-lg bg-green hover:bg-green/90 px-5 py-2 text-sm font-semibold text-bg transition">
+              <div className="flex flex-wrap gap-2 mb-3">
+                <button
+                  onClick={() => { setTradeMode(tradeMode === 'BUY' ? null : 'BUY'); setTradeMsg(''); }}
+                  className={`rounded-lg px-5 py-2 text-sm font-semibold transition ${tradeMode === 'BUY' ? 'bg-green text-bg ring-2 ring-green/40' : 'bg-green/10 hover:bg-green/20 text-green border border-green/30'}`}
+                >
                   Buy
                 </button>
-                <button className="rounded-lg bg-red hover:bg-red/90 px-5 py-2 text-sm font-semibold text-bg transition">
+                <button
+                  onClick={() => { setTradeMode(tradeMode === 'SELL' ? null : 'SELL'); setTradeMsg(''); }}
+                  className={`rounded-lg px-5 py-2 text-sm font-semibold transition ${tradeMode === 'SELL' ? 'bg-red text-bg ring-2 ring-red/40' : 'bg-red/10 hover:bg-red/20 text-red border border-red/30'}`}
+                >
                   Sell
                 </button>
                 <Link
@@ -292,10 +336,59 @@ export default function StockDetailModal() {
                   </svg>
                   Chart
                 </Link>
-                <button className="rounded-lg border border-border bg-glass hover:bg-glass2 px-4 py-2 text-sm font-medium text-text2 hover:text-text transition">
-                  Analyze
-                </button>
               </div>
+
+              {/* Inline order form */}
+              {tradeMode && (
+                <div className="mt-2 rounded-xl border bg-glass p-4 flex flex-col gap-3"
+                  style={{ borderColor: tradeMode === 'BUY' ? 'rgba(0,230,118,.2)' : 'rgba(255,82,82,.2)' }}>
+                  <p className="text-[11px] font-bold uppercase tracking-wider"
+                    style={{ color: tradeMode === 'BUY' ? 'var(--color-green)' : 'var(--color-red)' }}>
+                    {tradeMode === 'BUY' ? 'Place Buy Order' : 'Place Sell Order'} — {stockDetailSymbol}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Order Type</label>
+                      <select value={tradeOrderType} onChange={e => setTradeOrderType(e.target.value as 'MARKET' | 'LIMIT')}
+                        className="w-full rounded-lg border border-border bg-glass px-3 py-2 text-sm text-text outline-none focus:border-green/50 transition">
+                        <option value="MARKET">Market</option>
+                        <option value="LIMIT">Limit</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Quantity</label>
+                      <input type="number" min="1" value={tradeQty} onChange={e => setTradeQty(e.target.value)}
+                        className="w-full rounded-lg border border-border bg-glass px-3 py-2 text-sm text-text font-mono outline-none focus:border-green/50 transition" />
+                    </div>
+                  </div>
+                  {tradeOrderType === 'LIMIT' && (
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Limit Price (J$)</label>
+                      <input type="number" step="0.01" min="0" value={tradeLimitPrice} onChange={e => setTradeLimitPrice(e.target.value)}
+                        placeholder={price.toFixed(2)}
+                        className="w-full rounded-lg border border-border bg-glass px-3 py-2 text-sm text-text font-mono outline-none focus:border-green/50 transition" />
+                    </div>
+                  )}
+                  {parseInt(tradeQty) > 0 && price > 0 && (
+                    <p className="text-[11px] text-muted">
+                      Est. value: <span className="text-text font-mono font-semibold">
+                        J${((parseInt(tradeQty) || 0) * (tradeOrderType === 'LIMIT' && tradeLimitPrice ? parseFloat(tradeLimitPrice) : price)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </span>
+                    </p>
+                  )}
+                  <button onClick={handleTrade} disabled={tradePlacing}
+                    className="w-full rounded-lg py-2 text-sm font-bold text-bg transition disabled:opacity-50"
+                    style={{ background: tradeMode === 'BUY' ? 'var(--color-green)' : 'var(--color-red)' }}>
+                    {tradePlacing ? 'Placing...' : `Confirm ${tradeMode}`}
+                  </button>
+                  {tradeMsg && (
+                    <p className={`text-xs ${tradeMsg.includes('success') ? 'text-green' : 'text-red'}`}>{tradeMsg}</p>
+                  )}
+                </div>
+              )}
+              {tradeMsg && !tradeMode && (
+                <p className={`text-xs mt-2 ${tradeMsg.includes('success') ? 'text-green' : 'text-red'}`}>{tradeMsg}</p>
+              )}
             </div>
 
             {/* Alert section */}

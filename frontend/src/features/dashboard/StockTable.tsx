@@ -1,216 +1,146 @@
 import { useState, useMemo } from 'react';
 import { useMarketStore } from '../../stores/market';
 import { useUIStore } from '../../stores/ui';
-import type { Stock } from '../../types';
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                             */
-/* ------------------------------------------------------------------ */
+type Field = 'symbol' | 'name' | 'price' | 'dollarChange' | 'pctChange' | 'volume';
+type Dir = 'asc' | 'desc';
 
-type SortField = 'symbol' | 'name' | 'price' | 'dollarChange' | 'pctChange' | 'volume';
-type SortDir = 'asc' | 'desc';
-
-interface ColumnDef {
-  key: SortField;
-  label: string;
-  align?: 'left' | 'right';
-}
-
-const COLUMNS: ColumnDef[] = [
-  { key: 'symbol', label: 'Symbol', align: 'left' },
-  { key: 'name', label: 'Name', align: 'left' },
-  { key: 'price', label: 'Price', align: 'right' },
-  { key: 'dollarChange', label: '$Change', align: 'right' },
-  { key: 'pctChange', label: '%Change', align: 'right' },
-  { key: 'volume', label: 'Volume', align: 'right' },
+const COLS: { key: Field; label: string; right?: boolean }[] = [
+  { key: 'symbol',       label: 'Symbol'  },
+  { key: 'price',        label: 'Price',   right: true },
+  { key: 'dollarChange', label: 'Change',  right: true },
+  { key: 'pctChange',    label: '%',       right: true },
+  { key: 'volume',       label: 'Volume',  right: true },
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                           */
-/* ------------------------------------------------------------------ */
-
-function formatPrice(n: number): string {
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function formatVolume(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
-  return n.toLocaleString();
-}
-
-function changeColor(v: number): string {
-  if (v > 0) return 'text-green';
-  if (v < 0) return 'text-red';
-  return 'text-muted';
-}
-
-function changePrefix(v: number): string {
-  return v > 0 ? '+' : '';
-}
-
-/* ------------------------------------------------------------------ */
-/*  SortIcon                                                          */
-/* ------------------------------------------------------------------ */
-
-function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
-  if (!active) {
-    return (
-      <svg className="w-3 h-3 text-muted ml-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-      </svg>
-    );
-  }
-  return (
-    <svg className="w-3 h-3 text-green ml-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      {dir === 'asc' ? (
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-      ) : (
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      )}
-    </svg>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  StockTable                                                        */
-/* ------------------------------------------------------------------ */
+const fmt2 = (n?: number) => (n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtVol = (n?: number) => {
+  const v = n ?? 0;
+  if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+  return v.toLocaleString();
+};
+const chgColor = (v?: number) => (v ?? 0) > 0 ? '#00e676' : (v ?? 0) < 0 ? '#ff5252' : 'var(--color-muted)';
 
 export default function StockTable() {
   const stocks = useMarketStore((s) => s.stocks);
   const selectSymbol = useMarketStore((s) => s.selectSymbol);
   const openStockDetail = useUIStore((s) => s.openStockDetail);
 
-  const [search, setSearch] = useState('');
-  const [sortField, setSortField] = useState<SortField>('symbol');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [q, setQ] = useState('');
+  const [sf, setSf] = useState<Field>('pctChange');
+  const [sd, setSd] = useState<Dir>('desc');
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortDir(field === 'symbol' || field === 'name' ? 'asc' : 'desc');
-    }
+  const handleSort = (f: Field) => {
+    if (sf === f) setSd(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSf(f); setSd(f === 'symbol' ? 'asc' : 'desc'); }
   };
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    let result = stocks;
-
-    if (q) {
-      result = stocks.filter(
-        (s) =>
-          s.symbol.toLowerCase().includes(q) ||
-          s.name.toLowerCase().includes(q),
-      );
-    }
-
-    // Sort
-    const dir = sortDir === 'asc' ? 1 : -1;
-    return [...result].sort((a, b) => {
-      const av = a[sortField];
-      const bv = b[sortField];
-      if (typeof av === 'string' && typeof bv === 'string') {
-        return av.localeCompare(bv) * dir;
-      }
+  const rows = useMemo(() => {
+    const ql = q.toLowerCase().trim();
+    let r = ql ? stocks.filter(s => s.symbol.toLowerCase().includes(ql) || (s.name ?? '').toLowerCase().includes(ql)) : stocks;
+    const dir = sd === 'asc' ? 1 : -1;
+    return [...r].sort((a, b) => {
+      const av = a[sf] ?? '', bv = b[sf] ?? '';
+      if (typeof av === 'string' && typeof bv === 'string') return av.localeCompare(bv) * dir;
       return ((av as number) - (bv as number)) * dir;
     });
-  }, [stocks, search, sortField, sortDir]);
-
-  const handleRowClick = (stock: Stock) => {
-    selectSymbol(stock.symbol);
-    openStockDetail(stock.symbol);
-  };
+  }, [stocks, q, sf, sd]);
 
   return (
-    <div className="rounded-xl border border-border bg-card backdrop-blur-sm overflow-hidden">
+    <div style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 16, overflow: 'hidden' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-text">All Stocks</h3>
-        <div className="relative">
-          <svg
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--color-border)', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,.05)' }}>
+            <i className="fa-solid fa-table-list" style={{ fontSize: 12, color: 'var(--color-muted)' }} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>All Securities</p>
+            <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)' }}>{rows.length} of {stocks.length}</p>
+          </div>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: 'var(--color-muted)', pointerEvents: 'none' }} />
           <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search stocks..."
-            className="w-48 rounded-lg border border-border bg-glass pl-8 pr-3 py-1.5 text-xs text-text placeholder-muted outline-none focus:border-green/50 focus:ring-1 focus:ring-green/20 transition"
+            value={q} onChange={e => setQ(e.target.value)} placeholder="Search symbol or name..."
+            style={{ height: 32, width: 210, paddingLeft: 30, paddingRight: q ? 30 : 10, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 11, color: 'var(--color-text)', outline: 'none', transition: 'all 150ms', boxSizing: 'border-box' }}
+            onFocus={e => { e.target.style.borderColor = 'rgba(0,230,118,.4)'; e.target.style.background = 'rgba(0,230,118,.04)'; }}
+            onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.background = 'rgba(255,255,255,.05)'; }}
           />
+          {q && (
+            <button onClick={() => setQ('')} style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <i className="fa-solid fa-xmark" style={{ fontSize: 9, color: 'var(--color-muted)' }} />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr className="border-b border-border">
-              {COLUMNS.map((col) => (
-                <th
-                  key={col.key}
-                  onClick={() => handleSort(col.key)}
-                  className={`px-4 py-2.5 text-xs font-medium text-muted uppercase tracking-wide cursor-pointer hover:text-text2 transition select-none ${
-                    col.align === 'right' ? 'text-right' : 'text-left'
-                  }`}
-                >
-                  {col.label}
-                  <SortIcon active={sortField === col.key} dir={sortDir} />
+            <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+              {COLS.map(col => (
+                <th key={col.key} onClick={() => handleSort(col.key)}
+                  style={{
+                    padding: '10px 16px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em',
+                    textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none',
+                    textAlign: col.right ? 'right' : 'left',
+                    color: sf === col.key ? '#00e676' : 'var(--color-muted)',
+                    transition: 'color 120ms', whiteSpace: 'nowrap',
+                  }}>
+                  {col.label}{' '}
+                  <i className={`fa-solid ${sf === col.key ? (sd === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}`} style={{ fontSize: 7 }} />
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {rows.length === 0 ? (
               <tr>
-                <td colSpan={COLUMNS.length} className="px-4 py-8 text-center text-muted text-sm">
-                  {search ? 'No stocks match your search' : 'No stock data available'}
+                <td colSpan={5} style={{ padding: '40px 16px', textAlign: 'center', fontSize: 12, color: 'var(--color-muted)' }}>
+                  {q ? 'No results found' : 'Awaiting market data...'}
                 </td>
               </tr>
-            ) : (
-              filtered.map((stock) => (
-                <tr
-                  key={stock.symbol}
-                  onClick={() => handleRowClick(stock)}
-                  className="border-b border-border/30 hover:bg-glass cursor-pointer transition"
+            ) : rows.map((s) => {
+              const pos = (s.pctChange ?? 0) > 0;
+              const neg = (s.pctChange ?? 0) < 0;
+              return (
+                <tr key={s.symbol}
+                  onClick={() => { selectSymbol(s.symbol); openStockDetail(s.symbol); }}
+                  style={{ borderBottom: '1px solid rgba(255,255,255,.022)', cursor: 'pointer', transition: 'background 100ms' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}
                 >
-                  <td className="px-4 py-2.5 font-medium text-text">{stock.symbol}</td>
-                  <td className="px-4 py-2.5 text-text2 truncate max-w-[200px]">{stock.name}</td>
-                  <td className="px-4 py-2.5 text-right font-mono text-text">
-                    ${formatPrice(stock.price)}
+                  <td style={{ padding: '11px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.08)' : 'rgba(255,255,255,.04)' }}>
+                        <span style={{ fontSize: 8, fontWeight: 900, color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)' }}>{s.symbol.slice(0, 3)}</span>
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{s.symbol}</p>
+                        {s.name && <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</p>}
+                      </div>
+                    </div>
                   </td>
-                  <td className={`px-4 py-2.5 text-right font-mono ${changeColor(stock.dollarChange)}`}>
-                    {changePrefix(stock.dollarChange)}
-                    {formatPrice(Math.abs(stock.dollarChange))}
+                  <td style={{ padding: '11px 16px', textAlign: 'right', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text)' }}>
+                    ${fmt2(s.price)}
                   </td>
-                  <td className={`px-4 py-2.5 text-right font-mono ${changeColor(stock.pctChange)}`}>
-                    {changePrefix(stock.pctChange)}
-                    {stock.pctChange.toFixed(2)}%
+                  <td style={{ padding: '11px 16px', textAlign: 'right', fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-mono)', color: chgColor(s.dollarChange) }}>
+                    {(s.dollarChange ?? 0) >= 0 ? '+' : ''}${fmt2(s.dollarChange ?? 0)}
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-muted">
-                    {formatVolume(stock.volume)}
+                  <td style={{ padding: '11px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: chgColor(s.pctChange) }}>
+                    {pos ? '+' : ''}{(s.pctChange ?? 0).toFixed(2)}%
+                  </td>
+                  <td style={{ padding: '11px 16px', textAlign: 'right', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted)' }}>
+                    {fmtVol(s.volume)}
                   </td>
                 </tr>
-              ))
-            )}
+              );
+            })}
           </tbody>
         </table>
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 py-2 border-t border-border text-[11px] text-muted">
-        {filtered.length} of {stocks.length} stocks
       </div>
     </div>
   );

@@ -66,7 +66,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <nav className="flex-1 overflow-y-auto py-3 no-scrollbar">
           {Object.entries(sections).map(([section, items]) => (
             <div key={section} className="mb-3">
-              <p className="px-5 py-1.5 text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+              <p className="px-5 py-1.5 text-[11px] font-semibold text-text-muted uppercase tracking-wider">
                 {section}
               </p>
               {items.map((item) => {
@@ -87,7 +87,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <i className={`fas ${item.icon} w-4 text-center text-xs`} />
                     <span>{item.label}</span>
                     {locked && (
-                      <i className="fas fa-lock text-[9px] text-gf-gold ml-auto" />
+                      <i className="fas fa-lock text-[11px] text-gf-gold ml-auto" />
                     )}
                   </NavLink>
                 );
@@ -100,14 +100,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {isAuthenticated && (
           <div className="p-4 border-t border-card-border">
             <div className="glass-card p-3 text-center">
-              <span className="text-[10px] uppercase tracking-wider text-text-muted">Current Plan</span>
+              <span className="text-[11px] uppercase tracking-wider text-text-muted">Current Plan</span>
               <p className={`text-sm font-bold ${tier === 'FREE' ? 'text-text-secondary' : 'gradient-text'}`}>
                 {tier === 'ENTERPRISE' ? 'Institutional' : tier}
               </p>
               {tier === 'FREE' && (
                 <NavLink
                   to="/subscription"
-                  className="mt-2 block text-[11px] text-gf-green hover:underline"
+                  className="mt-2 block text-xs text-gf-green hover:underline"
                 >
                   Upgrade to Pro
                 </NavLink>

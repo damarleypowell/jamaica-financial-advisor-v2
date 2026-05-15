@@ -115,8 +115,15 @@ router.post("/quotes", rateLimit(60000, 20), async (req, res) => {
     return res.status(400).json({ error: "Max 50 symbols per request" });
   }
   try {
-    const quotes = await alpaca.getMultipleQuotes(symbols);
-    res.json(quotes);
+    const raw = await alpaca.getMultipleQuotes(symbols);
+    // Alpaca can return numeric-indexed results — re-key by symbol
+    const keyed = {};
+    const entries = Object.entries(raw);
+    entries.forEach(([k, v], i) => {
+      const sym = /^\d+$/.test(k) ? (symbols[i] || k).toUpperCase() : k.toUpperCase();
+      keyed[sym] = v;
+    });
+    res.json(keyed);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

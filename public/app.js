@@ -290,7 +290,11 @@
             <div class="user-dropdown-item" data-action="subscription" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
               <i class="fas fa-crown" style="width:18px;text-align:center;color:var(--gold);"></i> Subscription & Billing
             </div>
-            <div class="user-dropdown-item" data-action="wallet" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
+            <!-- WALLET & DEPOSITS — hidden until brokerage partnership integration.
+                 Gotham is the intelligence layer; deposit/withdrawal flows will
+                 connect to Jamaican brokerages (NCB Capital, JMMB, etc.) once
+                 API partnerships are in place. Re-enable by removing display:none. -->
+            <div class="user-dropdown-item" data-action="wallet" style="display:none;padding:10px 18px;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
               <i class="fas fa-wallet" style="width:18px;text-align:center;color:var(--green);"></i> Wallet & Deposits
             </div>
             <div class="user-dropdown-item" data-action="alerts" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
@@ -299,7 +303,10 @@
             <div class="user-dropdown-item" data-action="security" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
               <i class="fas fa-shield-halved" style="width:18px;text-align:center;color:var(--blue);"></i> Security & 2FA
             </div>
-            <div class="user-dropdown-item" data-action="kyc" style="padding:10px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
+            <!-- KYC VERIFICATION — hidden until brokerage integration.
+                 KYC will be required when users connect a real brokerage account.
+                 Not applicable for the intelligence/analytics platform phase. -->
+            <div class="user-dropdown-item" data-action="kyc" style="display:none;padding:10px 18px;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">
               <i class="fas fa-id-card" style="width:18px;text-align:center;color:var(--muted);"></i> KYC Verification
             </div>
           </div>
@@ -820,6 +827,24 @@
       cell.addEventListener('click', () => selectStock(cell.dataset.symbol));
     });
   }
+
+  // ── Heatmap Toggle ─────────────────────────────────────────────────────────
+  (function initHeatmapToggle() {
+    const header = $('#heatmapHeader');
+    const body   = $('#heatmapBody');
+    const chevron = $('#heatmapChevron');
+    let collapsed = false;
+
+    function toggle() {
+      collapsed = !collapsed;
+      body.classList.toggle('collapsed', collapsed);
+      chevron.style.transform = collapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+      chevron.style.transition = 'transform 0.25s ease';
+    }
+
+    header?.addEventListener('click', toggle);
+    $('#heatmapToggleBtn')?.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+  })();
 
   // ── Stock Table ────────────────────────────────────────────────────────────
   let fullStockData = [];

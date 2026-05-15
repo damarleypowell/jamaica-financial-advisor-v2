@@ -3,27 +3,33 @@ import { Outlet } from 'react-router-dom';
 import Ticker from './Ticker.tsx';
 import Header from './Header.tsx';
 import Sidebar from './Sidebar.tsx';
+import { useAnalytics } from '../../hooks/useAnalytics.ts';
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useAnalytics();
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <Ticker />
-      <Header onToggleSidebar={() => setSidebarOpen((v) => !v)} />
+      <Header onToggleSidebar={() => setSidebarOpen(v => !v)} />
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Main content area */}
+      {/* Persistent desktop sidebar offset — sidebar is always visible on lg+ */}
       <main
-        className={
-          'min-h-screen pt-[100px] pb-6 px-4 md:px-6 ' +
-          'md:ml-[260px] ' +   /* desktop: offset for sidebar */
-          'mb-[60px] md:mb-0'  /* mobile: offset for bottom nav */
-        }
+        style={{
+          paddingTop: 88,          // ticker (32px) + header (56px)
+          paddingBottom: 80,
+          paddingLeft: 20,
+          paddingRight: 20,
+          maxWidth: 1280,
+          margin: '0 auto',
+          /* On desktop we shift content right to accommodate the pinned sidebar.
+             The sidebar is 260px wide. Class applied via media query below. */
+        }}
+        className="layout-main animate-fade-in"
       >
-        <div className="max-w-[1600px] mx-auto animate-fade-in">
-          <Outlet />
-        </div>
+        <Outlet />
       </main>
     </div>
   );

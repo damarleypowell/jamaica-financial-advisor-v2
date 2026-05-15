@@ -4,368 +4,336 @@ import { useMarketStore } from '../../stores/market.ts';
 import type { SubscriptionTier } from '../../types/index.ts';
 import { useState, useEffect } from 'react';
 
-/* ---------- tier helpers ---------- */
-const TIER_LEVEL: Record<SubscriptionTier, number> = {
-  FREE: 0,
-  BASIC: 1,
-  PRO: 2,
-  ENTERPRISE: 3,
+const TIER: Record<SubscriptionTier, number> = { FREE: 0, BASIC: 1, PRO: 2, ENTERPRISE: 3 };
+const canAccess = (u: SubscriptionTier, req: SubscriptionTier) => TIER[u] >= TIER[req];
+
+interface NavItem { label: string; icon: string; to: string; tier?: SubscriptionTier; adminOnly?: boolean; }
+interface Section { heading: string; items: NavItem[]; }
+
+const NAV: Section[] = [
+  {
+    heading: 'Market',
+    items: [
+      { label: 'Dashboard',      icon: 'fa-solid fa-chart-line',           to: '/'                },
+      { label: 'Advanced Chart', icon: 'fa-solid fa-chart-candlestick',    to: '/technicals',     tier: 'BASIC' },
+      { label: 'News',           icon: 'fa-solid fa-newspaper',            to: '/news'            },
+      { label: 'Watchlists',     icon: 'fa-solid fa-eye',                  to: '/watchlists'      },
+      { label: 'Screener',       icon: 'fa-solid fa-filter',               to: '/screener',       tier: 'BASIC' },
+      { label: 'Sectors',        icon: 'fa-solid fa-building',             to: '/sectors',        tier: 'BASIC' },
+      { label: 'Compare',        icon: 'fa-solid fa-code-compare',         to: '/compare',        tier: 'BASIC' },
+      { label: 'Dividends',      icon: 'fa-solid fa-money-bill-trend-up',  to: '/dividends',      tier: 'BASIC' },
+    ],
+  },
+  {
+    heading: 'Invest',
+    items: [
+      { label: 'Portfolio',       icon: 'fa-solid fa-briefcase',           to: '/portfolio'       },
+      { label: 'Orders',          icon: 'fa-solid fa-clock-rotate-left',   to: '/orders'          },
+      { label: 'Calculators',     icon: 'fa-solid fa-calculator',          to: '/calculators',    tier: 'BASIC' },
+      { label: 'US Stocks',       icon: 'fa-solid fa-flag-usa',            to: '/us-stocks',      tier: 'BASIC' },
+      { label: 'Forex',           icon: 'fa-solid fa-money-bill-transfer', to: '/forex',          tier: 'PRO'   },
+      { label: 'Global Markets',  icon: 'fa-solid fa-globe',               to: '/global-markets', tier: 'PRO'   },
+      { label: 'Financial Plan',  icon: 'fa-solid fa-bullseye',            to: '/planner',        tier: 'PRO'   },
+    ],
+  },
+  {
+    heading: 'Intelligence',
+    items: [
+      { label: 'AI Chat',         icon: 'fa-solid fa-robot',               to: '/chat',           tier: 'BASIC' },
+      { label: 'AI Analysis',     icon: 'fa-solid fa-brain',               to: '/analysis',       tier: 'PRO'   },
+    ],
+  },
+  {
+    heading: 'Account',
+    items: [
+      { label: 'Leaderboard',     icon: 'fa-solid fa-trophy',              to: '/leaderboard',    tier: 'PRO'   },
+      { label: 'Learn',           icon: 'fa-solid fa-graduation-cap',      to: '/learn'           },
+      { label: 'Settings',        icon: 'fa-solid fa-gear',                to: '/settings'        },
+      { label: 'Subscription',    icon: 'fa-solid fa-crown',               to: '/subscription'   },
+      { label: 'Admin',           icon: 'fa-solid fa-shield-halved',       to: '/admin',          adminOnly: true },
+    ],
+  },
+];
+
+const MOBILE_NAV: NavItem[] = [
+  { label: 'Home',      icon: 'fa-solid fa-house',            to: '/'          },
+  { label: 'Markets',   icon: 'fa-solid fa-newspaper',        to: '/news'      },
+  { label: 'Orders',    icon: 'fa-solid fa-clock-rotate-left', to: '/orders'   },
+  { label: 'Portfolio', icon: 'fa-solid fa-briefcase',        to: '/portfolio' },
+  { label: 'More',      icon: 'fa-solid fa-bars',             to: '/settings'  },
+];
+
+const TIER_COLORS: Record<string, string> = {
+  FREE: '#00e676', BASIC: '#40c4ff', PRO: '#ffd740', ENTERPRISE: '#ce93d8',
 };
 
-function canAccess(userTier: SubscriptionTier, required: SubscriptionTier): boolean {
-  return TIER_LEVEL[userTier] >= TIER_LEVEL[required];
-}
-
-/* ---------- nav item definition ---------- */
-interface NavItem {
-  label: string;
-  icon: string;
-  to: string;
-  tier?: SubscriptionTier;
-  adminOnly?: boolean;
-}
-
-interface NavSection {
-  heading: string;
-  items: NavItem[];
-}
-
-const NAV_SECTIONS: NavSection[] = [
-  {
-    heading: 'MARKET',
-    items: [
-      { label: 'Dashboard', icon: 'fa-solid fa-chart-line', to: '/' },
-      { label: 'Advanced Chart', icon: 'fa-solid fa-chart-candlestick', to: '/technicals', tier: 'BASIC' },
-      { label: 'News', icon: 'fa-solid fa-newspaper', to: '/news' },
-      { label: 'Watchlists', icon: 'fa-solid fa-eye', to: '/watchlists' },
-      { label: 'Screener', icon: 'fa-solid fa-filter', to: '/screener', tier: 'BASIC' },
-      { label: 'Sectors', icon: 'fa-solid fa-building', to: '/sectors', tier: 'BASIC' },
-      { label: 'Compare', icon: 'fa-solid fa-code-compare', to: '/compare', tier: 'BASIC' },
-      { label: 'Dividends', icon: 'fa-solid fa-money-bill-trend-up', to: '/dividends', tier: 'BASIC' },
-    ],
-  },
-  {
-    heading: 'INVEST',
-    items: [
-      { label: 'Portfolio', icon: 'fa-solid fa-briefcase', to: '/portfolio' },
-      { label: 'Orders & History', icon: 'fa-solid fa-clock-rotate-left', to: '/orders' },
-      { label: 'Calculators', icon: 'fa-solid fa-calculator', to: '/calculators', tier: 'BASIC' },
-      { label: 'US Stocks', icon: 'fa-solid fa-flag-usa', to: '/us-stocks', tier: 'BASIC' },
-      { label: 'Forex', icon: 'fa-solid fa-money-bill-transfer', to: '/forex', tier: 'PRO' },
-      { label: 'Markets', icon: 'fa-solid fa-globe', to: '/global-markets', tier: 'PRO' },
-      { label: 'Currency Impact', icon: 'fa-solid fa-coins', to: '/currency-impact', tier: 'PRO' },
-      { label: 'Planner', icon: 'fa-solid fa-bullseye', to: '/planner', tier: 'PRO' },
-      { label: 'Leaderboard', icon: 'fa-solid fa-trophy', to: '/leaderboard', tier: 'PRO' },
-    ],
-  },
-  {
-    heading: 'AI TOOLS',
-    items: [
-      { label: 'AI Chat', icon: 'fa-solid fa-robot', to: '/chat', tier: 'BASIC' },
-      { label: 'AI Analysis', icon: 'fa-solid fa-brain', to: '/analysis', tier: 'PRO' },
-    ],
-  },
-  {
-    heading: 'LEARN',
-    items: [
-      { label: 'Learn', icon: 'fa-solid fa-graduation-cap', to: '/learn' },
-    ],
-  },
-  {
-    heading: 'ACCOUNT',
-    items: [
-      { label: 'Settings', icon: 'fa-solid fa-gear', to: '/settings' },
-      { label: 'Subscription', icon: 'fa-solid fa-crown', to: '/subscription' },
-      { label: 'Admin', icon: 'fa-solid fa-shield-halved', to: '/admin', adminOnly: true },
-    ],
-  },
-];
-
-/* ---------- mobile bottom nav items ---------- */
-const MOBILE_NAV: NavItem[] = [
-  { label: 'Home', icon: 'fa-solid fa-house', to: '/' },
-  { label: 'Portfolio', icon: 'fa-solid fa-briefcase', to: '/portfolio' },
-  { label: 'Chart', icon: 'fa-solid fa-chart-line', to: '/technicals', tier: 'BASIC' },
-  { label: 'News', icon: 'fa-solid fa-newspaper', to: '/news' },
-  { label: 'More', icon: 'fa-solid fa-ellipsis', to: '/settings' },
-];
-
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { user } = useAuthStore();
-  const isConnected = useMarketStore((s) => s.isConnected);
-  const userTier: SubscriptionTier = user?.subscriptionTier ?? 'FREE';
-  const isAdmin = userTier === 'ENTERPRISE';
+function NavItemRow({ item, userTier, onClose }: { item: NavItem; userTier: SubscriptionTier; onClose: () => void }) {
   const navigate = useNavigate();
+  const locked = !!item.tier && !canAccess(userTier, item.tier);
+  const tierColor = item.tier ? TIER_COLORS[item.tier] : null;
+
+  return (
+    <NavLink
+      to={item.to}
+      end={item.to === '/'}
+      onClick={e => {
+        if (locked) { e.preventDefault(); navigate('/subscription'); }
+        onClose();
+      }}
+      style={({ isActive }) => ({
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 10px', borderRadius: 10,
+        fontSize: 13, fontWeight: isActive ? 600 : 400,
+        textDecoration: 'none', transition: 'all 130ms',
+        opacity: locked ? .4 : 1,
+        background: isActive ? 'rgba(0,230,118,.08)' : 'transparent',
+        color: isActive ? '#00e676' : 'var(--color-text2)',
+        marginBottom: 1,
+        cursor: locked ? 'not-allowed' : 'pointer',
+      })}
+    >
+      {({ isActive }) => (
+        <>
+          <span style={{
+            width: 18, display: 'flex', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <i className={item.icon} style={{
+              fontSize: 13, color: isActive ? '#00e676' : 'var(--color-muted)',
+            }} />
+          </span>
+          <span style={{ flex: 1, lineHeight: 1.2 }}>{item.label}</span>
+          {item.tier && !locked && tierColor && (
+            <span style={{
+              fontSize: 8, fontWeight: 800, padding: '1px 5px', borderRadius: 4,
+              background: tierColor + '18', color: tierColor, letterSpacing: '.06em',
+              border: `1px solid ${tierColor}30`,
+            }}>{item.tier}</span>
+          )}
+          {locked && <i className="fa-solid fa-lock" style={{ fontSize: 8, color: 'var(--color-muted)', opacity: .5 }} />}
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; userTier: SubscriptionTier; isAdmin: boolean }) {
+  const isConn = useMarketStore(s => s.isConnected);
+  const { user } = useAuthStore();
   const [clock, setClock] = useState(new Date());
+  const tierColor = TIER_COLORS[userTier] ?? '#00e676';
 
   useEffect(() => {
-    const interval = setInterval(() => setClock(new Date()), 1000);
-    return () => clearInterval(interval);
+    const id = setInterval(() => setClock(new Date()), 1000);
+    return () => clearInterval(id);
   }, []);
 
-  // Jamaica is UTC-5
-  const jamaicaTime = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Jamaica',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
+  const jamTime = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Jamaica', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
   }).format(clock);
+  const local = new Date(clock.toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
+  const d = local.getDay(), m = local.getHours() * 60 + local.getMinutes();
+  const mktOpen = d >= 1 && d <= 5 && m >= 570 && m < 810;
 
-  // JSE hours: Mon-Fri 9:30 AM - 1:30 PM Jamaica time
-  const jamaicaNow = new Date(
-    clock.toLocaleString('en-US', { timeZone: 'America/Jamaica' }),
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+
+      {/* Logo block */}
+      <div style={{ padding: '18px 16px 12px', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+            background: 'linear-gradient(135deg, rgba(0,230,118,.2), rgba(0,178,72,.1))',
+            border: '1px solid rgba(0,230,118,.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" style={{ width: 18, height: 18 }}>
+              <path d="M3 17L7 12L11 14.5L16 9L21 5" stroke="#00e676" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="21" cy="5" r="2.2" fill="#00e676"/>
+            </svg>
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 900, letterSpacing: '.12em', color: '#00e676', lineHeight: 1 }}>GOTHAM</p>
+            <p style={{ margin: 0, fontSize: 8, fontWeight: 600, letterSpacing: '.3em', color: 'var(--color-muted)', lineHeight: 1, marginTop: 3 }}>FINANCIAL</p>
+          </div>
+        </div>
+
+        {/* User pill (if logged in) */}
+        {user && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 9, marginTop: 14,
+            padding: '8px 10px', borderRadius: 10,
+            background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.05)',
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, fontWeight: 800,
+              background: tierColor + '18', border: `1.5px solid ${tierColor}40`, color: tierColor,
+            }}>{user.name.charAt(0).toUpperCase()}</div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name.split(' ')[0]}</p>
+              <p style={{ margin: 0, fontSize: 9, fontWeight: 800, color: tierColor, letterSpacing: '.1em' }}>{userTier}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Nav */}
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', scrollbarWidth: 'none' }}>
+        {NAV.map(sec => {
+          const vis = sec.items.filter(i => !i.adminOnly || isAdmin);
+          if (!vis.length) return null;
+          return (
+            <div key={sec.heading} style={{ marginBottom: 4 }}>
+              <p style={{
+                fontSize: 9, fontWeight: 800, letterSpacing: '.16em', color: 'var(--color-muted)',
+                textTransform: 'uppercase', padding: '10px 10px 4px', margin: 0, opacity: .55,
+              }}>
+                {sec.heading}
+              </p>
+              {vis.map(item => (
+                <NavItemRow key={item.to} item={item} userTier={userTier} onClose={onClose} />
+              ))}
+            </div>
+          );
+        })}
+        <div style={{ height: 20 }} />
+      </nav>
+
+      {/* Market status footer */}
+      <div style={{ padding: '10px 16px 14px', borderTop: '1px solid rgba(255,255,255,.05)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{
+            width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+            background: mktOpen ? '#00e676' : isConn ? '#ffd740' : 'rgba(255,255,255,.15)',
+            boxShadow: mktOpen ? '0 0 8px rgba(0,230,118,.6)' : 'none',
+          }} className={mktOpen ? 'animate-pulse-dot' : ''} />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{ margin: 0, fontSize: 11.5, fontWeight: 700, color: mktOpen ? '#00e676' : 'var(--color-text2)', lineHeight: 1 }}>
+              {mktOpen ? 'JSE Open' : 'JSE Closed'}
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>
+              {jamTime} JAM
+            </p>
+          </div>
+          {isConn && (
+            <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 99, color: '#00e676', background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.2)' }}>
+              LIVE
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
   );
-  const day = jamaicaNow.getDay();
-  const hours = jamaicaNow.getHours();
-  const minutes = jamaicaNow.getMinutes();
-  const timeMinutes = hours * 60 + minutes;
-  const isMarketOpen =
-    day >= 1 && day <= 5 && timeMinutes >= 570 && timeMinutes < 810;
+}
 
-  function handleNavClick(item: NavItem, e: React.MouseEvent) {
-    if (item.tier && !canAccess(userTier, item.tier)) {
-      e.preventDefault();
-      navigate('/subscription');
-      onClose();
-      return;
-    }
-    onClose();
-  }
+export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { user } = useAuthStore();
+  const userTier: SubscriptionTier = user?.subscriptionTier ?? 'FREE';
+  const isAdmin = userTier === 'ENTERPRISE';
+
+  const SIDEBAR_W = 240;
 
   return (
     <>
-      {/* Desktop sidebar */}
+      {/* ── Desktop: always-visible pinned sidebar ─────────────────── */}
       <aside
-        className={`fixed top-9 left-0 bottom-0 w-[260px] bg-bg2 border-r border-border z-30 flex-col overflow-y-auto hidden md:flex transition-transform duration-300`}
+        className="hidden lg:flex"
+        style={{
+          position: 'fixed',
+          top: 32,         // below ticker
+          left: 0,
+          bottom: 0,
+          width: SIDEBAR_W,
+          background: '#060a12',
+          borderRight: '1px solid rgba(255,255,255,.05)',
+          zIndex: 35,
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
       >
-        {/* Brand */}
-        <div className="px-5 pt-5 pb-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 flex-shrink-0">
-              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <rect width="32" height="32" rx="7" fill="rgba(0,200,83,0.12)"/>
-                <rect width="32" height="32" rx="7" stroke="#00c853" strokeWidth="0.75" strokeOpacity="0.4"/>
-                <path d="M7 22 L11 17 L15 19.5 L20 14 L25 10" stroke="#00c853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="25" cy="10" r="2.5" fill="#00c853"/>
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-base font-bold tracking-wide text-green leading-none">
-                GOTHAM
-              </h1>
-              <p className="text-[10px] font-medium text-muted tracking-[0.2em] leading-none mt-0.5">
-                FINANCIAL
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 py-3 px-3 space-y-4 overflow-y-auto">
-          {NAV_SECTIONS.map((section) => (
-            <div key={section.heading}>
-              <p className="text-[10px] font-semibold text-muted tracking-[0.15em] uppercase px-3 mb-1.5">
-                {section.heading}
-              </p>
-              <ul className="space-y-0.5">
-                {section.items.map((item) => {
-                  // Hide admin item for non-admins
-                  if (item.adminOnly && !isAdmin) return null;
-
-                  const locked =
-                    !!item.tier && !canAccess(userTier, item.tier);
-
-                  return (
-                    <li key={item.to}>
-                      <NavLink
-                        to={item.to}
-                        end={item.to === '/'}
-                        onClick={(e) => handleNavClick(item, e)}
-                        className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group ${
-                            isActive
-                              ? 'bg-green/10 text-green border-l-2 border-green'
-                              : 'text-text2 hover:bg-glass hover:text-text border-l-2 border-transparent'
-                          } ${locked ? 'opacity-60' : ''}`
-                        }
-                      >
-                        <i
-                          className={`${item.icon} w-4 text-center text-xs`}
-                        />
-                        <span className="flex-1 truncate">{item.label}</span>
-                        {locked && (
-                          <i className="fa-solid fa-lock text-[10px] text-muted" />
-                        )}
-                        {item.tier && !locked && (
-                          <span
-                            className={`text-[9px] font-bold uppercase tracking-wider px-1 py-px rounded ${
-                              item.tier === 'PRO'
-                                ? 'bg-gold/15 text-gold'
-                                : 'bg-blue/15 text-blue'
-                            }`}
-                          >
-                            {item.tier}
-                          </span>
-                        )}
-                      </NavLink>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </nav>
-
-        {/* Footer: market status */}
-        <div className="px-4 py-3 border-t border-border">
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isMarketOpen ? 'bg-green animate-pulse-slow' : isConnected ? 'bg-gold' : 'bg-red'
-              }`}
-            />
-            <span className="text-xs text-muted">
-              {isMarketOpen ? 'JSE Market Open' : 'JSE Market Closed'}
-            </span>
-          </div>
-          <p className="text-[10px] text-muted mt-1 font-mono">{jamaicaTime}</p>
-        </div>
+        <SidebarContent onClose={() => {}} userTier={userTier} isAdmin={isAdmin} />
       </aside>
 
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={onClose}
-        />
-      )}
+      {/* Desktop content offset injected via global style */}
+      <style>{`
+        @media (min-width: 1024px) {
+          .layout-main {
+            padding-left: ${SIDEBAR_W + 20}px !important;
+          }
+        }
+      `}</style>
 
-      {/* Mobile slide-out sidebar */}
-      <aside
-        className={`fixed top-9 left-0 bottom-[60px] w-[280px] bg-bg2 border-r border-border z-50 flex flex-col overflow-y-auto md:hidden transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        {/* Brand */}
-        <div className="px-5 pt-5 pb-4 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 flex-shrink-0">
-              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <rect width="32" height="32" rx="7" fill="rgba(0,200,83,0.12)"/>
-                <rect width="32" height="32" rx="7" stroke="#00c853" strokeWidth="0.75" strokeOpacity="0.4"/>
-                <path d="M7 22 L11 17 L15 19.5 L20 14 L25 10" stroke="#00c853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="25" cy="10" r="2.5" fill="#00c853"/>
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-base font-bold tracking-wide text-green leading-none">
-                GOTHAM
-              </h1>
-              <p className="text-[10px] font-medium text-muted tracking-[0.2em] leading-none mt-0.5">
-                FINANCIAL
-              </p>
-            </div>
-          </div>
-          <button
+      {/* ── Mobile: backdrop + slide drawer ────────────────────────── */}
+      <div className="lg:hidden">
+        {isOpen && (
+          <div
             onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-glass text-muted hover:text-text transition-colors flex items-center justify-center"
-            aria-label="Close sidebar"
-          >
-            <i className="fa-solid fa-xmark" />
-          </button>
-        </div>
-
-        {/* Same nav sections */}
-        <nav className="flex-1 py-3 px-3 space-y-4 overflow-y-auto">
-          {NAV_SECTIONS.map((section) => (
-            <div key={section.heading}>
-              <p className="text-[10px] font-semibold text-muted tracking-[0.15em] uppercase px-3 mb-1.5">
-                {section.heading}
-              </p>
-              <ul className="space-y-0.5">
-                {section.items.map((item) => {
-                  if (item.adminOnly && !isAdmin) return null;
-                  const locked =
-                    !!item.tier && !canAccess(userTier, item.tier);
-
-                  return (
-                    <li key={item.to}>
-                      <NavLink
-                        to={item.to}
-                        end={item.to === '/'}
-                        onClick={(e) => handleNavClick(item, e)}
-                        className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                            isActive
-                              ? 'bg-green/10 text-green border-l-2 border-green'
-                              : 'text-text2 hover:bg-glass hover:text-text border-l-2 border-transparent'
-                          } ${locked ? 'opacity-60' : ''}`
-                        }
-                      >
-                        <i
-                          className={`${item.icon} w-4 text-center text-xs`}
-                        />
-                        <span className="flex-1 truncate">{item.label}</span>
-                        {locked && (
-                          <i className="fa-solid fa-lock text-[10px] text-muted" />
-                        )}
-                        {item.tier && !locked && (
-                          <span
-                            className={`text-[9px] font-bold uppercase tracking-wider px-1 py-px rounded ${
-                              item.tier === 'PRO'
-                                ? 'bg-gold/15 text-gold'
-                                : 'bg-blue/15 text-blue'
-                            }`}
-                          >
-                            {item.tier}
-                          </span>
-                        )}
-                      </NavLink>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </nav>
-
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-border">
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isMarketOpen ? 'bg-green animate-pulse-slow' : isConnected ? 'bg-gold' : 'bg-red'
-              }`}
-            />
-            <span className="text-xs text-muted">
-              {isMarketOpen ? 'JSE Open' : 'JSE Closed'}
-            </span>
+            style={{
+              position: 'fixed', inset: 0,
+              background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)', zIndex: 48,
+            }}
+          />
+        )}
+        <aside style={{
+          position: 'fixed', top: 0, left: 0, bottom: 0, width: 280,
+          background: '#060a12',
+          borderRight: '1px solid rgba(255,255,255,.06)',
+          zIndex: 50, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 260ms cubic-bezier(.4,0,.2,1)',
+        }}>
+          {/* Mobile drawer close button */}
+          <div style={{
+            display: 'flex', justifyContent: 'flex-end',
+            padding: '12px 12px 0',
+            paddingTop: 'max(12px, env(safe-area-inset-top))',
+          }}>
+            <button onClick={onClose} style={{
+              width: 32, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.07)', cursor: 'pointer',
+            }}>
+              <i className="fa-solid fa-xmark" style={{ fontSize: 13, color: 'var(--color-muted)' }} />
+            </button>
           </div>
-          <p className="text-[10px] text-muted mt-1 font-mono">{jamaicaTime}</p>
-        </div>
-      </aside>
+          <SidebarContent onClose={onClose} userTier={userTier} isAdmin={isAdmin} />
+        </aside>
+      </div>
 
-      {/* Mobile bottom nav bar */}
-      <nav className="fixed bottom-0 left-0 right-0 h-[60px] bg-bg2 border-t border-border z-40 flex items-center justify-around md:hidden">
-        {MOBILE_NAV.map((item) => (
+      {/* ── Mobile bottom nav ────────────────────────────────────────── */}
+      <nav className="lg:hidden" style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        height: 60, paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        background: 'rgba(6,10,18,.97)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
+        borderTop: '1px solid rgba(255,255,255,.055)', zIndex: 40,
+        display: 'flex', alignItems: 'center',
+      }}>
+        {MOBILE_NAV.map(item => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to === '/'}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-colors ${
-                isActive ? 'text-green' : 'text-muted hover:text-text'
-              }`
-            }
-          >
-            <i className={`${item.icon} text-lg`} />
-            <span className="text-[10px] font-medium">{item.label}</span>
+            style={{ textDecoration: 'none', flex: 1, display: 'flex', justifyContent: 'center' }}>
+            {({ isActive }) => (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '6px 8px', position: 'relative', minWidth: 48 }}>
+                {isActive && (
+                  <span style={{
+                    position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)',
+                    width: 18, height: 2, borderRadius: 99, background: 'var(--color-green)',
+                    boxShadow: '0 0 8px rgba(0,230,118,.6)',
+                  }} />
+                )}
+                <i className={item.icon} style={{
+                  fontSize: 18, transition: 'all 160ms',
+                  color: isActive ? 'var(--color-green)' : 'var(--color-muted)',
+                  filter: isActive ? 'drop-shadow(0 0 4px rgba(0,230,118,.5))' : 'none',
+                }} />
+                <span style={{ fontSize: 9.5, fontWeight: 600, color: isActive ? 'var(--color-green)' : 'var(--color-muted)', transition: 'color 160ms' }}>
+                  {item.label}
+                </span>
+              </div>
+            )}
           </NavLink>
         ))}
       </nav>

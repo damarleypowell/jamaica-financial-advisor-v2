@@ -7,10 +7,18 @@ const { checkFeature } = require("../middleware/subscription");
 const marketService = require("../services/market.service");
 const analytics = require("../services/analytics.service");
 const { fetchAllNews } = require("../../news-scraper");
+const { wrapAIResponse, logAIInteraction } = require("../middleware/compliance");
 
 const router = Router();
 
 const client = new Anthropic({ apiKey: config.anthropicApiKey });
+
+// Shared system prompt block for JSE context — cached by Anthropic (5-min TTL)
+const JSE_SYSTEM_CACHE_BLOCK = {
+  type: "text",
+  text: `You are Gotham Financial Advisor, an AI assistant for the Jamaica Stock Exchange (JSE) and Caribbean retail investors. You provide educational financial information, market data analysis, and general investment education. You NEVER provide personalized investment advice. Always clarify that responses are educational and users should consult a licensed financial advisor for personalized guidance. Be conversational, supportive, and use clear language accessible to first-time investors.`,
+  cache_control: { type: "ephemeral" },
+};
 const VOICE_ID = "onwK4e9ZLuTAKqWW03F9"; // Daniel — deep, clear, professional British voice
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -28,40 +36,36 @@ router.post("/api/chat", rateLimit(60000, 20), async (req, res) => {
   const topLosers = [...marketService.livePrices]
     .sort((a, b) => a.liveChange - b.liveChange)
     .slice(0, 5);
-  const marketContext = `
-Current JSE Market Data (live):
+
+  const marketContext = `Current JSE Market Data (live):
 Top Gainers: ${topGainers.map((s) => `${s.symbol}(+${s.liveChange}%,$${s.livePrice})`).join(", ")}
 Top Losers: ${topLosers.map((s) => `${s.symbol}(${s.liveChange}%,$${s.livePrice})`).join(", ")}
 Total Stocks: ${marketService.livePrices.length}
 ${context ? `\nUser Context: ${context}` : ""}`;
 
-  const systemPrompt = `You are Gotham Financial Advisor, a friendly and knowledgeable financial assistant. You help users understand investing, financial concepts, and the Jamaican stock market.
-
-${marketContext}
-
-Guidelines:
-- Explain financial terms in clear, accessible language
-- Reference actual JSE-listed companies and current market data when relevant
-- Provide balanced perspectives on investment decisions
-- Always include disclaimers that this is not financial advice
-- Be conversational and supportive
-- If asked about a specific stock, reference the live market data provided
-- For complex financial planning, suggest consulting a licensed financial advisor
-- You can discuss: stock analysis, portfolio strategy, financial literacy, market trends, risk management, retirement planning, savings strategies
-- Format responses with markdown for readability`;
-
   try {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 2000,
-      system: systemPrompt,
+      system: [
+        JSE_SYSTEM_CACHE_BLOCK,
+        {
+          type: "text",
+          text: `${marketContext}\n\nGuidelines: Explain financial terms clearly. Reference live market data. Always note this is not financial advice. Format with markdown.`,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
     });
     const text = response.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("\n");
-    res.json({ reply: text });
+
+    const userId = req.user?.id;
+    logAIInteraction(userId, "aiChat", "⚠️ AI responses are educational, not advice.");
+
+    res.json(wrapAIResponse(text, "aiChat", false));
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError)
       return res.status(401).json({ error: "Invalid API key" });
@@ -128,34 +132,37 @@ You MUST respond with ONLY valid JSON:
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 2500,
-      system:
-        "You are an expert Jamaican financial planner. Create detailed, actionable investment plans based on JSE stocks. Always respond with valid JSON only.",
+      system: [
+        JSE_SYSTEM_CACHE_BLOCK,
+        {
+          type: "text",
+          text: "You are an expert Jamaican financial planner. Create detailed, actionable investment plans based on JSE stocks. Always respond with valid JSON only. Never give personalized investment advice — frame all outputs as illustrative educational plans.",
+          cache_control: { type: "ephemeral" },
+        },
+      ],
       messages: [{ role: "user", content: prompt }],
     });
     const raw = response.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("\n");
+
+    logAIInteraction(req.user?.id, "financialPlan", "⚠️ Illustrative plan only. Not personalized financial advice.");
+
     try {
       const jsonStr = raw.match(/\{[\s\S]*\}/)?.[0];
       const parsed = JSON.parse(jsonStr);
-      res.json({ plan: parsed, structured: true });
+      res.json(wrapAIResponse({ plan: parsed, structured: true }, "financialPlan", true));
     } catch {
-      res.json({ plan: raw, structured: false });
+      res.json(wrapAIResponse({ plan: raw, structured: false }, "financialPlan", true));
     }
   } catch (error) {
     console.error("Financial plan error:", error.message);
     if (error instanceof Anthropic.AuthenticationError)
-      return res
-        .status(401)
-        .json({ error: "AI service authentication failed" });
+      return res.status(401).json({ error: "AI service authentication failed" });
     if (error instanceof Anthropic.RateLimitError)
-      return res.status(429).json({
-        error: "Rate limit reached. Please wait a moment and try again.",
-      });
-    res
-      .status(500)
-      .json({ error: "Financial planning failed. Please try again." });
+      return res.status(429).json({ error: "Rate limit reached. Please wait a moment and try again." });
+    res.status(500).json({ error: "Financial planning failed. Please try again." });
   }
 });
 
@@ -249,24 +256,32 @@ All decisions must be based ONLY on the live data provided. Be specific with sha
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 2500,
-      system:
-        "You are an expert autonomous JSE portfolio manager. Make precise, data-driven trade decisions. Respond with valid JSON only.",
+      system: [
+        JSE_SYSTEM_CACHE_BLOCK,
+        {
+          type: "text",
+          text: "You are an expert autonomous JSE portfolio manager. Make precise, data-driven trade decisions. Respond with valid JSON only. All suggestions are educational and not personalized investment advice.",
+          cache_control: { type: "ephemeral" },
+        },
+      ],
       messages: [{ role: "user", content: prompt }],
     });
     const raw = response.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("\n");
+
+    logAIInteraction(req.user?.id, "portfolioOptimizer", "⚠️ Theoretical model. Not a recommendation for YOUR portfolio.");
+
     try {
       const jsonStr = raw.match(/\{[\s\S]*\}/)?.[0];
       const parsed = JSON.parse(jsonStr);
-      res.json({
-        result: parsed,
-        structured: true,
-        metrics: { totalValue, totalCost, holdings: enriched },
-      });
+      res.json(wrapAIResponse(
+        { result: parsed, structured: true, metrics: { totalValue, totalCost, holdings: enriched } },
+        "portfolioOptimizer", true
+      ));
     } catch {
-      res.json({ result: raw, structured: false });
+      res.json(wrapAIResponse({ result: raw, structured: false }, "portfolioOptimizer", true));
     }
   } catch (error) {
     if (error instanceof Anthropic.RateLimitError)
@@ -512,7 +527,14 @@ Trading Days in Data:  ${d.candleCount}`;
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1500,
-      system: SYSTEM_PROMPTS[experience_level],
+      system: [
+        JSE_SYSTEM_CACHE_BLOCK,
+        {
+          type: "text",
+          text: SYSTEM_PROMPTS[experience_level],
+          cache_control: { type: "ephemeral" },
+        },
+      ],
       messages: [{ role: "user", content: enrichedInput }],
     });
 
@@ -520,6 +542,8 @@ Trading Days in Data:  ${d.candleCount}`;
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("\n");
+    logAIInteraction(req.user?.id, "stockAnalysis", "⚠️ Educational analysis only. Not investment advice.");
+
     let parsed;
     try {
       const jsonStr = raw.match(/\{[\s\S]*\}/)?.[0];
@@ -528,28 +552,22 @@ Trading Days in Data:  ${d.candleCount}`;
       if (!parsed.company || !parsed.recommendation)
         throw new Error("incomplete");
     } catch {
-      return res.json({
-        analysis: raw,
-        structured: false,
-        symbol: detectedStock?.symbol || null,
-        level: experience_level,
-      });
+      return res.json(wrapAIResponse(
+        { analysis: raw, structured: false, symbol: detectedStock?.symbol || null, level: experience_level },
+        "stockAnalysis", true
+      ));
     }
-    res.json({
-      analysis: parsed,
-      structured: true,
-      symbol: detectedStock?.symbol || null,
-      level: experience_level,
-    });
+    res.json(wrapAIResponse(
+      { analysis: parsed, structured: true, symbol: detectedStock?.symbol || null, level: experience_level },
+      "stockAnalysis", true
+    ));
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError)
       return res.status(401).json({ error: "Invalid API key" });
     if (error instanceof Anthropic.RateLimitError)
       return res.status(429).json({ error: "Rate limit reached" });
     if (error instanceof Anthropic.APIError)
-      return res
-        .status(502)
-        .json({ error: `Claude API error: ${error.message}` });
+      return res.status(502).json({ error: `Claude API error: ${error.message}` });
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -886,30 +904,32 @@ Provide specific, data-driven portfolio optimization. Rank actions by priority.`
       const response = await client.messages.create({
         model: "claude-sonnet-4-20250514",
         max_tokens: 2000,
-        system: systemPrompt,
+        system: [
+          JSE_SYSTEM_CACHE_BLOCK,
+          {
+            type: "text",
+            text: systemPrompt,
+            cache_control: { type: "ephemeral" },
+          },
+        ],
         messages: [{ role: "user", content: userPrompt }],
       });
       const raw = response.content
         .filter((b) => b.type === "text")
         .map((b) => b.text)
         .join("\n");
+
+      logAIInteraction(req.user?.id, "portfolioOptimizer", "⚠️ Theoretical model. Not a recommendation for YOUR portfolio.");
+
       try {
         const jsonStr = raw.match(/\{[\s\S]*\}/)?.[0];
         const parsed = JSON.parse(jsonStr);
-        res.json({
-          optimization: parsed,
-          structured: true,
-          metrics: {
-            totalValue,
-            totalCost,
-            totalGainLoss,
-            totalReturn,
-            sectorMap,
-            holdings: enriched,
-          },
-        });
+        res.json(wrapAIResponse(
+          { optimization: parsed, structured: true, metrics: { totalValue, totalCost, totalGainLoss, totalReturn, sectorMap, holdings: enriched } },
+          "portfolioOptimizer", true
+        ));
       } catch {
-        res.json({ optimization: raw, structured: false });
+        res.json(wrapAIResponse({ optimization: raw, structured: false }, "portfolioOptimizer", true));
       }
     } catch (error) {
       if (error instanceof Anthropic.AuthenticationError)

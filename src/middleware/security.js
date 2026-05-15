@@ -45,12 +45,22 @@ function securityHeaders(req, res, next) {
  * In production, restrict to specific domains. In development, allow localhost.
  */
 function corsMiddleware(req, res, next) {
-  const allowedOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(",").map(s => s.trim())
-    : ["http://localhost:3000", "http://127.0.0.1:3000"];
+  const defaultOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+  ];
 
+  // Add production URLs from env (comma-separated)
+  if (process.env.APP_URL) defaultOrigins.push(process.env.APP_URL);
+  if (process.env.CORS_ORIGINS) {
+    process.env.CORS_ORIGINS.split(",").map(s => s.trim()).forEach(o => defaultOrigins.push(o));
+  }
+
+  const allowedOrigins = defaultOrigins;
   const origin = req.headers.origin;
-  if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+  if (!origin || allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin || "*");
   }
 

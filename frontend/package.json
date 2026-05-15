@@ -10,11 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.61.6",
     "@fortawesome/fontawesome-free": "^7.2.0",
     "@hookform/resolvers": "^5.2.2",
+    "@paypal/react-paypal-js": "^9.2.0",
     "@tanstack/react-query": "^5.95.0",
     "chart.js": "^4.5.1",
     "lightweight-charts": "^5.1.0",
+    "lucide-react": "^1.14.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.72.0",

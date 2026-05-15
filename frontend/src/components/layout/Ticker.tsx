@@ -1,43 +1,46 @@
 import { useMarketStore } from '../../stores/market.ts';
 
 export default function Ticker() {
-  const stocks = useMarketStore((s) => s.stocks);
+  const stocks = useMarketStore(s => s.stocks);
 
-  if (stocks.length === 0) {
+  const items = stocks.filter(s => s.price != null);
+
+  if (items.length === 0) {
     return (
-      <div className="fixed top-0 left-0 right-0 h-9 bg-bg2 border-b border-border z-50 flex items-center justify-center">
-        <span className="text-muted text-xs">Loading market data...</span>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 32, zIndex: 50, background: 'rgba(4,6,13,.98)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: 10, color: 'var(--color-muted)' }}>Connecting to market data...</span>
       </div>
     );
   }
 
-  const tickerItems = stocks.map((stock) => (
-    <span
-      key={stock.symbol}
-      className="inline-flex items-center gap-2 px-4 whitespace-nowrap"
-    >
-      <span className="text-green font-semibold text-xs">{stock.symbol}</span>
-      <span className="font-mono text-xs text-text">
-        ${stock.price.toFixed(2)}
+  const row = items.map(s => {
+    const pos = (s.pctChange ?? 0) > 0, neg = (s.pctChange ?? 0) < 0;
+    return (
+      <span key={s.symbol} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 16px', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,.04)' }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-text2)' }}>{s.symbol}</span>
+        <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--color-text)' }}>${(s.price ?? 0).toFixed(2)}</span>
+        <span style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)' }}>
+          {pos ? '▲' : neg ? '▼' : '–'}{pos ? '+' : ''}{(s.pctChange ?? 0).toFixed(2)}%
+        </span>
       </span>
-      <span
-        className={`font-mono text-xs ${
-          stock.pctChange >= 0 ? 'text-green' : 'text-red'
-        }`}
-      >
-        {stock.pctChange >= 0 ? '+' : ''}
-        {stock.pctChange.toFixed(2)}%
-      </span>
-    </span>
-  ));
+    );
+  });
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-9 bg-bg2 border-b border-border z-50 overflow-hidden">
-      <div className="h-full flex items-center animate-ticker hover:[animation-play-state:paused]">
-        {/* Duplicate items for infinite scroll effect */}
-        <div className="flex items-center shrink-0">{tickerItems}</div>
-        <div className="flex items-center shrink-0" aria-hidden="true">
-          {tickerItems}
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 32, zIndex: 50, background: 'rgba(4,6,13,.98)', borderBottom: '1px solid var(--color-border)', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+      {/* Gradient fade left */}
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 60, background: 'linear-gradient(90deg, var(--color-bg), transparent)', zIndex: 2, pointerEvents: 'none' }} />
+      {/* Gradient fade right */}
+      <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 60, background: 'linear-gradient(270deg, var(--color-bg), transparent)', zIndex: 2, pointerEvents: 'none' }} />
+      {/* Label */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 12px', flexShrink: 0, zIndex: 3, borderRight: '1px solid rgba(255,255,255,.06)', background: 'rgba(4,6,13,.98)' }}>
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#00e676', display: 'inline-block' }} className="animate-pulse-dot" />
+        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.12em', color: '#00e676' }}>JSE</span>
+      </div>
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', height: '100%' }} className="animate-ticker">
+          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{row}</div>
+          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }} aria-hidden="true">{row}</div>
         </div>
       </div>
     </div>

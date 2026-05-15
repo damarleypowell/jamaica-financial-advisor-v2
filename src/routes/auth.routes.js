@@ -1555,6 +1555,322 @@ router.post("/api/auth/logout", authMiddleware, async (req, res) => {
   }
 });
 
+// ── POST /api/users/accept-compliance ────────────────────────────────────────
+router.post("/api/users/accept-compliance", authMiddleware, async (req, res) => {
+  try {
+    const { version = "1.0" } = req.body;
+    const userId = req.user.id;
+
+    let prisma;
+    try { prisma = require("../config/database").prisma; } catch (_) { prisma = null; }
+    const USE_DB = !!(process.env.DATABASE_URL && prisma);
+
+    if (USE_DB) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          complianceAccepted: true,
+          complianceAcceptedAt: new Date(),
+          complianceVersion: version,
+        },
+      });
+    }
+
+    logAudit("COMPLIANCE_ACCEPTED", { userId, version, ip: req.ip });
+    res.json({ success: true, message: "Compliance accepted" });
+  } catch (err) {
+    console.error("[compliance] Error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── POST /api/users/onboarding ────────────────────────────────────────────────
+router.post("/api/users/onboarding", authMiddleware, async (req, res) => {
+  try {
+    const { userType, step, completed, lessonScores } = req.body;
+    const userId = req.user.id;
+
+    let prisma;
+    try { prisma = require("../config/database").prisma; } catch (_) { prisma = null; }
+    const USE_DB = !!(process.env.DATABASE_URL && prisma);
+
+    if (USE_DB) {
+      await prisma.onboardingProgress.upsert({
+        where: { userId },
+        update: {
+          userType,
+          currentStep: step,
+          completed: !!completed,
+          lessonScores: lessonScores || {},
+          ...(completed ? { completedAt: new Date() } : {}),
+        },
+        create: {
+          id: require("crypto").randomUUID(),
+          userId,
+          userType,
+          currentStep: step || 0,
+          completed: !!completed,
+          lessonScores: lessonScores || {},
+          ...(completed ? { completedAt: new Date() } : {}),
+        },
+      });
+
+      if (completed) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { onboardingCompleted: true },
+        });
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[onboarding] Error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Clerk Sync — called after every Clerk sign-in to get/create local user ───
+// ══════════════════════════════════════════════════════════════════════════════
+
+router.post("/api/auth/clerk-sync", async (req, res) => {
+  try {
+    const secretKey = process.env.CLERK_SECRET_KEY;
+    if (!secretKey) return res.status(503).json({ error: "Clerk not configured" });
+
+    const rawToken = req.headers.authorization?.split(" ")[1];
+    if (!rawToken) return res.status(401).json({ error: "No token" });
+
+    const { createClerkClient } = require("@clerk/backend");
+    const clerk = createClerkClient({ secretKey });
+    const payload = await clerk.verifyToken(rawToken);
+    const clerkUserId = payload.sub;
+
+    // Fetch full Clerk user (name, email)
+    const clerkUser = await clerk.users.getUser(clerkUserId);
+    const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
+    const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || email.split("@")[0];
+
+    let user;
+
+    if (USE_DB) {
+      user = await prisma.user.upsert({
+        where: { clerkId: clerkUserId },
+        update: { email, name, lastLogin: new Date() },
+        create: {
+          clerkId: clerkUserId, email, name, emailVerified: true,
+          subscriptionTier: "FREE", accountType: "paper",
+          settings: {}, passwordHash: "", passwordSalt: "",
+        },
+      });
+    } else {
+      const users = getUsersDB();
+      user = users.find(u => u.clerkId === clerkUserId);
+      if (!user) {
+        user = {
+          id: crypto.randomUUID(), clerkId: clerkUserId, email, name,
+          emailVerified: true, subscriptionTier: "FREE", accountType: "paper",
+          settings: {}, createdAt: new Date().toISOString(),
+        };
+        users.push(user);
+        saveUsersDB(users);
+      } else {
+        user.email = email;
+        user.name = name;
+        saveUsersDB(users);
+      }
+    }
+
+    res.json({
+      user: {
+        id: user.id, name: user.name, email: user.email,
+        subscriptionTier: user.subscriptionTier ?? "FREE",
+        accountType: user.accountType ?? "paper",
+        emailVerified: user.emailVerified ?? true,
+        settings: user.settings ?? {},
+      }
+    });
+  } catch (err) {
+    console.error("[clerk-sync] Error:", err);
+    res.status(500).json({ error: "Clerk sync failed" });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── OAuth: Google Sign-In ────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+router.post("/api/auth/google", async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ error: "Missing Google credential" });
+
+    // Verify the Google ID token via tokeninfo endpoint (no extra libraries)
+    const tokenRes = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
+    );
+    const googleData = await tokenRes.json();
+
+    if (!tokenRes.ok || googleData.error) {
+      return res.status(401).json({ error: "Invalid Google token" });
+    }
+
+    // Optionally enforce audience
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (clientId && googleData.aud !== clientId) {
+      return res.status(401).json({ error: "Token audience mismatch" });
+    }
+
+    const { email, name, email_verified } = googleData;
+    if (!email) return res.status(400).json({ error: "Google did not provide an email" });
+    const normalizedEmail = email.toLowerCase().trim();
+    const displayName = name || normalizedEmail.split("@")[0];
+
+    if (USE_DB) {
+      let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            name: displayName,
+            email: normalizedEmail,
+            passwordHash: "",
+            salt: "",
+            emailVerified: email_verified === "true",
+            settings: { theme: "dark", notifications: true, accountType: "paper", oauthProvider: "google" },
+          },
+        });
+        logAudit(AuditAction.SIGNUP, { ip: req.ip, userId: user.id, email: user.email });
+      }
+      const token = signJWTWithIP({ id: user.id, name: user.name, email: user.email }, req.ip);
+      return res.json({
+        token,
+        user: { id: user.id, name: user.name, email: user.email, emailVerified: user.emailVerified, settings: user.settings },
+      });
+    }
+
+    // File-based fallback
+    const users = getUsersDB();
+    let user = users.find((u) => u.email === normalizedEmail);
+    if (!user) {
+      user = {
+        id: crypto.randomUUID(),
+        name: displayName,
+        email: normalizedEmail,
+        hash: "",
+        salt: "",
+        emailVerified: email_verified === "true",
+        createdAt: new Date().toISOString(),
+        portfolio: [],
+        watchlist: [],
+        goals: [],
+        chatHistory: [],
+        riskProfile: null,
+        settings: { theme: "dark", notifications: true, accountType: "paper", oauthProvider: "google" },
+      };
+      users.push(user);
+      saveUsersDB(users);
+      logAudit(AuditAction.SIGNUP, { ip: req.ip, userId: user.id, email: user.email });
+    }
+
+    const token = signJWTWithIP({ id: user.id, name: user.name, email: user.email }, req.ip);
+    return res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, emailVerified: user.emailVerified, settings: user.settings },
+    });
+  } catch (err) {
+    console.error("[auth/google] Error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── OAuth: Apple Sign-In ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+router.post("/api/auth/apple", async (req, res) => {
+  try {
+    const { id_token, user: appleUser } = req.body;
+    if (!id_token) return res.status(400).json({ error: "Missing Apple ID token" });
+
+    // Decode JWT payload (base64url — Apple signs with RS256, skip full sig check for dev)
+    const parts = id_token.split(".");
+    if (parts.length !== 3) return res.status(400).json({ error: "Invalid Apple token format" });
+
+    let payload;
+    try {
+      const padded = parts[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(
+        parts[1].length + ((4 - (parts[1].length % 4)) % 4), "="
+      );
+      payload = JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+    } catch {
+      return res.status(400).json({ error: "Failed to decode Apple token" });
+    }
+
+    const { email, email_verified } = payload;
+    if (!email) return res.status(400).json({ error: "Apple did not provide an email" });
+
+    const firstName = appleUser?.name?.firstName ?? "";
+    const lastName = appleUser?.name?.lastName ?? "";
+    const displayName = (firstName + " " + lastName).trim() || email.split("@")[0];
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (USE_DB) {
+      let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            name: displayName,
+            email: normalizedEmail,
+            passwordHash: "",
+            salt: "",
+            emailVerified: Boolean(email_verified),
+            settings: { theme: "dark", notifications: true, accountType: "paper", oauthProvider: "apple" },
+          },
+        });
+        logAudit(AuditAction.SIGNUP, { ip: req.ip, userId: user.id, email: user.email });
+      }
+      const token = signJWTWithIP({ id: user.id, name: user.name, email: user.email }, req.ip);
+      return res.json({
+        token,
+        user: { id: user.id, name: user.name, email: user.email, emailVerified: user.emailVerified, settings: user.settings },
+      });
+    }
+
+    const users = getUsersDB();
+    let user = users.find((u) => u.email === normalizedEmail);
+    if (!user) {
+      user = {
+        id: crypto.randomUUID(),
+        name: displayName,
+        email: normalizedEmail,
+        hash: "",
+        salt: "",
+        emailVerified: Boolean(email_verified),
+        createdAt: new Date().toISOString(),
+        portfolio: [],
+        watchlist: [],
+        goals: [],
+        chatHistory: [],
+        riskProfile: null,
+        settings: { theme: "dark", notifications: true, accountType: "paper", oauthProvider: "apple" },
+      };
+      users.push(user);
+      saveUsersDB(users);
+      logAudit(AuditAction.SIGNUP, { ip: req.ip, userId: user.id, email: user.email });
+    }
+
+    const token = signJWTWithIP({ id: user.id, name: user.name, email: user.email }, req.ip);
+    return res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, emailVerified: user.emailVerified, settings: user.settings },
+    });
+  } catch (err) {
+    console.error("[auth/apple] Error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 /**
  * Check if a JWT token has been revoked (in-memory).
  * Imported by auth middleware to enforce session revocation.

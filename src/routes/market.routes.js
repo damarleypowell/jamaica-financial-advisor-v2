@@ -61,23 +61,29 @@ router.get("/api/market-overview", (_req, res) => {
   const lp = marketService.livePrices;
   const gainers = lp.filter((s) => s.liveChange > 0).length;
   const losers = lp.filter((s) => s.liveChange < 0).length;
+  const unchanged = lp.length - gainers - losers;
   const sorted = [...lp].sort((a, b) => b.liveChange - a.liveChange);
   const topGainer = sorted[0];
   const topLoser = sorted[sorted.length - 1];
-  const totalVolume = lp.reduce((sum, s) => sum + s.volume, 0);
+  const totalVolume = lp.reduce((sum, s) => sum + (s.volume || 0), 0);
+  const jseIndex = marketService.jseIndex || 0;
+  const jseIndexChange = marketService.jseIndexChange || 0;
 
   res.json({
+    // canonical fields (StatsGrid)
+    jseIndex,
+    jseIndexChange,
+    advancers: gainers,
+    decliners: losers,
+    unchanged,
+    totalVolume,
+    volumeChange: 0,
+    totalStocks: lp.length,
+    // legacy aliases
     gainers,
     losers,
-    unchanged: lp.length - gainers - losers,
-    topGainer: topGainer
-      ? { symbol: topGainer.symbol, change: topGainer.liveChange }
-      : null,
-    topLoser: topLoser
-      ? { symbol: topLoser.symbol, change: topLoser.liveChange }
-      : null,
-    totalVolume,
-    totalStocks: lp.length,
+    topGainer: topGainer ? { symbol: topGainer.symbol, change: topGainer.liveChange } : null,
+    topLoser: topLoser ? { symbol: topLoser.symbol, change: topLoser.liveChange } : null,
   });
 });
 

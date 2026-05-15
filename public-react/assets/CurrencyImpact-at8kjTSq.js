@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-DAs1UGHr.js";var t=e();function n(){return(0,t.jsxs)(`div`,{className:`space-y-6`,children:[(0,t.jsx)(`h2`,{className:`text-2xl font-bold text-text`,children:`Currency Impact`}),(0,t.jsx)(`p`,{className:`text-muted`,children:`FX impact analysis will be displayed here.`})]})}export{n as default};
