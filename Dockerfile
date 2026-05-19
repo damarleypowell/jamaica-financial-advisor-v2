@@ -12,7 +12,7 @@ RUN npm run build
 # ── Stage 2: Node.js backend dependencies ────────────────────────────────────
 FROM node:20-slim AS node-deps
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY package.json ./
 RUN npm install --omit=dev
 
 # ── Stage 3: Prisma generate ─────────────────────────────────────────────────
