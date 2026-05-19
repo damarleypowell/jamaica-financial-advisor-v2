@@ -12,55 +12,43 @@ interface Section { heading: string; items: NavItem[]; }
 
 const NAV: Section[] = [
   {
-    heading: 'Market',
+    heading: 'Markets',
     items: [
-      { label: 'Dashboard',      icon: 'fa-solid fa-chart-line',           to: '/'                },
-      { label: 'Advanced Chart', icon: 'fa-solid fa-chart-candlestick',    to: '/technicals',     tier: 'BASIC' },
-      { label: 'News',           icon: 'fa-solid fa-newspaper',            to: '/news'            },
-      { label: 'Watchlists',     icon: 'fa-solid fa-eye',                  to: '/watchlists'      },
-      { label: 'Screener',       icon: 'fa-solid fa-filter',               to: '/screener',       tier: 'BASIC' },
-      { label: 'Sectors',        icon: 'fa-solid fa-building',             to: '/sectors',        tier: 'BASIC' },
-      { label: 'Compare',        icon: 'fa-solid fa-code-compare',         to: '/compare',        tier: 'BASIC' },
-      { label: 'Dividends',      icon: 'fa-solid fa-money-bill-trend-up',  to: '/dividends',      tier: 'BASIC' },
+      { label: 'Dashboard',     icon: 'fa-solid fa-chart-line',     to: '/'           },
+      { label: 'News',          icon: 'fa-solid fa-newspaper',      to: '/news'        },
+      { label: 'Watchlists',    icon: 'fa-solid fa-star',           to: '/watchlists'  },
     ],
   },
   {
-    heading: 'Invest',
+    heading: 'Analysis',
     items: [
-      { label: 'Portfolio',       icon: 'fa-solid fa-briefcase',           to: '/portfolio'       },
-      { label: 'Orders',          icon: 'fa-solid fa-clock-rotate-left',   to: '/orders'          },
-      { label: 'Calculators',     icon: 'fa-solid fa-calculator',          to: '/calculators',    tier: 'BASIC' },
-      { label: 'US Stocks',       icon: 'fa-solid fa-flag-usa',            to: '/us-stocks',      tier: 'BASIC' },
-      { label: 'Forex',           icon: 'fa-solid fa-money-bill-transfer', to: '/forex',          tier: 'PRO'   },
-      { label: 'Global Markets',  icon: 'fa-solid fa-globe',               to: '/global-markets', tier: 'PRO'   },
-      { label: 'Financial Plan',  icon: 'fa-solid fa-bullseye',            to: '/planner',        tier: 'PRO'   },
+      { label: 'AI Analysis',   icon: 'fa-solid fa-brain',          to: '/analysis'    },
+      { label: 'AI Chat',       icon: 'fa-solid fa-robot',          to: '/chat'        },
     ],
   },
   {
-    heading: 'Intelligence',
+    heading: 'Practice',
     items: [
-      { label: 'AI Chat',         icon: 'fa-solid fa-robot',               to: '/chat',           tier: 'BASIC' },
-      { label: 'AI Analysis',     icon: 'fa-solid fa-brain',               to: '/analysis',       tier: 'PRO'   },
+      { label: 'Paper Trading', icon: 'fa-solid fa-flask-vial',     to: '/portfolio'   },
     ],
   },
   {
     heading: 'Account',
     items: [
-      { label: 'Leaderboard',     icon: 'fa-solid fa-trophy',              to: '/leaderboard',    tier: 'PRO'   },
-      { label: 'Learn',           icon: 'fa-solid fa-graduation-cap',      to: '/learn'           },
-      { label: 'Settings',        icon: 'fa-solid fa-gear',                to: '/settings'        },
-      { label: 'Subscription',    icon: 'fa-solid fa-crown',               to: '/subscription'   },
-      { label: 'Admin',           icon: 'fa-solid fa-shield-halved',       to: '/admin',          adminOnly: true },
+      { label: 'Alerts',        icon: 'fa-solid fa-bell',           to: '/alerts'      },
+      { label: 'Learn',         icon: 'fa-solid fa-graduation-cap', to: '/learn'       },
+      { label: 'Settings',      icon: 'fa-solid fa-gear',           to: '/settings'    },
+      { label: 'Admin',         icon: 'fa-solid fa-shield-halved',  to: '/admin',      adminOnly: true },
     ],
   },
 ];
 
 const MOBILE_NAV: NavItem[] = [
-  { label: 'Home',      icon: 'fa-solid fa-house',            to: '/'          },
-  { label: 'Markets',   icon: 'fa-solid fa-newspaper',        to: '/news'      },
-  { label: 'Orders',    icon: 'fa-solid fa-clock-rotate-left', to: '/orders'   },
-  { label: 'Portfolio', icon: 'fa-solid fa-briefcase',        to: '/portfolio' },
-  { label: 'More',      icon: 'fa-solid fa-bars',             to: '/settings'  },
+  { label: 'Home',     icon: 'fa-solid fa-house',      to: '/'           },
+  { label: 'AI',       icon: 'fa-solid fa-brain',      to: '/analysis'   },
+  { label: 'Paper',    icon: 'fa-solid fa-flask-vial', to: '/portfolio'  },
+  { label: 'Watch',    icon: 'fa-solid fa-star',       to: '/watchlists' },
+  { label: 'More',     icon: 'fa-solid fa-bars',       to: '/settings'   },
 ];
 
 const TIER_COLORS: Record<string, string> = {
@@ -210,7 +198,7 @@ function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; u
           }} className={mktOpen ? 'animate-pulse-dot' : ''} />
           <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{ margin: 0, fontSize: 11.5, fontWeight: 700, color: mktOpen ? '#00e676' : 'var(--color-text2)', lineHeight: 1 }}>
-              {mktOpen ? 'JSE Open' : 'JSE Closed'}
+              {mktOpen ? 'Markets Open' : 'Markets Closed'}
             </p>
             <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>
               {jamTime} JAM

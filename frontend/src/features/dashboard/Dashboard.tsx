@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useMarketStore } from '../../stores/market';
 import { useAuthStore } from '../../stores/auth';
-import { apiGet } from '../../lib/api';
+import { apiGet, apiPost } from '../../lib/api';
 import MainChart from './MainChart';
 import StockPanel from './StockPanel';
 import StockTable from './StockTable';
@@ -12,9 +12,10 @@ interface Overview {
   totalMarketCap?: number; advancers?: number; decliners?: number;
 }
 
-const SYNE = "'Syne', 'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
-const SANS = "'DM Sans', 'Inter', sans-serif";
+const INTER = "'Inter', 'DM Sans', sans-serif";
+const MONO = "'JetBrains Mono', 'Fira Mono', monospace";
+const SYNE = "'Syne', 'Inter', sans-serif"; // keep for brand accents only
+const SANS = INTER; // alias so existing usage still works
 
 function fmt(n?: number, dp = 2) {
   return (n ?? 0).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
@@ -72,10 +73,11 @@ function Counter({ value, decimals = 0 }: { value: number; decimals?: number }) 
 }
 
 /* ── Hero market status card ─────────────────────────────────── */
-function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, advCount, decCount, total }: {
+function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, advCount, decCount, total, marketLabel = 'Market Index' }: {
   jse: number; jseΔ: number; volume: number; firstName: string;
   jamTime: string; mktOpen: boolean; isConn: boolean;
   advCount: number; decCount: number; total: number;
+  marketLabel?: string; isUS?: boolean;
 }) {
   const pos = jseΔ >= 0;
   const flat = total - advCount - decCount;
@@ -113,7 +115,7 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
               {jse > 0 ? (
                 <>
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: SANS, marginBottom: 4 }}>Market Index</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: INTER, marginBottom: 4 }}>{marketLabel}</div>
                     <div style={{ fontSize: 36, fontWeight: 800, fontFamily: SYNE, letterSpacing: '-0.03em', lineHeight: 1, color: '#fff' }}>
                       <Counter value={jse} decimals={0} />
                     </div>
@@ -134,7 +136,7 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
                 </>
               ) : (
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: SANS, marginBottom: 8 }}>Caribbean Markets</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: INTER, marginBottom: 8 }}>{marketLabel}</div>
                   <div style={{ fontSize: 26, fontWeight: 800, fontFamily: SYNE, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                     {total > 0 ? `${total} Securities` : 'Loading market…'}
                   </div>
@@ -225,7 +227,7 @@ function KPITile({ label, value, sub, icon, accent, delay = 0 }: {
             <i className={`fa-solid ${icon}`} style={{ fontSize: 11, color: accent }} />
           </div>
         </div>
-        <div style={{ fontSize: 26, fontWeight: 800, fontFamily: SYNE, letterSpacing: "-0.025em", lineHeight: 1, color: '#fff' }}>{value}</div>
+        <div style={{ fontSize: 26, fontWeight: 800, fontFamily: INTER, letterSpacing: "-0.025em", lineHeight: 1, color: '#fff' }}>{value}</div>
         {sub && <div style={{ fontSize: 11, color: accent, fontFamily: MONO, marginTop: 6, fontWeight: 600 }}>{sub}</div>}
       </div>
     </div>
@@ -278,7 +280,7 @@ function MoverCard({ s, isSelected, onSelect, moverTab }: {
           {pos ? '+' : ''}{(s.pctChange ?? 0).toFixed(2)}%
         </span>
       </div>
-      <span style={{ fontSize: 16, fontWeight: 800, fontFamily: SYNE, color: 'rgba(255,255,255,.9)', letterSpacing: '-0.01em' }}>
+      <span style={{ fontSize: 16, fontWeight: 800, fontFamily: INTER, color: 'rgba(255,255,255,.9)', letterSpacing: '-0.01em' }}>
         ${fmt(s.price)}
       </span>
       {s.volume != null && (
@@ -301,10 +303,44 @@ export default function Dashboard() {
 
   const [moverTab, setMoverTab] = useState<MoverTab>('gainers');
   const [clock, setClock] = useState(new Date());
+  const [market, setMarket] = useState<'us' | 'caribbean'>('us');
+  const [usSearch, setUsSearch] = useState('');
+
+  const US_POPULAR = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'JPM', 'BRK/B', 'V', 'UNH', 'XOM', 'NFLX', 'AMD', 'DIS', 'BABA', 'PYPL', 'INTC'];
+
+  const { data: usData } = useQuery<any[]>({
+    queryKey: ['us-dashboard', usSearch || 'popular'],
+    queryFn: async () => {
+      const symbols = usSearch.trim() ? [usSearch.trim().toUpperCase()] : US_POPULAR;
+      const res: any = await apiPost<any>('/api/us/quotes', { symbols });
+      if (Array.isArray(res)) return res;
+      if (res && typeof res === 'object') {
+        return Object.entries(res).map(([sym, q]: [string, any]) => ({
+          symbol: sym,
+          name: q.name ?? sym,
+          price: q.price ?? q.ask ?? 0,
+          pctChange: typeof q.change === 'string' ? parseFloat(q.change) : (q.change ?? 0),
+          volume: q.volume ?? 0,
+        }));
+      }
+      return [];
+    },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    enabled: market === 'us',
+    retry: 1,
+  });
+
+  const usStocks = Array.isArray(usData) ? usData.filter(s => s.price > 0) : [];
+  const activeStocks = market === 'us' ? usStocks : stocks;
 
   useEffect(() => {
-    if (!selectedSymbol && stocks.length > 0) selectSymbol(stocks[0].symbol);
-  }, [selectedSymbol, stocks, selectSymbol]);
+    if (market === 'us' && usStocks.length > 0 && (!selectedSymbol || stocks.find(s => s.symbol === selectedSymbol))) {
+      selectSymbol(usStocks[0].symbol);
+    } else if (market === 'caribbean' && stocks.length > 0 && !stocks.find(s => s.symbol === selectedSymbol)) {
+      selectSymbol(stocks[0].symbol);
+    }
+  }, [market, usStocks.length, stocks.length]); // eslint-disable-line
 
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 1000);
@@ -330,12 +366,14 @@ export default function Dashboard() {
 
   const advCount = useMemo(() => stocks.filter(s => (s.pctChange ?? 0) > 0).length, [stocks]);
   const decCount = useMemo(() => stocks.filter(s => (s.pctChange ?? 0) < 0).length, [stocks]);
+  const usAdvCount = useMemo(() => usStocks.filter(s => (s.pctChange ?? 0) > 0).length, [usStocks]);
+  const usDecCount = useMemo(() => usStocks.filter(s => (s.pctChange ?? 0) < 0).length, [usStocks]);
 
   const movers = useMemo(() => ({
-    gainers: [...stocks].sort((a, b) => (b.pctChange ?? 0) - (a.pctChange ?? 0)).slice(0, 20),
-    losers:  [...stocks].sort((a, b) => (a.pctChange ?? 0) - (b.pctChange ?? 0)).slice(0, 20),
-    active:  [...stocks].sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0)).slice(0, 20),
-  }), [stocks]);
+    gainers: [...activeStocks].sort((a, b) => (b.pctChange ?? 0) - (a.pctChange ?? 0)).slice(0, 20),
+    losers:  [...activeStocks].sort((a, b) => (a.pctChange ?? 0) - (b.pctChange ?? 0)).slice(0, 20),
+    active:  [...activeStocks].sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0)).slice(0, 20),
+  }), [activeStocks]);
 
   const currentMovers = movers[moverTab];
   const activeTabDef = MOVER_TABS.find(t => t.key === moverTab)!;
@@ -344,26 +382,76 @@ export default function Dashboard() {
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
+      {/* ── 0. Market toggle ─────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
+          {([['us', '🇺🇸 US Markets'], ['caribbean', '🌴 Caribbean']] as const).map(([key, label]) => (
+            <button key={key} onClick={() => setMarket(key)}
+              style={{
+                padding: '7px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                fontSize: 12, fontWeight: 700, fontFamily: INTER, transition: 'all .15s',
+                background: market === key ? (key === 'us' ? 'rgba(64,196,255,.15)' : 'rgba(0,230,118,.15)') : 'transparent',
+                color: market === key ? (key === 'us' ? '#40c4ff' : '#00e676') : 'rgba(255,255,255,.35)',
+                boxShadow: market === key ? `0 0 12px ${key === 'us' ? 'rgba(64,196,255,.2)' : 'rgba(0,230,118,.2)'}` : 'none',
+              }}>{label}</button>
+          ))}
+        </div>
+        {market === 'us' && (
+          <div style={{ position: 'relative' }}>
+            <input
+              value={usSearch}
+              onChange={e => setUsSearch(e.target.value)}
+              placeholder="Search US symbol…"
+              style={{
+                height: 36, paddingLeft: 36, paddingRight: 14, borderRadius: 10,
+                background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)',
+                color: '#fff', fontSize: 13, fontFamily: INTER, outline: 'none', width: 180,
+              }}
+            />
+            <i className="fa-solid fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'rgba(255,255,255,.3)' }} />
+          </div>
+        )}
+      </div>
+
       {/* ── 1. Hero ─────────────────────────────────────────────── */}
       <HeroCard
-        jse={jse} jseΔ={jseΔ} volume={overview?.totalVolume ?? 0}
+        jse={market === 'us' ? (usStocks.find(s => s.symbol === 'SPY')?.price ?? 0) : jse}
+        jseΔ={market === 'us' ? (usStocks.find(s => s.symbol === 'SPY')?.pctChange ?? 0) : jseΔ}
+        volume={market === 'us' ? usStocks.reduce((a, s) => a + (s.volume ?? 0), 0) : (overview?.totalVolume ?? 0)}
         firstName={firstName} jamTime={jamTime}
-        mktOpen={mktOpen} isConn={isConn}
-        advCount={advCount} decCount={decCount} total={stocks.length}
+        mktOpen={market === 'us' ? true : mktOpen}
+        isConn={isConn}
+        advCount={market === 'us' ? usStocks.filter(s => (s.pctChange ?? 0) > 0).length : advCount}
+        decCount={market === 'us' ? usStocks.filter(s => (s.pctChange ?? 0) < 0).length : decCount}
+        total={market === 'us' ? usStocks.length : stocks.length}
+        marketLabel={market === 'us' ? 'S&P 500 (SPY)' : 'Caribbean Markets'}
+        isUS={market === 'us'}
       />
 
       {/* ── 2. KPI tiles ────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
-        {jse > 0 && <KPITile label="JSE Index" value={jse.toLocaleString('en-US', { maximumFractionDigits: 0 })} sub={`${jsePos ? '+' : ''}${jseΔ.toFixed(2)}% today`} icon="fa-chart-line" accent="#00e676" delay={0} />}
-        {(overview?.totalVolume ?? 0) > 0 && <KPITile label="Volume" value={fmtVol(overview?.totalVolume)} icon="fa-bars-progress" accent="#40c4ff" delay={60} />}
-        <KPITile label="Securities" value={String(stocks.length)} icon="fa-list" accent="#ce93d8" delay={80} />
-        <KPITile label="Advancers" value={String(advCount)} icon="fa-arrow-trend-up" accent="#00e676" delay={120} />
-        <KPITile label="Decliners" value={String(decCount)} icon="fa-arrow-trend-down" accent="#ff5252" delay={180} />
+        {market === 'us' ? (
+          <>
+            {usStocks.find(s => s.symbol === 'SPY') && <KPITile label="S&P 500 (SPY)" value={`$${(usStocks.find(s => s.symbol === 'SPY')?.price ?? 0).toFixed(2)}`} sub={`${(usStocks.find(s => s.symbol === 'SPY')?.pctChange ?? 0) >= 0 ? '+' : ''}${(usStocks.find(s => s.symbol === 'SPY')?.pctChange ?? 0).toFixed(2)}% today`} icon="fa-chart-line" accent="#40c4ff" delay={0} />}
+            {usStocks.find(s => s.symbol === 'QQQ') && <KPITile label="Nasdaq (QQQ)" value={`$${(usStocks.find(s => s.symbol === 'QQQ')?.price ?? 0).toFixed(2)}`} sub={`${(usStocks.find(s => s.symbol === 'QQQ')?.pctChange ?? 0) >= 0 ? '+' : ''}${(usStocks.find(s => s.symbol === 'QQQ')?.pctChange ?? 0).toFixed(2)}% today`} icon="fa-chart-bar" accent="#ce93d8" delay={60} />}
+            <KPITile label="US Stocks" value={String(usStocks.length)} icon="fa-flag-usa" accent="#ffd740" delay={80} />
+            <KPITile label="Advancing" value={String(usAdvCount)} icon="fa-arrow-trend-up" accent="#00e676" delay={120} />
+            <KPITile label="Declining" value={String(usDecCount)} icon="fa-arrow-trend-down" accent="#ff5252" delay={180} />
+          </>
+        ) : (
+          <>
+            {jse > 0 && <KPITile label="JSE Index" value={jse.toLocaleString('en-US', { maximumFractionDigits: 0 })} sub={`${jsePos ? '+' : ''}${jseΔ.toFixed(2)}% today`} icon="fa-chart-line" accent="#00e676" delay={0} />}
+            {(overview?.totalVolume ?? 0) > 0 && <KPITile label="Volume" value={fmtVol(overview?.totalVolume)} icon="fa-bars-progress" accent="#40c4ff" delay={60} />}
+            <KPITile label="Securities" value={String(stocks.length)} icon="fa-list" accent="#ce93d8" delay={80} />
+            <KPITile label="Advancers" value={String(advCount)} icon="fa-arrow-trend-up" accent="#00e676" delay={120} />
+            <KPITile label="Decliners" value={String(decCount)} icon="fa-arrow-trend-down" accent="#ff5252" delay={180} />
+          </>
+        )}
       </div>
 
       {/* ── 3. Movers strip ─────────────────────────────────────── */}
       <div>
-        <SectionLabel count={stocks.length}
+        <SectionLabel count={activeStocks.length}
           right={
             <div style={{ display: 'flex', gap: 2, padding: '3px', borderRadius: 12, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)' }}>
               {MOVER_TABS.map(tab => (
@@ -387,7 +475,7 @@ export default function Dashboard() {
         </SectionLabel>
 
         <div className="scroll-x" style={{ display: 'flex', gap: 10, paddingBottom: 4 }}>
-          {stocks.length === 0 ? (
+          {activeStocks.length === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 4px', color: 'rgba(255,255,255,.2)', fontSize: 12, fontFamily: SANS }}>
               <i className="fa-solid fa-satellite-dish" style={{ fontSize: 16, opacity: .3 }} />
               Connecting to live market data…
@@ -405,7 +493,18 @@ export default function Dashboard() {
 
       {/* ── 4. Chart + Panel ────────────────────────────────────── */}
       <div>
-        <SectionLabel>Chart &amp; Analysis</SectionLabel>
+        <SectionLabel right={
+          selectedSymbol ? (
+            <a href={`/analysis?q=${selectedSymbol}`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 8, background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.2)', color: '#00e676', fontSize: 11, fontWeight: 700, fontFamily: INTER, textDecoration: 'none', transition: 'opacity .15s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '.75'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+            >
+              <i className="fa-solid fa-brain" style={{ fontSize: 10 }} />
+              AI Analysis
+            </a>
+          ) : undefined
+        }>Chart &amp; Analysis</SectionLabel>
         <div className="dashboard-grid">
           <div style={{
             borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)',

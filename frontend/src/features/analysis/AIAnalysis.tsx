@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useMarketStore } from '../../stores/market';
 import { apiPost } from '../../lib/api';
@@ -24,6 +24,11 @@ export default function AIAnalysis() {
   const stocks = useMarketStore(s => s.stocks);
   const [level, setLevel] = useState<Level>('beginner');
   const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) { setQuery(q); }
+  }, []);
 
   const mutation = useMutation({
     mutationFn: (q: string) => apiPost<{ response: string }>('/api/chat', {

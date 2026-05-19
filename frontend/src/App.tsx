@@ -15,18 +15,9 @@ const AdvancedChart = lazy(() => import('./features/technicals/AdvancedChart.tsx
 const News = lazy(() => import('./features/news/News.tsx'));
 const Watchlists = lazy(() => import('./features/watchlists/Watchlists.tsx'));
 const Screener = lazy(() => import('./features/screener/Screener.tsx'));
-const Sectors = lazy(() => import('./features/sectors/Sectors.tsx'));
-const Compare = lazy(() => import('./features/compare/Compare.tsx'));
-const Dividends = lazy(() => import('./features/dividends/Dividends.tsx'));
 const Portfolio = lazy(() => import('./features/portfolio/Portfolio.tsx'));
 const Orders = lazy(() => import('./features/orders/Orders.tsx'));
-const Calculators = lazy(() => import('./features/calculators/Calculators.tsx'));
 const USStocks    = lazy(() => import('./features/us-stocks/USStocks.tsx'));
-const Forex = lazy(() => import('./features/forex/Forex.tsx'));
-const GlobalMarkets = lazy(() => import('./features/global-markets/GlobalMarkets.tsx'));
-const CurrencyImpact = lazy(() => import('./features/currency-impact/CurrencyImpact.tsx'));
-const Planner = lazy(() => import('./features/planner/Planner.tsx'));
-const Leaderboard = lazy(() => import('./features/leaderboard/Leaderboard.tsx'));
 const AIChat = lazy(() => import('./features/chat/AIChat.tsx'));
 const AIAnalysis = lazy(() => import('./features/analysis/AIAnalysis.tsx'));
 const Learn = lazy(() => import('./features/learn/Learn.tsx'));
@@ -199,46 +190,6 @@ export default function App() {
                 }
               />
             </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Sectors" />}>
-              <Route
-                path="sectors"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Sectors />
-                  </Suspense>
-                }
-              />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Compare" />}>
-              <Route
-                path="compare"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Compare />
-                  </Suspense>
-                }
-              />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Dividends" />}>
-              <Route
-                path="dividends"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Dividends />
-                  </Suspense>
-                }
-              />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Calculators" />}>
-              <Route
-                path="calculators"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Calculators />
-                  </Suspense>
-                }
-              />
-            </Route>
             <Route element={<ProtectedRoute requiredTier="BASIC" featureName="US Stocks" />}>
               <Route
                 path="us-stocks"
@@ -249,78 +200,22 @@ export default function App() {
                 }
               />
             </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="AI Chat" />}>
-              <Route
-                path="chat"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <AIChat />
-                  </Suspense>
-                }
-              />
-            </Route>
-
-            {/* PRO+ routes */}
-            <Route element={<ProtectedRoute requiredTier="PRO" featureName="Forex" />}>
-              <Route
-                path="forex"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Forex />
-                  </Suspense>
-                }
-              />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="PRO" featureName="Global Markets" />}>
-              <Route
-                path="global-markets"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <GlobalMarkets />
-                  </Suspense>
-                }
-              />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="PRO" featureName="Currency Impact" />}>
-              <Route
-                path="currency-impact"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <CurrencyImpact />
-                  </Suspense>
-                }
-              />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="PRO" featureName="Financial Planner" />}>
-              <Route
-                path="planner"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Planner />
-                  </Suspense>
-                }
-              />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="PRO" featureName="Leaderboard" />}>
-              <Route
-                path="leaderboard"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Leaderboard />
-                  </Suspense>
-                }
-              />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="PRO" featureName="AI Analysis" />}>
-              <Route
-                path="analysis"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <AIAnalysis />
-                  </Suspense>
-                }
-              />
-            </Route>
+            <Route
+              path="chat"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <AIChat />
+                </Suspense>
+              }
+            />
+            <Route
+              path="analysis"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <AIAnalysis />
+                </Suspense>
+              }
+            />
 
             {/* Admin route */}
             <Route element={<ProtectedRoute requiredTier="ENTERPRISE" featureName="Admin Panel" />}>
