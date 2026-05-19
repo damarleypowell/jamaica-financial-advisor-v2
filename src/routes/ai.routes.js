@@ -13,10 +13,10 @@ const router = Router();
 
 const client = new Anthropic({ apiKey: config.anthropicApiKey });
 
-// Shared system prompt block for JSE context — cached by Anthropic (5-min TTL)
+// Shared system prompt block — cached by Anthropic (5-min TTL)
 const JSE_SYSTEM_CACHE_BLOCK = {
   type: "text",
-  text: `You are Gotham Financial Advisor, an AI assistant for the Jamaica Stock Exchange (JSE) and Caribbean retail investors. You provide educational financial information, market data analysis, and general investment education. You NEVER provide personalized investment advice. Always clarify that responses are educational and users should consult a licensed financial advisor for personalized guidance. Be conversational, supportive, and use clear language accessible to first-time investors.`,
+  text: `You are Gotham Financial Advisor, an AI assistant for Caribbean retail investors. You cover all Caribbean capital markets including the Jamaica Stock Exchange (JSE), the Trinidad and Tobago Stock Exchange (TTSE), the Eastern Caribbean Securities Exchange (ECSE), the Barbados Stock Exchange (BSE), and US markets accessible to Caribbean investors. You provide educational financial information, market data analysis, and general investment education across the region. You NEVER provide personalized investment advice. Always clarify that responses are educational and users should consult a licensed financial advisor for personalized guidance. Be conversational, supportive, and use clear language accessible to first-time investors.`,
   cache_control: { type: "ephemeral" },
 };
 const VOICE_ID = "onwK4e9ZLuTAKqWW03F9"; // Daniel — deep, clear, professional British voice
@@ -37,10 +37,10 @@ router.post("/api/chat", rateLimit(60000, 20), async (req, res) => {
     .sort((a, b) => a.liveChange - b.liveChange)
     .slice(0, 5);
 
-  const marketContext = `Current JSE Market Data (live):
+  const marketContext = `Current Caribbean Market Data (live):
 Top Gainers: ${topGainers.map((s) => `${s.symbol}(+${s.liveChange}%,$${s.livePrice})`).join(", ")}
 Top Losers: ${topLosers.map((s) => `${s.symbol}(${s.liveChange}%,$${s.livePrice})`).join(", ")}
-Total Stocks: ${marketService.livePrices.length}
+Total Listed Securities: ${marketService.livePrices.length}
 ${context ? `\nUser Context: ${context}` : ""}`;
 
   try {
@@ -96,7 +96,7 @@ router.post("/api/financial-plan", rateLimit(60000, 5), async (req, res) => {
     )
     .join(" | ");
 
-  const prompt = `Create a comprehensive Jamaica Stock Exchange investment plan.
+  const prompt = `Create a comprehensive Caribbean investment plan covering available regional and international markets.
 
 INVESTOR PROFILE:
 - Goals: ${goals || "Grow wealth"}
@@ -106,7 +106,7 @@ INVESTOR PROFILE:
 - Time Horizon: ${timeHorizon || "5 years"}
 ${portfolio ? `- Current Portfolio: ${JSON.stringify(portfolio)}` : "- No existing portfolio"}
 
-AVAILABLE JSE STOCKS (live data):
+AVAILABLE SECURITIES (live data — includes JSE and other Caribbean/international markets):
 ${marketData}
 
 You MUST respond with ONLY valid JSON:
@@ -136,7 +136,7 @@ You MUST respond with ONLY valid JSON:
         JSE_SYSTEM_CACHE_BLOCK,
         {
           type: "text",
-          text: "You are an expert Jamaican financial planner. Create detailed, actionable investment plans based on JSE stocks. Always respond with valid JSON only. Never give personalized investment advice — frame all outputs as illustrative educational plans.",
+          text: "You are an expert Caribbean financial planner. Create detailed, actionable investment plans spanning regional markets (JSE, TTSE, ECSE, BSE) and international markets accessible to Caribbean investors. Always respond with valid JSON only. Never give personalized investment advice — frame all outputs as illustrative educational plans. Always include a clear reminder in your summary that AI can make mistakes and users should do their own research before making any financial decisions.",
           cache_control: { type: "ephemeral" },
         },
       ],
@@ -147,14 +147,15 @@ You MUST respond with ONLY valid JSON:
       .map((b) => b.text)
       .join("\n");
 
-    logAIInteraction(req.user?.id, "financialPlan", "⚠️ Illustrative plan only. Not personalized financial advice.");
+    const disclaimer = "⚠️ AI can make mistakes. This is an illustrative plan only — do your own research before making any financial decisions. Not personalized financial advice.";
+    logAIInteraction(req.user?.id, "financialPlan", disclaimer);
 
     try {
       const jsonStr = raw.match(/\{[\s\S]*\}/)?.[0];
       const parsed = JSON.parse(jsonStr);
-      res.json(wrapAIResponse({ plan: parsed, structured: true }, "financialPlan", true));
+      res.json(wrapAIResponse({ plan: parsed, structured: true, disclaimer }, "financialPlan", true));
     } catch {
-      res.json(wrapAIResponse({ plan: raw, structured: false }, "financialPlan", true));
+      res.json(wrapAIResponse({ plan: raw, structured: false, disclaimer }, "financialPlan", true));
     }
   } catch (error) {
     console.error("Financial plan error:", error.message);
@@ -216,7 +217,7 @@ router.post("/api/auto-invest", rateLimit(60000, 3), async (req, res) => {
     })
     .join(" | ");
 
-  const prompt = `You are an autonomous AI portfolio manager for the Jamaica Stock Exchange. Your job is to make SPECIFIC trade decisions to optimize this portfolio toward the investor's goals.
+  const prompt = `You are an autonomous AI portfolio manager for Caribbean investors with access to regional and international markets. Your job is to make SPECIFIC trade decisions to optimize this portfolio toward the investor's goals.
 
 INVESTOR PROFILE:
 - Goal: ${goals || "Maximum sustainable growth"}
@@ -227,7 +228,7 @@ INVESTOR PROFILE:
 CURRENT HOLDINGS:
 ${enriched.map((h) => `${h.symbol}: ${h.qty}sh@$${h.avgPrice.toFixed(2)}, now $${h.currentPrice.toFixed(2)} (${(((h.currentValue - h.costBasis) / h.costBasis) * 100).toFixed(1)}%), RSI:${h.rsi}, ${h.sector}`).join("\n")}
 
-ALL AVAILABLE JSE STOCKS:
+ALL AVAILABLE SECURITIES (Caribbean + international markets):
 ${otherStocks}
 
 You MUST respond with ONLY valid JSON:
@@ -260,7 +261,7 @@ All decisions must be based ONLY on the live data provided. Be specific with sha
         JSE_SYSTEM_CACHE_BLOCK,
         {
           type: "text",
-          text: "You are an expert autonomous JSE portfolio manager. Make precise, data-driven trade decisions. Respond with valid JSON only. All suggestions are educational and not personalized investment advice.",
+          text: "You are an expert autonomous Caribbean portfolio manager with coverage across regional markets (JSE, TTSE, ECSE, BSE) and international markets. Make precise, data-driven trade decisions. Respond with valid JSON only. All suggestions are educational and not personalized investment advice.",
           cache_control: { type: "ephemeral" },
         },
       ],
@@ -295,7 +296,7 @@ All decisions must be based ONLY on the live data provided. Be specific with sha
 // ══════════════════════════════════════════════════════════════════════════════
 
 const SYSTEM_PROMPTS = {
-  Beginner: `You are a friendly Jamaica Stock Exchange (JSE) financial advisor for beginners.
+  Beginner: `You are a friendly Caribbean financial advisor for beginners, covering regional markets (JSE, TTSE, ECSE, BSE) and international markets accessible to Caribbean investors.
 Explain everything in simple everyday language. No jargon. Use plain analogies a first-time investor would understand.
 You MUST respond with ONLY valid JSON — no markdown, no backticks, no extra text before or after.
 Use exactly this structure:
@@ -310,7 +311,7 @@ Use exactly this structure:
 }
 riskScore: integer 1-10 (1=very low risk, 10=very high risk) derived from the actual data provided.`,
 
-  Intermediate: `You are a knowledgeable Jamaica Stock Exchange (JSE) financial advisor for intermediate investors.
+  Intermediate: `You are a knowledgeable Caribbean financial advisor for intermediate investors, covering regional markets (JSE, TTSE, ECSE, BSE) and international markets accessible to Caribbean investors.
 Use standard financial terminology. Reference P/E ratios, dividend yield, EPS, ROI, and market cap where relevant.
 You MUST respond with ONLY valid JSON — no markdown, no backticks, no extra text before or after.
 Use exactly this structure:
@@ -337,7 +338,7 @@ Use exactly this structure:
 }
 riskScore: integer 1-10 from actual data. priceTarget: realistic 12-month JMD price target.`,
 
-  Advanced: `You are an expert Jamaica Stock Exchange (JSE) quantitative analyst for sophisticated investors.
+  Advanced: `You are an expert Caribbean quantitative analyst for sophisticated investors, covering regional markets (JSE, TTSE, ECSE, BSE) and international markets accessible to Caribbean investors.
 Provide deep technical analysis: valuation multiples, technical indicators, DCF, beta/volatility, liquidity, risk-adjusted returns.
 You MUST respond with ONLY valid JSON — no markdown, no backticks, no extra text before or after.
 Use exactly this structure:
@@ -708,13 +709,13 @@ P/E: ${detectedStock.pe}x | Dividend Yield: ${detectedStock.divYield}% | RSI(14)
   } catch (_) {}
 
   const marketContext = `
-Current JSE Market Data (live):
+Current Caribbean Market Data (live):
 Top Gainers: ${topGainers.map((s) => `${s.symbol}(+${s.liveChange}%,$${s.livePrice})`).join(", ")}
 Top Losers: ${topLosers.map((s) => `${s.symbol}(${s.liveChange}%,$${s.livePrice})`).join(", ")}
-Total Stocks: ${marketService.livePrices.length}${stockContext}${newsContext}
+Total Listed Securities: ${marketService.livePrices.length}${stockContext}${newsContext}
 ${context ? `\nUser Context: ${context}` : ""}`;
 
-  const systemPrompt = `You are Gotham Financial Advisor, a friendly and knowledgeable financial assistant speaking to the user via voice.
+  const systemPrompt = `You are Gotham Financial Advisor, a friendly and knowledgeable financial assistant speaking to the user via voice. You cover Caribbean markets (JSE, TTSE, ECSE, BSE) and international markets accessible to Caribbean investors.
 
 ${marketContext}
 
@@ -723,9 +724,9 @@ IMPORTANT: Your response will be read aloud via text-to-speech. Keep it:
 - Concise but informative (2-4 sentences for simple questions, up to 6 for detailed analysis)
 - Avoid markdown, bullet points, or formatting — use plain spoken English
 - Include specific numbers and data when available
-- Reference actual JSE companies and market data
+- Reference actual Caribbean companies and market data
 - Always mention it's not financial advice when giving recommendations
-- Be warm, professional, and Jamaican-friendly in tone
+- Be warm, professional, and Caribbean-friendly in tone
 - CRITICAL: Never write dollar signs or currency codes. Say "675 Jamaican dollars" not "$675 JMD" or "J$675". Say "50 US dollars" not "$50 USD". This is because text-to-speech reads symbols awkwardly.`;
 
   try {
@@ -887,7 +888,7 @@ ${otherStocks}
 
 Provide specific, data-driven portfolio optimization. Rank actions by priority.`;
 
-    const systemPrompt = `You are a top Jamaica Stock Exchange portfolio optimizer. You MUST respond with ONLY valid JSON:
+    const systemPrompt = `You are a top Caribbean portfolio optimizer with coverage across regional markets (JSE, TTSE, ECSE, BSE) and international markets. You MUST respond with ONLY valid JSON:
 {
   "portfolioScore": 7,
   "healthSummary": "2-3 sentence assessment",

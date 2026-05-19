@@ -15,6 +15,7 @@ interface AuthActions {
   signup: (name: string, email: string, password: string, accountType: AccountType) => Promise<any>;
   verify2FA: (code: string, tempToken: string) => Promise<any>;
   loginWithGoogle: (credential: string) => Promise<any>;
+  loginWithApple: (idToken: string, appleUser?: { name?: { firstName?: string; lastName?: string } }) => Promise<any>;
   setUser: (user: User) => void;
   logout: () => void;
 }
@@ -77,6 +78,15 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   loginWithGoogle: async (credential: string) => {
     const res = await apiPost<{ token: string; user: User }>('/api/auth/google', { credential });
+    if (res.token) {
+      localStorage.setItem('jse_token', res.token);
+      set({ user: res.user, isAuthenticated: true, token: res.token });
+    }
+    return res;
+  },
+
+  loginWithApple: async (idToken: string, appleUser?: { name?: { firstName?: string; lastName?: string } }) => {
+    const res = await apiPost<{ token: string; user: User }>('/api/auth/apple', { id_token: idToken, user: appleUser });
     if (res.token) {
       localStorage.setItem('jse_token', res.token);
       set({ user: res.user, isAuthenticated: true, token: res.token });
