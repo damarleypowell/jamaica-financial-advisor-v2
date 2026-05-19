@@ -14,8 +14,7 @@ interface Overview {
 
 const INTER = "'Inter', 'DM Sans', sans-serif";
 const MONO = "'JetBrains Mono', 'Fira Mono', monospace";
-const SYNE = "'Syne', 'Inter', sans-serif"; // keep for brand accents only
-const SANS = INTER; // alias so existing usage still works
+const SANS = INTER;
 
 function fmt(n?: number, dp = 2) {
   return (n ?? 0).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
@@ -116,7 +115,7 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
                 <>
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: INTER, marginBottom: 4 }}>{marketLabel}</div>
-                    <div style={{ fontSize: 36, fontWeight: 800, fontFamily: SYNE, letterSpacing: '-0.03em', lineHeight: 1, color: '#fff' }}>
+                    <div style={{ fontSize: 36, fontWeight: 800, fontFamily: INTER, letterSpacing: '-0.03em', lineHeight: 1, color: '#fff' }}>
                       <Counter value={jse} decimals={0} />
                     </div>
                   </div>
@@ -137,8 +136,8 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
               ) : (
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: INTER, marginBottom: 8 }}>{marketLabel}</div>
-                  <div style={{ fontSize: 26, fontWeight: 800, fontFamily: SYNE, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-                    {total > 0 ? `${total} Securities` : 'Loading market…'}
+                  <div style={{ fontSize: 22, fontWeight: 700, fontFamily: INTER, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+                    {total > 0 ? `${total} Securities` : 'Connecting to market…'}
                   </div>
                   {total > 0 && <div style={{ fontSize: 12, color: 'rgba(0,230,118,.6)', fontFamily: MONO, marginTop: 6 }}>Real-time market data</div>}
                 </div>
@@ -186,7 +185,7 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
           {volume > 0 && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.28)', letterSpacing: '.1em', textTransform: 'uppercase', fontFamily: SANS }}>Volume</div>
-              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: SYNE, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: INTER, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
                 {fmtVol(volume)}
               </div>
             </div>
@@ -308,10 +307,12 @@ export default function Dashboard() {
 
   const US_POPULAR = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'JPM', 'BRK/B', 'V', 'UNH', 'XOM', 'NFLX', 'AMD', 'DIS', 'BABA', 'PYPL', 'INTC'];
 
-  const { data: usData } = useQuery<any[]>({
+  const { data: usData, isError: usError } = useQuery<any[]>({
     queryKey: ['us-dashboard', usSearch || 'popular'],
     queryFn: async () => {
-      const symbols = usSearch.trim() ? [usSearch.trim().toUpperCase()] : US_POPULAR;
+      const symbols = usSearch.trim()
+        ? [usSearch.trim().toUpperCase()]
+        : US_POPULAR.filter(s => !s.includes('/'));
       const res: any = await apiPost<any>('/api/us/quotes', { symbols });
       if (Array.isArray(res)) return res;
       if (res && typeof res === 'object') {
@@ -328,11 +329,12 @@ export default function Dashboard() {
     staleTime: 30_000,
     refetchInterval: 60_000,
     enabled: market === 'us',
-    retry: 1,
+    retry: 0,
   });
 
   const usStocks = Array.isArray(usData) ? usData.filter(s => s.price > 0) : [];
   const activeStocks = market === 'us' ? usStocks : stocks;
+  const usUnavailable = usError && market === 'us';
 
   useEffect(() => {
     if (market === 'us' && usStocks.length > 0 && (!selectedSymbol || stocks.find(s => s.symbol === selectedSymbol))) {
@@ -412,6 +414,17 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* ── US unavailable notice ───────────────────────────────── */}
+      {usUnavailable && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 12, background: 'rgba(255,215,64,.06)', border: '1px solid rgba(255,215,64,.18)', fontSize: 12, color: 'rgba(255,215,64,.8)', fontFamily: INTER }}>
+          <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 11, color: '#ffd740' }} />
+          US market data unavailable — Alpaca API not configured. Switch to Caribbean markets to view live data.
+          <button onClick={() => setMarket('caribbean')} style={{ marginLeft: 'auto', padding: '4px 12px', borderRadius: 8, background: 'rgba(0,230,118,.12)', border: '1px solid rgba(0,230,118,.25)', color: '#00e676', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+            Switch to Caribbean
+          </button>
+        </div>
+      )}
 
       {/* ── 1. Hero ─────────────────────────────────────────────── */}
       <HeroCard

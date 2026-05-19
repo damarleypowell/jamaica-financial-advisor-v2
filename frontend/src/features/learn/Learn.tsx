@@ -127,9 +127,9 @@ const LESSONS: Lesson[] = [
 
 const PATHS: LearningPath[] = [
   {
-    id: 'beginner',
-    title: 'JSE Beginner',
-    lessonCount: 8,
+    id: 'all',
+    title: 'All Lessons',
+    lessonCount: 6,
     color: 'var(--color-green)',
     tag: 'Start Here',
     icon: <BookOpen size={20} />,
@@ -137,14 +137,14 @@ const PATHS: LearningPath[] = [
   {
     id: 'technical',
     title: 'Technical Analysis',
-    lessonCount: 6,
+    lessonCount: 2,
     color: '#4f9eff',
     icon: <BarChart2 size={20} />,
   },
   {
     id: 'advanced',
     title: 'Advanced Investing',
-    lessonCount: 10,
+    lessonCount: 3,
     color: '#f5c842',
     tag: 'PRO',
     icon: <TrendingUp size={20} />,
@@ -194,21 +194,24 @@ const badgePill: React.CSSProperties = {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function PathCard({ path }: { path: LearningPath }) {
+function PathCard({ path, isActive, onClick }: { path: LearningPath; isActive: boolean; onClick: () => void }) {
   return (
     <div
+      onClick={onClick}
       style={{
         minWidth: 200, flex: '0 0 200px',
-        background: 'var(--color-bg2)', border: '1px solid var(--color-border)',
+        background: isActive ? `${path.color}12` : 'var(--color-bg2)',
+        border: `1px solid ${isActive ? path.color + '55' : 'var(--color-border)'}`,
         borderRadius: 18, padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 12,
         cursor: 'pointer', transition: 'all .2s', position: 'relative', overflow: 'hidden',
+        boxShadow: isActive ? `0 4px 20px ${path.color}18` : 'none',
       }}
       onMouseEnter={e => {
         (e.currentTarget as HTMLElement).style.borderColor = path.color;
         (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
+        (e.currentTarget as HTMLElement).style.borderColor = isActive ? path.color + '55' : 'var(--color-border)';
         (e.currentTarget as HTMLElement).style.transform = '';
       }}
     >
@@ -457,9 +460,17 @@ function saveRead(ids: Set<string>) {
   } catch { /* ignore */ }
 }
 
+function filterLessonsByPath(pathId: string): Lesson[] {
+  if (pathId === 'all') return LESSONS;
+  if (pathId === 'technical') return LESSONS.filter(l => l.category === 'Technical Analysis');
+  if (pathId === 'advanced') return LESSONS.filter(l => l.difficulty === 'Advanced' || l.difficulty === 'Intermediate');
+  return LESSONS;
+}
+
 export default function Learn() {
   const [readIds, setReadIds] = useState<Set<string>>(loadRead);
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  const [selectedPath, setSelectedPath] = useState<string>('all');
 
   const markRead = (id: string) => {
     setReadIds(prev => {
@@ -470,6 +481,7 @@ export default function Learn() {
     });
   };
 
+  const filteredLessons = filterLessonsByPath(selectedPath);
   const completedCount = LESSONS.filter(l => readIds.has(l.id)).length;
   const progressPct = Math.round((completedCount / LESSONS.length) * 100);
 
@@ -485,7 +497,7 @@ export default function Learn() {
               Learning Hub
             </h1>
             <p style={{ margin: '5px 0 0', fontSize: 13, color: 'var(--color-text2)' }}>
-              Master the Jamaica Stock Exchange — from first principles to advanced strategy.
+              Master Caribbean &amp; US investing — from first principles to advanced strategy.
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 12 }}>
@@ -519,7 +531,14 @@ export default function Learn() {
 
         {/* Horizontal scroll on mobile, flex wrap on desktop */}
         <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'none' }}>
-          {PATHS.map(p => <PathCard key={p.id} path={p} />)}
+          {PATHS.map(p => (
+            <PathCard
+              key={p.id}
+              path={{ ...p, lessonCount: filterLessonsByPath(p.id).length }}
+              isActive={selectedPath === p.id}
+              onClick={() => setSelectedPath(p.id)}
+            />
+          ))}
         </div>
       </section>
 
@@ -527,11 +546,16 @@ export default function Learn() {
       <section>
         <h2 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 800, color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <BookOpen size={15} color="var(--color-green)" />
-          Featured Lessons
+          {selectedPath === 'all' ? 'All Lessons' : PATHS.find(p => p.id === selectedPath)?.title ?? 'Lessons'}
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text2)', marginLeft: 2 }}>({filteredLessons.length})</span>
         </h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-          {LESSONS.map(l => (
+          {filteredLessons.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--color-text2)', gridColumn: '1 / -1', padding: '24px 0' }}>
+              No lessons in this path yet — check back soon.
+            </p>
+          ) : filteredLessons.map(l => (
             <LessonCard
               key={l.id}
               lesson={l}
