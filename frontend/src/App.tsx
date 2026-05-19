@@ -35,6 +35,7 @@ const Alerts = lazy(() => import('./features/alerts/Alerts.tsx'));
 const Subscription = lazy(() => import('./features/subscription/Subscription.tsx'));
 const Admin = lazy(() => import('./features/admin/Admin.tsx'));
 const Onboarding = lazy(() => import('./features/onboarding/Onboarding.tsx'));
+const VerifyEmail = lazy(() => import('./features/verify-email/VerifyEmail.tsx'));
 
 /* ---------- Query client ---------- */
 const queryClient = new QueryClient({
@@ -82,6 +83,14 @@ export default function App() {
             element={
               <Suspense fallback={<PageLoader />}>
                 <Onboarding />
+              </Suspense>
+            }
+          />
+          <Route
+            path="verify-email"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <VerifyEmail />
               </Suspense>
             }
           />

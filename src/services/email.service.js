@@ -9,9 +9,9 @@ const nodemailer = require("nodemailer");
 const EMAIL_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST || "smtp.gmail.com";
 const EMAIL_PORT = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT, 10) || 587;
 const EMAIL_USER = process.env.SMTP_USER || process.env.EMAIL_USER || "";
-const EMAIL_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS || "";
+const EMAIL_PASS = (process.env.SMTP_PASS || process.env.EMAIL_PASS || "").replace(/\s/g, "");
 const EMAIL_FROM = process.env.EMAIL_FROM || `"Gotham Financial" <${EMAIL_USER || "noreply@gothamfinancial.com"}>`;
-const APP_URL = process.env.APP_URL || "http://localhost:3000";
+const APP_URL = process.env.APP_URL || "https://gotham-latk.onrender.com";
 
 // ── Transport ────────────────────────────────────────────────────────────────
 
@@ -120,7 +120,7 @@ function buildEmail({ title, preheader, greeting, body, ctaText, ctaUrl, footer 
  * Send an email verification link to a newly registered user.
  */
 async function sendVerificationEmail(email, token, name) {
-  const verifyUrl = `${APP_URL}/api/auth/verify?token=${encodeURIComponent(token)}`;
+  const verifyUrl = `${APP_URL}/verify-email?token=${encodeURIComponent(token)}`;
   const html = buildEmail({
     title: "Verify Your Email — Gotham Financial",
     preheader: "Please verify your email address to activate your Gotham Financial account.",
@@ -134,17 +134,22 @@ async function sendVerificationEmail(email, token, name) {
     footer: `<p>If the button doesn't work, copy and paste this link into your browser:<br/><a href="${verifyUrl}" style="word-break:break-all;">${verifyUrl}</a></p>`,
   });
 
-  return transporter.sendMail({
-    from: EMAIL_FROM,
-    to: email,
-    subject: "Verify Your Email — Gotham Financial",
-    text: `Welcome to Gotham Financial, ${name || "Investor"}! Verify your email: ${verifyUrl}`,
-    html,
-    headers: {
-      "X-Mailer": "Gotham-Financial/2.0",
-      "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
-    },
-  });
+  try {
+    return await transporter.sendMail({
+      from: EMAIL_FROM,
+      to: email,
+      subject: "Verify Your Email — Gotham Financial",
+      text: `Welcome to Gotham Financial, ${name || "Investor"}! Verify your email: ${verifyUrl}`,
+      html,
+      headers: {
+        "X-Mailer": "Gotham-Financial/2.0",
+        "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
+      },
+    });
+  } catch (err) {
+    console.error("[Email] Failed to send verification email to", email, err?.message || err);
+    throw err;
+  }
 }
 
 /**
@@ -169,18 +174,23 @@ async function sendPasswordResetEmail(email, token, name) {
     footer: `<p>If the button doesn't work, copy and paste this link:<br/><a href="${resetUrl}" style="word-break:break-all;">${resetUrl}</a></p>`,
   });
 
-  return transporter.sendMail({
-    from: EMAIL_FROM,
-    to: email,
-    subject: "Reset Your Password — Gotham Financial",
-    text: `Hi ${name || "there"}, reset your password here: ${resetUrl} (expires in 1 hour)`,
-    html,
-    headers: {
-      "X-Mailer": "Gotham-Financial/2.0",
-      "X-Priority": "1",
-      "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
-    },
-  });
+  try {
+    return await transporter.sendMail({
+      from: EMAIL_FROM,
+      to: email,
+      subject: "Reset Your Password — Gotham Financial",
+      text: `Hi ${name || "there"}, reset your password here: ${resetUrl} (expires in 1 hour)`,
+      html,
+      headers: {
+        "X-Mailer": "Gotham-Financial/2.0",
+        "X-Priority": "1",
+        "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
+      },
+    });
+  } catch (err) {
+    console.error("[Email] Failed to send password reset email to", email, err?.message || err);
+    throw err;
+  }
 }
 
 /**
@@ -237,17 +247,21 @@ async function sendOrderConfirmation(email, order) {
     ctaUrl: `${APP_URL}/#transactions`,
   });
 
-  return transporter.sendMail({
-    from: EMAIL_FROM,
-    to: email,
-    subject: `Order Confirmed: ${side} ${order.quantity} ${order.symbol} — Gotham Financial`,
-    text: `Your ${side} order for ${order.quantity} shares of ${order.symbol} at J$${order.price} has been placed.`,
-    html,
-    headers: {
-      "X-Mailer": "Gotham-Financial/2.0",
-      "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
-    },
-  });
+  try {
+    return await transporter.sendMail({
+      from: EMAIL_FROM,
+      to: email,
+      subject: `Order Confirmed: ${side} ${order.quantity} ${order.symbol} — Gotham Financial`,
+      text: `Your ${side} order for ${order.quantity} shares of ${order.symbol} at J$${order.price} has been placed.`,
+      html,
+      headers: {
+        "X-Mailer": "Gotham-Financial/2.0",
+        "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
+      },
+    });
+  } catch (err) {
+    console.error("[Email] Failed to send order confirmation to", email, err?.message || err);
+  }
 }
 
 /**
@@ -287,17 +301,21 @@ async function sendWelcomeEmail(email, name) {
     footer: `<p>Need help getting started? Reply to this email or use the AI chat inside the app.</p>`,
   });
 
-  return transporter.sendMail({
-    from: EMAIL_FROM,
-    to: email,
-    subject: "Welcome to Gotham Financial — Let's Get Started",
-    text: `Welcome to Gotham Financial, ${name || "Investor"}! Your account is ready. Visit ${APP_URL} to get started.`,
-    html,
-    headers: {
-      "X-Mailer": "Gotham-Financial/2.0",
-      "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
-    },
-  });
+  try {
+    return await transporter.sendMail({
+      from: EMAIL_FROM,
+      to: email,
+      subject: "Welcome to Gotham Financial — Let's Get Started",
+      text: `Welcome to Gotham Financial, ${name || "Investor"}! Your account is ready. Visit ${APP_URL} to get started.`,
+      html,
+      headers: {
+        "X-Mailer": "Gotham-Financial/2.0",
+        "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
+      },
+    });
+  } catch (err) {
+    console.error("[Email] Failed to send welcome email to", email, err?.message || err);
+  }
 }
 
 /**
@@ -346,17 +364,21 @@ async function sendAlertTriggered(email, alert) {
     ctaUrl: `${APP_URL}/#stock/${alert.symbol}`,
   });
 
-  return transporter.sendMail({
-    from: EMAIL_FROM,
-    to: email,
-    subject: `Price Alert: ${alert.symbol} has ${direction} J$${alert.targetPrice}`,
-    text: `${alert.symbol} has ${direction} your target of J$${alert.targetPrice}. Current price: J$${alert.currentPrice}.`,
-    html,
-    headers: {
-      "X-Mailer": "Gotham-Financial/2.0",
-      "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
-    },
-  });
+  try {
+    return await transporter.sendMail({
+      from: EMAIL_FROM,
+      to: email,
+      subject: `Price Alert: ${alert.symbol} has ${direction} J$${alert.targetPrice}`,
+      text: `${alert.symbol} has ${direction} your target of J$${alert.targetPrice}. Current price: J$${alert.currentPrice}.`,
+      html,
+      headers: {
+        "X-Mailer": "Gotham-Financial/2.0",
+        "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
+      },
+    });
+  } catch (err) {
+    console.error("[Email] Failed to send price alert to", email, err?.message || err);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
