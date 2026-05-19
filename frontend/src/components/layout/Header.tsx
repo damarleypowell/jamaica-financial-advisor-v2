@@ -1,8 +1,9 @@
-﻿import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.ts';
 import { useMarketStore } from '../../stores/market.ts';
 import { useUIStore } from '../../stores/ui.ts';
+import type { AuthModalView } from '../../stores/ui.ts';
 import type { Stock } from '../../types/index.ts';
 
 interface SearchResultsProps {
@@ -85,11 +86,11 @@ const TIER_BADGE: Record<string, { bg: string; color: string; border: string }> 
   ENTERPRISE: { bg: 'rgba(206,147,216,.12)', color: '#ce93d8', border: 'rgba(206,147,216,.25)' },
 };
 
-/* â”€â”€ JWT auth section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â"€â"€ JWT auth section â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 function AuthSection({ user, isAuthenticated, openAuthModal, logout }: {
   user: { subscriptionTier?: string; name?: string } | null;
   isAuthenticated: boolean;
-  openAuthModal: (view: string) => void;
+  openAuthModal: (view?: AuthModalView) => void;
   logout: () => void;
 }) {
   const tier = user?.subscriptionTier ?? 'FREE';
@@ -99,14 +100,14 @@ function AuthSection({ user, isAuthenticated, openAuthModal, logout }: {
   if (isAuthenticated) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 99, fontSize: 10, fontWeight: 800, letterSpacing: '.1em', background: tb.bg, border: `1px solid ${tb.border}`, color: tb.color }} className=”hidden md:inline-flex”>{tier}</span>
-        <div style={{ position: 'relative' }} className=”group”>
+        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 99, fontSize: 10, fontWeight: 800, letterSpacing: '.1em', background: tb.bg, border: `1px solid ${tb.border}`, color: tb.color }} className="hidden md:inline-flex">{tier}</span>
+        <div style={{ position: 'relative' }} className="group">
           <button
             onClick={logout}
-            title=”Sign out”
+            title="Sign out"
             style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(0,230,118,.12)', border: '1px solid rgba(0,230,118,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#00e676', fontFamily: 'var(--font-mono)', transition: 'all 150ms' }}
-            onMouseEnter={e => { (e.currentTarget.style.background = 'rgba(255,82,82,.12)'; e.currentTarget.style.borderColor = 'rgba(255,82,82,.3)'; e.currentTarget.style.color = '#ff5252'; })}
-            onMouseLeave={e => { (e.currentTarget.style.background = 'rgba(0,230,118,.12)'; e.currentTarget.style.borderColor = 'rgba(0,230,118,.22)'; e.currentTarget.style.color = '#00e676'; })}>
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,82,82,.12)'; e.currentTarget.style.borderColor = 'rgba(255,82,82,.3)'; e.currentTarget.style.color = '#ff5252'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,230,118,.12)'; e.currentTarget.style.borderColor = 'rgba(0,230,118,.22)'; e.currentTarget.style.color = '#00e676'; }}>
             {initials}
           </button>
         </div>
@@ -119,8 +120,8 @@ function AuthSection({ user, isAuthenticated, openAuthModal, logout }: {
       <button
         onClick={() => openAuthModal('login')}
         style={{ padding: '7px 16px', fontSize: 13, fontWeight: 600, color: 'var(--color-text2)', border: '1px solid rgba(255,255,255,.09)', borderRadius: 10, transition: 'all 150ms', background: 'transparent', cursor: 'pointer' }}
-        onMouseEnter={e => { (e.currentTarget.style.background = 'rgba(255,255,255,.05)'); (e.currentTarget.style.color = 'var(--color-text)'); }}
-        onMouseLeave={e => { (e.currentTarget.style.background = 'transparent'); (e.currentTarget.style.color = 'var(--color-text2)'); }}>
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text2)'; }}>
         Log In
       </button>
       <button
@@ -179,9 +180,6 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar: () => voi
     return () => document.removeEventListener('keydown', fn);
   }, []);
 
-  const tier = user?.subscriptionTier ?? 'FREE';
-  const tb   = TIER_BADGE[tier] ?? TIER_BADGE.FREE;
-
   const iconBtn: React.CSSProperties = {
     width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms', flexShrink: 0,
@@ -212,7 +210,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar: () => voi
         <i className="fa-solid fa-bars" style={{ fontSize: 15, color: 'var(--color-text2)' }} />
       </button>
 
-      {/* Brand â€” single, always visible */}
+      {/* Brand â€" single, always visible */}
       <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', flexShrink: 0 }}>
         <div style={{
           width: 32, height: 32, borderRadius: 9, flexShrink: 0,
@@ -358,7 +356,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar: () => voi
         )}
       </div>
 
-      {/* Connection status â€” desktop */}
+      {/* Connection status â€" desktop */}
       <div style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,
         padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700,

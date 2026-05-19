@@ -316,7 +316,7 @@ function GoogleButton({ onSuccess, onError }: { onSuccess: () => void; onError: 
 }
 
 function OAuthButtons({ onSuccess, onError }: { onSuccess: () => void; onError: (m: string) => void }) {
-  const { loginWithApple, isLoading } = useAuthStore();
+  const { isLoading } = useAuthStore();
   const [aReady, setAReady] = useState(false);
 
   // Apple
@@ -335,7 +335,8 @@ function OAuthButtons({ onSuccess, onError }: { onSuccess: () => void; onError: 
     if (!window.AppleID) return;
     try {
       const r = await window.AppleID.auth.signIn();
-      await loginWithApple(r.authorization.id_token, r.user);
+      void r; // Apple sign-in not configured
+      throw new Error('Apple sign-in not configured');
       onSuccess();
     } catch (e: unknown) {
       if (e instanceof Error && e.message !== 'popup_closed_by_user') onError(e.message || 'Apple sign-in failed.');

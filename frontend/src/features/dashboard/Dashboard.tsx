@@ -249,9 +249,9 @@ function SectionLabel({ children, count, right }: { children: React.ReactNode; c
 }
 
 /* ── Mover card ───────────────────────────────────────────────── */
-function MoverCard({ s, isSelected, onSelect, accentColor, moverTab }: {
+function MoverCard({ s, isSelected, onSelect, moverTab }: {
   s: { symbol: string; price?: number; pctChange?: number; volume?: number };
-  isSelected: boolean; onSelect: () => void; accentColor: string; moverTab: MoverTab;
+  isSelected: boolean; onSelect: () => void; moverTab: MoverTab;
 }) {
   const [hov, setHov] = useState(false);
   const pos = (s.pctChange ?? 0) >= 0;
@@ -397,7 +397,6 @@ export default function Dashboard() {
               key={s.symbol} s={s}
               isSelected={s.symbol === selectedSymbol}
               onSelect={() => selectSymbol(s.symbol)}
-              accentColor={activeTabDef.color}
               moverTab={moverTab}
             />
           ))}

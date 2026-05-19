@@ -60,7 +60,7 @@ export default function USStocks() {
   });
 
   const orderMutation = useMutation({
-    mutationFn: (order: USOrder) => apiPost('/api/us/orders', {
+    mutationFn: (order: USOrder): Promise<{ id?: string }> => apiPost('/api/us/orders', {
       symbol: order.symbol,
       qty: order.qty,
       side: order.side,
