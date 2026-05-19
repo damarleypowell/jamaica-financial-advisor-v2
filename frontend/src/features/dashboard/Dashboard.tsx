@@ -113,7 +113,7 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
               {jse > 0 ? (
                 <>
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: SANS, marginBottom: 4 }}>JSE Composite Index</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: SANS, marginBottom: 4 }}>Market Index</div>
                     <div style={{ fontSize: 36, fontWeight: 800, fontFamily: SYNE, letterSpacing: '-0.03em', lineHeight: 1, color: '#fff' }}>
                       <Counter value={jse} decimals={0} />
                     </div>
@@ -134,11 +134,11 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
                 </>
               ) : (
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: SANS, marginBottom: 8 }}>Jamaica Stock Exchange</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: SANS, marginBottom: 8 }}>Caribbean Markets</div>
                   <div style={{ fontSize: 26, fontWeight: 800, fontFamily: SYNE, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                     {total > 0 ? `${total} Securities` : 'Loading market…'}
                   </div>
-                  {total > 0 && <div style={{ fontSize: 12, color: 'rgba(0,230,118,.6)', fontFamily: MONO, marginTop: 6 }}>Real-time JSE data</div>}
+                  {total > 0 && <div style={{ fontSize: 12, color: 'rgba(0,230,118,.6)', fontFamily: MONO, marginTop: 6 }}>Real-time market data</div>}
                 </div>
               )}
             </div>

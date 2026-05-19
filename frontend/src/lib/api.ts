@@ -36,6 +36,14 @@ export async function apiFetch<T>(url: string, opts: RequestInit = {}): Promise<
   try { body = await res.json(); } catch { body = null; }
 
   if (!res.ok) {
+    if (res.status === 401) {
+      // Token expired or revoked — clear session without triggering a loop
+      localStorage.removeItem('jse_token');
+      try {
+        const { useAuthStore } = await import('../stores/auth');
+        useAuthStore.getState().logout();
+      } catch { /* store not ready */ }
+    }
     const message =
       (body && typeof body === 'object' && 'message' in body ? (body as { message: string }).message : null) ??
       (body && typeof body === 'object' && 'error' in body ? (body as { error: string }).error : null) ??

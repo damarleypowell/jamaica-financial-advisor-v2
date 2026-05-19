@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiPost } from '../../lib/api';
+import { useAuthStore } from '../../stores/auth';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
+  const loadUser = useAuthStore((s) => s.loadUser);
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [msg, setMsg] = useState('');
 
@@ -12,12 +14,15 @@ export default function VerifyEmail() {
     if (!token) { setStatus('error'); setMsg('No verification token found.'); return; }
 
     apiPost('/api/auth/verify-email', { token })
-      .then(() => setStatus('success'))
+      .then(() => {
+        setStatus('success');
+        loadUser(); // refresh user so emailVerified reflects the new state
+      })
       .catch((e: unknown) => {
         setStatus('error');
         setMsg(e instanceof Error ? e.message : 'Verification failed. The link may have expired.');
       });
-  }, []);
+  }, [loadUser]);
 
   const GREEN = '#00C853';
   const INK = '#111827';

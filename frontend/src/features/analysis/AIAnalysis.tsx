@@ -12,12 +12,12 @@ const LEVELS: { key: Level; label: string; icon: string; desc: string; color: st
   { key: 'advanced',     label: 'Advanced',     icon: 'fa-solid fa-flask',       desc: 'DCF, EV/EBITDA, risk scoring',       color: '#ce93d8' },
 ];
 
-const QUICK_CHIPS = ['NCB', 'JMMBGL', 'WISYNCO', 'GK', 'SEP', 'PJAM'];
+const QUICK_CHIPS = ['NCB', 'JMMBGL', 'WISYNCO', 'AAPL', 'TSLA', 'NVDA'];
 
 const PROMPTS: Record<Level, (q: string) => string> = {
-  beginner: q => `You are a friendly financial educator. Analyse "${q}" for the Jamaica Stock Exchange in simple, plain English. Avoid jargon. Cover: what the company does, is the stock going up or down lately, is it a good buy for a beginner, and one key risk. Keep it concise and easy to understand.`,
-  intermediate: q => `Analyse "${q}" on the JSE. Cover: P/E ratio vs sector average, dividend yield and history, revenue trend, debt-to-equity, and a buy/hold/sell recommendation with reasoning. Use financial terminology but explain each metric briefly.`,
-  advanced: q => `Provide a deep-dive analysis of "${q}" on the Jamaica Stock Exchange. Include: DCF valuation assumptions, EV/EBITDA comparison, free cash flow trend, risk-adjusted return (Sharpe-like), insider ownership, and a specific price target with upside/downside case. Be data-driven and direct.`,
+  beginner: q => `You are a friendly financial educator. Analyse "${q}" — which may be listed on the JSE, TTSE, ECSE, BSE, or US markets — in simple, plain English. Avoid jargon. Cover: what the company does, is the stock going up or down lately, is it a good buy for a beginner, and one key risk. Keep it concise and easy to understand.`,
+  intermediate: q => `Analyse "${q}" (could be a Caribbean or US listed stock). Cover: P/E ratio vs sector average, dividend yield and history, revenue trend, debt-to-equity, and a buy/hold/sell recommendation with reasoning. Note which exchange it's on and any currency considerations. Use financial terminology but explain each metric briefly.`,
+  advanced: q => `Provide a deep-dive analysis of "${q}" (Caribbean or US market). Include: DCF valuation assumptions, EV/EBITDA comparison, free cash flow trend, risk-adjusted return (Sharpe-like), insider ownership, exchange-specific liquidity risks, and a specific price target with upside/downside case. Be data-driven and direct.`,
 };
 
 export default function AIAnalysis() {

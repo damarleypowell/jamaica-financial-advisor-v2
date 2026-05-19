@@ -67,7 +67,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   verify2FA: async (code: string, tempToken: string) => {
-    const res = await apiPost<{ token: string }>('/api/auth/verify-2fa', { code, tempToken });
+    const res = await apiPost<{ token: string }>('/api/auth/2fa/login', { code, tempToken });
     if (res.token) {
       localStorage.setItem('jse_token', res.token);
       const user = await apiGet<User>('/api/auth/me');
@@ -97,6 +97,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
   setUser: (user) => set({ user }),
 
   logout: () => {
+    const token = localStorage.getItem('jse_token');
+    if (token) {
+      // Fire-and-forget — revoke server-side, don't block UI
+      fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }).catch(() => {});
+    }
     localStorage.removeItem('jse_token');
     set({ user: null, isAuthenticated: false, isLoading: false, token: null });
   },

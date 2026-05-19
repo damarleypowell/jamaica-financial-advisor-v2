@@ -1542,7 +1542,7 @@ router.post("/api/auth/logout", authMiddleware, async (req, res) => {
       }
     }
 
-    logAudit(AuditAction.LOGIN_SUCCESS, {
+    logAudit(AuditAction.LOGOUT, {
       ip: req.ip,
       userId: req.user.id,
       message: "User logged out",

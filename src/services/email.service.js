@@ -279,7 +279,7 @@ async function sendWelcomeEmail(email, name) {
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
           <tr>
             <td style="padding:8px 0;color:#00c853;font-weight:700;font-size:14px;width:28px;">1.</td>
-            <td style="padding:8px 0;color:#e8edf2;font-size:14px;">Browse Jamaica Stock Exchange listings in real-time</td>
+            <td style="padding:8px 0;color:#e8edf2;font-size:14px;">Browse Caribbean market listings — JSE, TTSE, ECSE and more — in real-time</td>
           </tr>
           <tr>
             <td style="padding:8px 0;color:#00c853;font-weight:700;font-size:14px;">2.</td>
