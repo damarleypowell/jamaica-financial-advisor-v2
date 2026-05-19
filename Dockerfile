@@ -5,16 +5,15 @@
 # ── Stage 1: Build React frontend ────────────────────────────────────────────
 FROM node:20-slim AS frontend-build
 WORKDIR /app/frontend
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
 COPY frontend/ ./
+RUN npm install
 RUN npm run build
 
 # ── Stage 2: Node.js backend dependencies ────────────────────────────────────
 FROM node:20-slim AS node-deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+COPY package.json package-lock.json* ./
+RUN npm install --omit=dev
 
 # ── Stage 3: Prisma generate ─────────────────────────────────────────────────
 FROM node:20-slim AS prisma
