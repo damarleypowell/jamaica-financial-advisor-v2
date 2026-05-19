@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiGet } from '../../lib/api';
+import { apiPost } from '../../lib/api';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -11,7 +11,7 @@ export default function VerifyEmail() {
     const token = new URLSearchParams(window.location.search).get('token');
     if (!token) { setStatus('error'); setMsg('No verification token found.'); return; }
 
-    apiGet(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
+    apiPost('/api/auth/verify-email', { token })
       .then(() => setStatus('success'))
       .catch((e: unknown) => {
         setStatus('error');
