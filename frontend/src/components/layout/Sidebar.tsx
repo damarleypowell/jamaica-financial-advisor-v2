@@ -49,11 +49,10 @@ const NAV: Section[] = [
 ];
 
 const MOBILE_NAV: NavItem[] = [
-  { label: 'Home',    icon: 'fa-solid fa-house',             to: '/'           },
+  { label: 'Markets', icon: 'fa-solid fa-chart-line',        to: '/'           },
   { label: 'Charts',  icon: 'fa-solid fa-chart-candlestick', to: '/technicals' },
-  { label: 'Paper',   icon: 'fa-solid fa-flask-vial',        to: '/portfolio'  },
-  { label: 'Watch',   icon: 'fa-solid fa-star',              to: '/watchlists' },
-  { label: 'News',    icon: 'fa-solid fa-newspaper',         to: '/news'       },
+  { label: 'AI Chat', icon: 'fa-solid fa-robot',             to: '/chat'       },
+  { label: 'Learn',   icon: 'fa-solid fa-graduation-cap',    to: '/learn'      },
 ];
 
 const TIER_COLORS: Record<string, string> = {

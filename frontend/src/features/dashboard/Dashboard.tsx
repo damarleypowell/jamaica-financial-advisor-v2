@@ -470,7 +470,7 @@ export default function Dashboard() {
       />
 
       {/* ── 2. KPI tiles ────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+      <div className="mobile-hide" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
         {market === 'us' ? (
           <>
             {usStocks.find(s => s.symbol === 'SPY') && <KPITile label="S&P 500 (SPY)" value={`$${(usStocks.find(s => s.symbol === 'SPY')?.price ?? 0).toFixed(2)}`} sub={`${(usStocks.find(s => s.symbol === 'SPY')?.pctChange ?? 0) >= 0 ? '+' : ''}${(usStocks.find(s => s.symbol === 'SPY')?.pctChange ?? 0).toFixed(2)}% today`} icon="fa-chart-line" accent="#40c4ff" delay={0} />}
@@ -491,7 +491,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── 3. Movers strip ─────────────────────────────────────── */}
-      <div>
+      <div className="mobile-hide">
         <SectionLabel count={activeStocks.length}
           right={
             <div style={{ display: 'flex', gap: 2, padding: '3px', borderRadius: 12, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)' }}>
@@ -533,7 +533,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── 4. Chart + Panel ────────────────────────────────────── */}
-      <div>
+      <div className="mobile-hide">
         <SectionLabel right={
           selectedSymbol ? (
             <a href={`/analysis?q=${selectedSymbol}`}

@@ -7,7 +7,7 @@ export default function Ticker() {
 
   if (items.length === 0) {
     return (
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 32, zIndex: 50, background: 'rgba(4,6,13,.98)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="ticker-strip" style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 32, zIndex: 50, background: 'rgba(4,6,13,.98)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <span style={{ fontSize: 10, color: 'var(--color-muted)' }}>Connecting to market data...</span>
       </div>
     );
@@ -27,7 +27,7 @@ export default function Ticker() {
   });
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 32, zIndex: 50, background: 'rgba(4,6,13,.98)', borderBottom: '1px solid var(--color-border)', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+    <div className="ticker-strip" style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 32, zIndex: 50, background: 'rgba(4,6,13,.98)', borderBottom: '1px solid var(--color-border)', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
       {/* Gradient fade left */}
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 60, background: 'linear-gradient(90deg, var(--color-bg), transparent)', zIndex: 2, pointerEvents: 'none' }} />
       {/* Gradient fade right */}

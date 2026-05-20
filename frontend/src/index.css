@@ -640,6 +640,32 @@ a { text-decoration: none; color: inherit; }
   color: var(--color-muted);
 }
 
+/* ── Mobile strip ───────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Hide heavy sections that overwhelm mobile */
+  .mobile-hide { display: none !important; }
+
+  /* Tighter main padding */
+  .layout-main {
+    padding-top: 72px !important;
+    padding-bottom: 72px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  /* Compact hero card */
+  .hero-compact { padding: 18px 16px !important; }
+  .hero-compact-grid { grid-template-columns: 1fr !important; }
+  .hero-breadth-row { display: none !important; }
+
+  /* Ticker strip hidden on mobile — header snaps to top */
+  .ticker-strip { display: none !important; }
+  header { top: 0 !important; }
+
+  /* Stock table: hide volume + market cap columns */
+  .col-vol, .col-cap { display: none !important; }
+}
+
 /* ── Responsive grid helpers ───────────────────────────────────────── */
 /* Portfolio summary cards: 2-col on mobile, 4-col on desktop */
 .grid-summary-4 {
