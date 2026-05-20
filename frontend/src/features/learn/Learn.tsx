@@ -889,9 +889,30 @@ function ModuleViewer({
 }) {
   const [revealedSteps, setRevealedSteps] = useState<Set<number>>(new Set());
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  const [grades, setGrades] = useState<Record<number, { score: number; label: string; color: string; feedback: string }>>({});
   const { content } = module;
 
   const revealStep = (i: number) => setRevealedSteps(prev => new Set([...prev, i]));
+
+  function gradeAnswer(stepIndex: number, modelAnswer: string) {
+    const userText = userAnswers[stepIndex] ?? '';
+    const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s.%$]/g, ' ').trim();
+    const user = normalize(userText);
+    const model = normalize(modelAnswer);
+    const stopWords = new Set(['the','a','an','is','are','was','were','it','in','on','of','to','and','or','that','this','with','for','from','as','at','be','by','not','we','you','i','they','he','she','its','has','have','had','will','would','can','could','should','been','being','do','does','did','about','up','out','if','so','but','what','which','who','when','where','how']);
+    const modelTokens = (model.match(/\b[\w.%$]+\b/g) ?? []).filter(t => t.length > 2 && !stopWords.has(t));
+    const keywords = [...new Set(modelTokens)];
+    if (keywords.length === 0) return;
+    const matched = keywords.filter(kw => user.includes(kw));
+    const score = matched.length / keywords.length;
+    let label: string; let color: string; let feedback: string;
+    if (score >= 0.6) { label = 'Excellent'; color = '#00e676'; feedback = `You covered ${matched.length} of ${keywords.length} key points.`; }
+    else if (score >= 0.35) { label = 'Partial Credit'; color = '#ffd740'; feedback = `${matched.length} of ${keywords.length} key points found — review what you missed.`; }
+    else { label = 'Needs Work'; color = '#ff5252'; feedback = `Only ${matched.length} of ${keywords.length} key points. Check the model answer below.`; }
+    setGrades(prev => ({ ...prev, [stepIndex]: { score, label, color, feedback } }));
+    revealStep(stepIndex);
+  }
 
   const allStepsRevealed = content.exercise
     ? content.exercise.steps.every((_, i) => revealedSteps.has(i))
@@ -986,24 +1007,74 @@ function ModuleViewer({
             <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#ce93d8' }}>Scenario</p>
             <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,.8)', lineHeight: 1.7 }}>{content.exercise.scenario}</p>
           </div>
-          {content.exercise.steps.map((step, i) => (
-            <div key={i} style={{ marginBottom: 12 }}>
-              <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12, padding: '14px 16px' }}>
-                <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.85)', lineHeight: 1.5 }}>
-                  <span style={{ color: '#ce93d8', fontWeight: 800, marginRight: 6 }}>Q{i + 1}.</span>{step.instruction}
-                </p>
-                {revealedSteps.has(i) ? (
-                  <div style={{ background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.2)', borderRadius: 8, padding: '10px 14px' }}>
-                    <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.75)', lineHeight: 1.65 }}>{step.answer}</p>
-                  </div>
-                ) : (
-                  <button onClick={() => revealStep(i)} style={{ padding: '7px 16px', borderRadius: 8, background: 'rgba(206,147,216,.12)', border: '1px solid rgba(206,147,216,.25)', color: '#ce93d8', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                    Reveal Answer
-                  </button>
-                )}
+          {content.exercise.steps.map((step, i) => {
+            const grade = grades[i];
+            const revealed = revealedSteps.has(i);
+            return (
+              <div key={i} style={{ marginBottom: 14 }}>
+                <div style={{ background: 'rgba(255,255,255,.03)', border: `1px solid ${grade ? grade.color + '40' : 'rgba(255,255,255,.08)'}`, borderRadius: 12, padding: '14px 16px', transition: 'border-color .3s' }}>
+                  <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.85)', lineHeight: 1.5 }}>
+                    <span style={{ color: '#ce93d8', fontWeight: 800, marginRight: 6 }}>Q{i + 1}.</span>{step.instruction}
+                  </p>
+
+                  {/* Answer input — always shown until graded */}
+                  {!grade && (
+                    <div style={{ marginBottom: 10 }}>
+                      <textarea
+                        value={userAnswers[i] ?? ''}
+                        onChange={e => setUserAnswers(prev => ({ ...prev, [i]: e.target.value }))}
+                        placeholder="Type your answer here…"
+                        rows={3}
+                        style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 8, padding: '10px 12px', color: 'rgba(255,255,255,.85)', fontSize: 13, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit' }}
+                      />
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <button
+                          onClick={() => gradeAnswer(i, step.answer)}
+                          disabled={!(userAnswers[i] ?? '').trim()}
+                          style={{ padding: '7px 18px', borderRadius: 8, background: (userAnswers[i] ?? '').trim() ? 'rgba(206,147,216,.2)' : 'rgba(255,255,255,.05)', border: `1px solid ${(userAnswers[i] ?? '').trim() ? 'rgba(206,147,216,.4)' : 'rgba(255,255,255,.1)'}`, color: (userAnswers[i] ?? '').trim() ? '#ce93d8' : 'rgba(255,255,255,.3)', fontSize: 11, fontWeight: 700, cursor: (userAnswers[i] ?? '').trim() ? 'pointer' : 'not-allowed', transition: 'all .2s' }}
+                        >
+                          Submit &amp; Grade
+                        </button>
+                        <button
+                          onClick={() => revealStep(i)}
+                          style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', color: 'rgba(255,255,255,.35)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          Skip — Reveal Answer
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Grade badge */}
+                  {grade && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, padding: '8px 12px', borderRadius: 8, background: grade.color + '14', border: `1px solid ${grade.color}33` }}>
+                      <span style={{ fontSize: 18 }}>{grade.label === 'Excellent' ? '🎯' : grade.label === 'Partial Credit' ? '📝' : '💡'}</span>
+                      <div>
+                        <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: grade.color }}>{grade.label} — {Math.round(grade.score * 100)}%</p>
+                        <p style={{ margin: '1px 0 0', fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{grade.feedback}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* User's answer (shown after grading) */}
+                  {grade && userAnswers[i] && (
+                    <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.3)' }}>Your Answer</p>
+                      <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.6)', lineHeight: 1.6 }}>{userAnswers[i]}</p>
+                    </div>
+                  )}
+
+                  {/* Model answer — shown after reveal (either from grading or skip) */}
+                  {revealed && (
+                    <div style={{ background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.2)', borderRadius: 8, padding: '10px 14px' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(0,230,118,.6)' }}>Model Answer</p>
+                      <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.75)', lineHeight: 1.65 }}>{step.answer}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
