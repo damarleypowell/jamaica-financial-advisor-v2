@@ -24,6 +24,12 @@ const {
 // ── Revoked tokens (in-memory session revocation) ────────────────────────────
 const revokedTokens = new Set();
 
+// ── Admin email elevation ────────────────────────────────────────────────────
+function isAdminEmail(email) {
+  if (!process.env.ADMIN_EMAILS) return false;
+  return process.env.ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase()).includes(email.toLowerCase());
+}
+
 // ── Brute Force Protection (in-memory) ───────────────────────────────────────
 const failedLoginAttempts = new Map();
 const LOCKOUT_THRESHOLD = 5;
@@ -429,6 +435,7 @@ router.post("/api/auth/login", rateLimit.login(), async (req, res) => {
         const sub = await prisma.subscription.findUnique({ where: { userId: user.id } });
         if (sub && sub.status === "ACTIVE" && sub.plan) subscriptionTier = sub.plan;
       } catch (_) {}
+      if (isAdminEmail(user.email)) subscriptionTier = "ENTERPRISE";
 
       const token = signJWTWithIP(
         { id: user.id, name: user.name, email: user.email },
@@ -501,6 +508,7 @@ router.post("/api/auth/login", rateLimit.login(), async (req, res) => {
         name: user.name,
         email: user.email,
         settings: user.settings,
+        subscriptionTier: isAdminEmail(user.email) ? "ENTERPRISE" : (user.subscriptionTier || "FREE"),
       },
     });
   } catch (err) {
@@ -529,6 +537,7 @@ router.get("/api/auth/me", authMiddleware, async (req, res) => {
         const sub = await prisma.subscription.findUnique({ where: { userId: user.id } });
         if (sub && sub.status === "ACTIVE" && sub.plan) subscriptionTier = sub.plan;
       } catch (_) {}
+      if (isAdminEmail(user.email)) subscriptionTier = "ENTERPRISE";
 
       return res.json({
         id: user.id,
@@ -558,6 +567,7 @@ router.get("/api/auth/me", authMiddleware, async (req, res) => {
       goals: user.goals,
       riskProfile: user.riskProfile,
       settings: user.settings,
+      subscriptionTier: isAdminEmail(user.email) ? "ENTERPRISE" : (user.subscriptionTier || "FREE"),
       twoFactorEnabled: !!(user.twoFactorSecret) || !!(user.settings && user.settings.twoFactorEnabled),
     });
   } catch (err) {
@@ -1426,11 +1436,12 @@ router.post(
         });
 
         // Fetch subscription tier
-        let subscriptionTier2fa = "BASIC";
+        let subscriptionTier2fa = "FREE";
         try {
           const sub = await prisma.subscription.findUnique({ where: { userId: user.id } });
           if (sub && sub.status === "ACTIVE" && sub.plan) subscriptionTier2fa = sub.plan;
         } catch (_) {}
+        if (isAdminEmail(user.email)) subscriptionTier2fa = "ENTERPRISE";
 
         const token = signJWTWithIP(
           { id: user.id, name: user.name, email: user.email },
