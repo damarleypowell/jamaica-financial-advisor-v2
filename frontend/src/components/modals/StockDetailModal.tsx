@@ -171,8 +171,9 @@ export default function StockDetailModal() {
       await apiPost('/api/orders', {
         symbol: stockDetailSymbol,
         side: tradeMode,
-        type: tradeOrderType,
+        orderType: tradeOrderType,
         quantity: qty,
+        isPaper: true,
         ...(tradeOrderType === 'LIMIT' ? { limitPrice: parseFloat(tradeLimitPrice) } : {}),
       });
       setTradeMsg(`${tradeMode} order placed successfully.`);
