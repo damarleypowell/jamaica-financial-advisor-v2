@@ -10,11 +10,12 @@ const fs = require("fs");
 
 const BCRYPT_COST_FACTOR = 12;
 
-function signJWT(payload, expiresIn = "24h") {
+function signJWT(payload, expiresIn = "30d") {
   const header = Buffer.from(
     JSON.stringify({ alg: "HS256", typ: "JWT" })
   ).toString("base64url");
-  const expMs = expiresIn === "24h" ? 24 * 3600000
+  const expMs = expiresIn === "30d" ? 30 * 24 * 3600000
+    : expiresIn === "24h" ? 24 * 3600000
     : expiresIn === "5m" ? 5 * 60000
     : 3600000;
   const jti = crypto.randomUUID();
@@ -39,11 +40,13 @@ function signJWT(payload, expiresIn = "24h") {
  * @param {string} ip - The client IP to bind to the token
  * @param {string} expiresIn - Token lifetime (default 24h)
  */
-function signJWTWithIP(payload, ip, expiresIn = "24h") {
+function signJWTWithIP(payload, ip, expiresIn = "30d") {
   const header = Buffer.from(
     JSON.stringify({ alg: "HS256", typ: "JWT" })
   ).toString("base64url");
-  const expMs = expiresIn === "24h" ? 24 * 3600000 : 3600000;
+  const expMs = expiresIn === "30d" ? 30 * 24 * 3600000
+    : expiresIn === "24h" ? 24 * 3600000
+    : 3600000;
   const jti = crypto.randomUUID();
   const body = Buffer.from(
     JSON.stringify({

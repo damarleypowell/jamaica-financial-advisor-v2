@@ -48,6 +48,22 @@
   --nav-bottom-h: 72px;
 }
 
+/* ── Light mode overrides ───────────────────────────────────────────── */
+[data-theme="light"] {
+  --color-bg:      #f4f6f9;
+  --color-bg2:     #ffffff;
+  --color-bg3:     #edf0f5;
+  --color-bg4:     #e4e8ef;
+  --color-surface: #d8dde8;
+  --color-border:  rgba(0,0,0,0.08);
+  --color-border2: rgba(0,0,0,0.14);
+  --color-text:    #111827;
+  --color-text2:   #374151;
+  --color-muted:   #6b7280;
+}
+[data-theme="light"] body { background: var(--color-bg); color: var(--color-text); }
+[data-theme="light"] .card { background: #fff; border-color: rgba(0,0,0,.08); }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 

@@ -94,52 +94,85 @@ router.get("/api/history/:symbol", (req, res) => {
   res.json({ symbol: sym, history: hist });
 });
 
-// ── OHLCV candles for US stocks (Alpaca primary, Finnhub fallback) ──────────
+// ── OHLCV candles: Alpaca → Yahoo Finance → Finnhub ──────────────────────────
+
+// Simple in-memory cache for chart data (symbol+resolution → {data, ts})
+const candleCache = new Map();
+const CANDLE_TTL = 5 * 60 * 1000; // 5 minutes
 
 router.get("/api/stocks/:symbol/history", async (req, res) => {
   const sym = req.params.symbol.toUpperCase();
-  const { resolution = "D", from, to } = req.query;
+  const { resolution = "D" } = req.query;
+  const cacheKey = `${sym}:${resolution}`;
 
-  // Map resolution to Alpaca timeframe
+  // Serve from cache if fresh
+  const cached = candleCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < CANDLE_TTL) {
+    return res.json(cached.data);
+  }
+
   const resMap = { "1": "1Min", "5": "5Min", "15": "15Min", "30": "30Min", "60": "1Hour", "D": "1Day", "W": "1Week", "M": "1Month" };
   const alpacaTimeframe = resMap[resolution] || "1Day";
-  const limit = 365;
 
-  // Try Alpaca first (it has US stock candles on free tier)
+  // 1) Try Alpaca bars
   try {
     const alpaca = require("../services/alpaca.service");
     if (alpaca.isConfigured()) {
-      const bars = await alpaca.getUSStockBars(sym, alpacaTimeframe, limit);
+      const bars = await alpaca.getUSStockBars(sym, alpacaTimeframe, 365);
       if (bars && bars.length > 0) {
         const candles = bars.map(b => ({
           time: Math.floor(new Date(b.timestamp).getTime() / 1000),
-          open: b.open,
-          high: b.high,
-          low: b.low,
-          close: b.close,
-          volume: b.volume,
-        }));
-        return res.json({ symbol: sym, candles, source: "alpaca" });
+          open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume,
+        })).filter(c => c.time > 0 && c.close > 0);
+        if (candles.length > 0) {
+          const result = { symbol: sym, candles, source: "alpaca" };
+          candleCache.set(cacheKey, { data: result, ts: Date.now() });
+          return res.json(result);
+        }
       }
     }
   } catch (err) {
-    console.warn(`[alpaca candles] ${sym}:`, err.message);
+    console.warn(`[alpaca bars] ${sym}:`, err.message?.slice(0, 80));
   }
 
-  // Fallback: Finnhub (requires paid plan for US candles, but works for some data)
+  // 2) Yahoo Finance fallback — works for US + JSE (.JA suffix) stocks, free, no key
+  try {
+    const yf = require("yahoo-finance2").default;
+    const period1 = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
+    const interval = resolution === "D" ? "1d" : resolution === "W" ? "1wk" : "1d";
+    const historical = await yf.historical(sym, { period1, interval }, { validateResult: false });
+    if (historical && historical.length > 0) {
+      const candles = historical
+        .filter(b => b.open && b.close)
+        .map(b => ({
+          time: Math.floor(new Date(b.date).getTime() / 1000),
+          open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume ?? 0,
+        }));
+      if (candles.length > 0) {
+        const result = { symbol: sym, candles, source: "yahoo" };
+        candleCache.set(cacheKey, { data: result, ts: Date.now() });
+        return res.json(result);
+      }
+    }
+  } catch (err) {
+    console.warn(`[yahoo bars] ${sym}:`, err.message?.slice(0, 80));
+  }
+
+  // 3) Finnhub fallback
   if (finnhub.isConfigured()) {
     const now = Math.floor(Date.now() / 1000);
-    const fromTs = from ? parseInt(from) : now - 365 * 86400;
-    const toTs = to ? parseInt(to) : now;
     try {
-      const data = await finnhub.getCandles(sym, resolution, fromTs, toTs);
-      return res.json(data);
+      const data = await finnhub.getCandles(sym, resolution, now - 365 * 86400, now);
+      if (data?.candles?.length > 0) {
+        candleCache.set(cacheKey, { data, ts: Date.now() });
+        return res.json(data);
+      }
     } catch (err) {
-      console.warn(`[finnhub candles] ${sym}:`, err.message);
+      console.warn(`[finnhub candles] ${sym}:`, err.message?.slice(0, 80));
     }
   }
 
-  res.status(502).json({ error: "No candle data source available for " + sym });
+  res.status(502).json({ error: `No chart data available for ${sym}` });
 });
 
 // ── Finnhub company profile + fundamentals ──────────────────────────────────

@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.ts';
 import { useMarketStore } from '../../stores/market.ts';
+import { useUIStore } from '../../stores/ui.ts';
 import type { SubscriptionTier } from '../../types/index.ts';
 import { useState, useEffect } from 'react';
 
@@ -14,41 +15,45 @@ const NAV: Section[] = [
   {
     heading: 'Markets',
     items: [
-      { label: 'Dashboard',     icon: 'fa-solid fa-chart-line',     to: '/'           },
-      { label: 'News',          icon: 'fa-solid fa-newspaper',      to: '/news'        },
-      { label: 'Watchlists',    icon: 'fa-solid fa-star',           to: '/watchlists'  },
+      { label: 'Dashboard',     icon: 'fa-solid fa-chart-line',        to: '/'            },
+      { label: 'Charts',        icon: 'fa-solid fa-chart-candlestick', to: '/technicals', tier: 'BASIC' },
+      { label: 'Screener',      icon: 'fa-solid fa-sliders',           to: '/screener',   tier: 'BASIC' },
+      { label: 'US Stocks',     icon: 'fa-solid fa-flag-usa',          to: '/us-stocks',  tier: 'BASIC' },
+      { label: 'News',          icon: 'fa-solid fa-newspaper',         to: '/news'        },
+      { label: 'Watchlists',    icon: 'fa-solid fa-star',              to: '/watchlists'  },
     ],
   },
   {
     heading: 'Analysis',
     items: [
-      { label: 'AI Analysis',   icon: 'fa-solid fa-brain',          to: '/analysis'    },
-      { label: 'AI Chat',       icon: 'fa-solid fa-robot',          to: '/chat'        },
+      { label: 'AI Analysis',   icon: 'fa-solid fa-brain',             to: '/analysis'    },
+      { label: 'AI Chat',       icon: 'fa-solid fa-robot',             to: '/chat'        },
     ],
   },
   {
     heading: 'Practice',
     items: [
-      { label: 'Paper Trading', icon: 'fa-solid fa-flask-vial',     to: '/portfolio'   },
+      { label: 'Paper Trading', icon: 'fa-solid fa-flask-vial',        to: '/portfolio'   },
+      { label: 'Orders',        icon: 'fa-solid fa-receipt',           to: '/orders'      },
     ],
   },
   {
     heading: 'Account',
     items: [
-      { label: 'Alerts',        icon: 'fa-solid fa-bell',           to: '/alerts'      },
-      { label: 'Learn',         icon: 'fa-solid fa-graduation-cap', to: '/learn'       },
-      { label: 'Settings',      icon: 'fa-solid fa-gear',           to: '/settings'    },
-      { label: 'Admin',         icon: 'fa-solid fa-shield-halved',  to: '/admin',      adminOnly: true },
+      { label: 'Alerts',        icon: 'fa-solid fa-bell',              to: '/alerts'      },
+      { label: 'Learn',         icon: 'fa-solid fa-graduation-cap',    to: '/learn'       },
+      { label: 'Settings',      icon: 'fa-solid fa-gear',              to: '/settings'    },
+      { label: 'Admin',         icon: 'fa-solid fa-shield-halved',     to: '/admin',      adminOnly: true },
     ],
   },
 ];
 
 const MOBILE_NAV: NavItem[] = [
-  { label: 'Home',     icon: 'fa-solid fa-house',      to: '/'           },
-  { label: 'AI',       icon: 'fa-solid fa-brain',      to: '/analysis'   },
-  { label: 'Paper',    icon: 'fa-solid fa-flask-vial', to: '/portfolio'  },
-  { label: 'Watch',    icon: 'fa-solid fa-star',       to: '/watchlists' },
-  { label: 'More',     icon: 'fa-solid fa-bars',       to: '/settings'   },
+  { label: 'Home',    icon: 'fa-solid fa-house',             to: '/'           },
+  { label: 'Charts',  icon: 'fa-solid fa-chart-candlestick', to: '/technicals' },
+  { label: 'Paper',   icon: 'fa-solid fa-flask-vial',        to: '/portfolio'  },
+  { label: 'Watch',   icon: 'fa-solid fa-star',              to: '/watchlists' },
+  { label: 'News',    icon: 'fa-solid fa-newspaper',         to: '/news'       },
 ];
 
 const TIER_COLORS: Record<string, string> = {
@@ -106,7 +111,8 @@ function NavItemRow({ item, userTier, onClose }: { item: NavItem; userTier: Subs
 
 function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; userTier: SubscriptionTier; isAdmin: boolean }) {
   const isConn = useMarketStore(s => s.isConnected);
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const { theme, toggleTheme } = useUIStore();
   const [clock, setClock] = useState(new Date());
   const tierColor = TIER_COLORS[userTier] ?? '#00e676';
 
@@ -188,26 +194,38 @@ function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; u
         <div style={{ height: 20 }} />
       </nav>
 
-      {/* Market status footer */}
-      <div style={{ padding: '10px 16px 14px', borderTop: '1px solid rgba(255,255,255,.05)', flexShrink: 0 }}>
+      {/* Footer */}
+      <div style={{ padding: '10px 12px 14px', borderTop: '1px solid rgba(255,255,255,.05)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Market status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{
-            width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-            background: mktOpen ? '#00e676' : isConn ? '#ffd740' : 'rgba(255,255,255,.15)',
-            boxShadow: mktOpen ? '0 0 8px rgba(0,230,118,.6)' : 'none',
-          }} className={mktOpen ? 'animate-pulse-dot' : ''} />
+          <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: mktOpen ? '#00e676' : isConn ? '#ffd740' : 'rgba(255,255,255,.15)', boxShadow: mktOpen ? '0 0 8px rgba(0,230,118,.6)' : 'none' }} className={mktOpen ? 'animate-pulse-dot' : ''} />
           <div style={{ minWidth: 0, flex: 1 }}>
-            <p style={{ margin: 0, fontSize: 11.5, fontWeight: 700, color: mktOpen ? '#00e676' : 'var(--color-text2)', lineHeight: 1 }}>
-              {mktOpen ? 'Markets Open' : 'Markets Closed'}
-            </p>
-            <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>
-              {jamTime} JAM
-            </p>
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: mktOpen ? '#00e676' : 'var(--color-text2)', lineHeight: 1 }}>{mktOpen ? 'Markets Open' : 'Markets Closed'}</p>
+            <p style={{ margin: '2px 0 0', fontSize: 9, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>{jamTime} JAM</p>
           </div>
-          {isConn && (
-            <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 99, color: '#00e676', background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.2)' }}>
-              LIVE
-            </span>
+          {isConn && <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 99, color: '#00e676', background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.2)' }}>LIVE</span>}
+        </div>
+
+        {/* Actions row */}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {/* Light/Dark toggle */}
+          <button onClick={toggleTheme}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 9, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'var(--color-muted)', transition: 'all .15s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.08)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.04)'; }}>
+            <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`} style={{ fontSize: 11 }} />
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
+
+          {/* Logout */}
+          {user && (
+            <button onClick={() => { logout(); onClose(); }}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 9, background: 'rgba(255,82,82,.06)', border: '1px solid rgba(255,82,82,.12)', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'rgba(255,82,82,.7)', transition: 'all .15s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,82,82,.12)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,82,82,.06)'; }}>
+              <i className="fa-solid fa-right-from-bracket" style={{ fontSize: 10 }} />
+              Sign Out
+            </button>
           )}
         </div>
       </div>

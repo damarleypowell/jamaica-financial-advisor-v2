@@ -147,7 +147,16 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
     return () => { ro.disconnect(); chart.remove(); chartRef.current = null; areaRef.current = null; candleRef.current = null; volRef.current = null; };
   }, []); // eslint-disable-line
 
-  /* ── Push data whenever it changes ── */
+  /* ── Clear chart whenever the symbol changes ── */
+  useEffect(() => {
+    try {
+      areaRef.current?.setData([]);
+      candleRef.current?.setData([]);
+      volRef.current?.setData([]);
+    } catch (_) {}
+  }, [symbol, isUS]);
+
+  /* ── Push data whenever it arrives ── */
   useEffect(() => {
     if (!areaRef.current || areaPoints.length === 0) return;
     try {
@@ -261,10 +270,10 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, pointerEvents: 'none' }}>
               <i className="fa-solid fa-satellite-dish" style={{ fontSize: 24, color: 'var(--color-muted)', opacity: .3 }} />
               <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text2)', margin: 0 }}>
-                {isUS ? 'US chart data unavailable — Alpaca API not configured' : 'No price history yet'}
+                {isUS ? 'Chart data loading…' : 'No price history yet'}
               </p>
               <p style={{ fontSize: 10, color: 'var(--color-muted)', margin: 0 }}>
-                {isUS ? 'Add ALPACA_API_KEY to your environment to enable US charts' : 'Chart data streams in as prices update'}
+                {isUS ? 'Fetching from Alpaca / Yahoo Finance' : 'Chart data streams in as prices update'}
               </p>
             </div>
           )}
