@@ -8,6 +8,7 @@ import ComplianceModal from './components/modals/ComplianceModal.tsx';
 import AuthModal from './components/modals/AuthModal.tsx';
 import { useMarketStore } from './stores/market.ts';
 import { useAuthStore } from './stores/auth.ts';
+import FloatingAIAdvisor from './components/FloatingAIAdvisor.tsx';
 
 /* ---------- Lazy-loaded route components ---------- */
 const Dashboard = lazy(() => import('./features/dashboard/Dashboard.tsx'));
@@ -67,6 +68,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthModal />
+        <FloatingAIAdvisor />
         <Routes>
           {/* Onboarding â€” full-screen, no sidebar layout */}
           <Route
