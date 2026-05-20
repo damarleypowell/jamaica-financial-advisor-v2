@@ -2,27 +2,29 @@ import { useState } from 'react';
 import { useAuthStore } from '../../stores/auth';
 import { apiPost } from '../../lib/api';
 
+const COMPLIANCE_KEY = 'gf_compliance_v1';
+
 export default function ComplianceModal() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const [accepted, setAccepted] = useState({ understand: false, notAdvice: false, consultAdvisor: false });
   const [submitting, setSubmitting] = useState(false);
 
-  if (!user || user.complianceAccepted) return null;
+  // Hide if not logged in, already accepted on the user object, or accepted in localStorage
+  if (!user || user.complianceAccepted || localStorage.getItem(COMPLIANCE_KEY)) return null;
 
   const allAccepted = Object.values(accepted).every(Boolean);
 
   async function handleAccept() {
     if (!allAccepted) return;
     setSubmitting(true);
+    // Persist locally immediately so it never shows again after refresh
+    localStorage.setItem(COMPLIANCE_KEY, '1');
     try {
       await apiPost('/api/users/accept-compliance', { version: '1.0' });
-      setUser({ ...user!, complianceAccepted: true });
-    } catch {
-      setUser({ ...user!, complianceAccepted: true });
-    } finally {
-      setSubmitting(false);
-    }
+    } catch { /* ignore — localStorage already saved it */ }
+    setUser({ ...user!, complianceAccepted: true });
+    setSubmitting(false);
   }
 
   const items = [
