@@ -399,19 +399,16 @@ export default function Dashboard() {
           ))}
         </div>
         {market === 'us' && (
-          <div style={{ position: 'relative' }}>
-            <input
-              value={usSearch}
-              onChange={e => setUsSearch(e.target.value)}
-              placeholder="Search US symbol…"
-              style={{
-                height: 36, paddingLeft: 36, paddingRight: 14, borderRadius: 10,
-                background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)',
-                color: '#fff', fontSize: 13, fontFamily: INTER, outline: 'none', width: 180,
-              }}
-            />
-            <i className="fa-solid fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'rgba(255,255,255,.3)' }} />
-          </div>
+          <input
+            value={usSearch}
+            onChange={e => setUsSearch(e.target.value)}
+            placeholder="Filter US symbol…"
+            style={{
+              height: 34, paddingLeft: 12, paddingRight: 12, borderRadius: 10,
+              background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)',
+              color: '#fff', fontSize: 12, fontFamily: INTER, outline: 'none', width: 160,
+            }}
+          />
         )}
       </div>
 
@@ -523,21 +520,27 @@ export default function Dashboard() {
             borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)',
             background: '#080d18', boxShadow: '0 4px 32px rgba(0,0,0,.4)',
           }}>
-            <MainChart symbol={selectedSymbol} />
+            <MainChart symbol={selectedSymbol} isUS={market === 'us'} />
           </div>
           <div style={{
             borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)',
             background: '#080d18',
           }}>
-            <StockPanel />
+            <StockPanel stocks={market === 'us' ? usStocks : undefined} isUS={market === 'us'} />
           </div>
         </div>
       </div>
 
-      {/* ── 5. All Securities table ─────────────────────────────── */}
+      {/* ── 5. Securities table (market-aware) ─────────────────── */}
       <div>
-        <SectionLabel count={stocks.length}>All Securities</SectionLabel>
-        <StockTable />
+        <SectionLabel count={market === 'us' ? usStocks.length : stocks.filter(s => (s.price ?? 0) > 0).length}>
+          {market === 'us' ? 'US Equities' : 'JSE Securities'}
+        </SectionLabel>
+        {market === 'us' ? (
+          <StockTable stocks={usStocks} isUS title="US Equities" defaultLimit={20} />
+        ) : (
+          <StockTable defaultLimit={25} />
+        )}
       </div>
     </div>
   );

@@ -1,37 +1,14 @@
 /**
- * Jamaica News Scraper
- * Scrapes business/financial news from major Jamaican newspapers:
- * - Jamaica Gleaner
- * - Jamaica Observer
- * - Loop Jamaica
- * - RJR News
+ * Financial News Scraper
+ * Caribbean/Jamaica sources + International RSS feeds
  */
 
 const axios = require("axios");
 const cheerio = require("cheerio");
 
-// Cache to avoid hammering the sites
 let newsCache = [];
 let lastFetch = 0;
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-const JSE_KEYWORDS = [
-  "JSE", "stock", "shares", "dividend", "earnings", "profit", "revenue",
-  "investment", "market", "trading", "financial", "economy", "GDP",
-  "Bank of Jamaica", "BOJ", "inflation", "interest rate", "exchange rate",
-  "NCB", "Scotia", "Sagicor", "GraceKennedy", "Jamaica Broilers", "Barita",
-  "Wisynco", "Seprod", "Caribbean Cement", "JMMB", "Proven", "Mayberry",
-  "Carreras", "Derrimon", "Lasco", "Kingston Wharves", "iCreate",
-  "Knutsford Express", "Fosrich", "Lumber Depot", "Express Catering",
-  "Mailpac", "Sygnus", "Pulse", "Margaritaville", "Access Financial",
-  "Productive Business", "Indies Pharma", "Berger Paints",
-  "NCBFG", "SGJAM", "SFC", "GK", "JBGL", "BIL", "WISYNCO", "SEP",
-  "CCC", "AFS", "PROVEN", "CPJ", "MEEG", "KEX", "ICREATE", "PBS",
-  "FOSRICH", "LUMBER", "ECL", "MPC", "SCI", "DERRIMON", "LASC", "LASD",
-  "INDIES", "MCGE", "BRG", "CAR", "MJE", "PULS",
-  "business", "corporate", "IPO", "bond", "treasury", "fiscal",
-  "tourism", "remittance", "export", "import", "trade"
-];
 
 const SYMBOL_MAP = {
   "NCB": "NCBFG", "Scotia": "SGJAM", "Sagicor": "SFC", "GraceKennedy": "GK",
@@ -44,9 +21,20 @@ const SYMBOL_MAP = {
   "Lasco Financial": "LASC", "Lasco Distributors": "LASD",
   "Indies Pharma": "INDIES", "Margaritaville": "MCGE",
   "Berger Paints": "BRG", "Carreras": "CAR", "Mayberry": "MJE", "Pulse": "PULS",
-  "NCBFG": "NCBFG", "SGJAM": "SGJAM", "SFC": "SFC", "GK": "GK",
-  "JBGL": "JBGL", "BIL": "BIL",
 };
+
+const POSITIVE_WORDS = [
+  "record","growth","profit","surge","gain","rise","boost","strong","expand",
+  "increase","high","dividend","rally","bullish","recovery","improve","upgrade",
+  "exceed","positive","outperform","beat","optimism","revenue","milestone","soar",
+  "climb","rebound","advance","jump","higher","breakthrough","approval","deal",
+];
+const NEGATIVE_WORDS = [
+  "loss","decline","drop","fall","crash","weak","concern","risk","debt","downturn",
+  "bearish","cut","reduce","downgrade","warning","deficit","slump","default","layoff",
+  "close","sell-off","plunge","contraction","recession","crisis","sanction","war",
+  "lawsuit","penalty","fraud","bankruptcy","below","miss","lower","fears","threat",
+];
 
 function detectSymbol(text) {
   const upper = text.toUpperCase();
@@ -57,329 +45,218 @@ function detectSymbol(text) {
 }
 
 function detectSentiment(text) {
-  const lower = text.toLowerCase();
-  const positive = ["record", "growth", "profit", "surge", "gain", "rise", "boost",
-    "strong", "expand", "increase", "high", "dividend", "rally", "bullish", "recovery",
-    "improve", "upgrade", "exceed", "positive", "outperform"];
-  const negative = ["loss", "decline", "drop", "fall", "crash", "weak", "concern",
-    "risk", "debt", "downturn", "bearish", "cut", "reduce", "downgrade", "warning",
-    "deficit", "slump", "default", "layoff", "close"];
-
+  const lower = (text || "").toLowerCase();
   let score = 0;
-  positive.forEach(w => { if (lower.includes(w)) score++; });
-  negative.forEach(w => { if (lower.includes(w)) score--; });
-
-  if (score > 0) return "positive";
-  if (score < 0) return "negative";
-  return "neutral";
+  POSITIVE_WORDS.forEach(w => { if (lower.includes(w)) score++; });
+  NEGATIVE_WORDS.forEach(w => { if (lower.includes(w)) score--; });
+  if (score > 0) return { sentiment: "positive", score };
+  if (score < 0) return { sentiment: "negative", score };
+  return { sentiment: "neutral", score: 0 };
 }
 
 function detectSector(text) {
-  const lower = text.toLowerCase();
   if (/bank|financial|ncb|scotia|barita|jmmb|mayberry|sygnus|access financial|proven|lasco financial/i.test(text)) return "Financial";
   if (/insurance|sagicor/i.test(text)) return "Insurance";
   if (/tourism|hotel|margaritaville|resort/i.test(text)) return "Tourism";
-  if (/technology|icreate|productive business|tech/i.test(text)) return "Technology";
+  if (/technology|icreate|productive business|tech|ai|nvidia|apple|microsoft|google|chip|semiconductor/i.test(text)) return "Technology";
   if (/food|broilers|seprod|caribbean producers|derrimon|lasco dist/i.test(text)) return "Food";
   if (/cement|construction|lumber|fosrich/i.test(text)) return "Construction";
   if (/beverages|wisynco/i.test(text)) return "Beverages";
-  if (/pharma|health|indies/i.test(text)) return "Healthcare";
-  if (/transport|knutsford|express catering|mailpac/i.test(text)) return "Transport";
+  if (/pharma|health|indies|drug|fda/i.test(text)) return "Healthcare";
+  if (/transport|knutsford|express catering|mailpac|airline|shipping/i.test(text)) return "Transport";
   if (/gracekennedy|conglomerate/i.test(text)) return "Conglomerate";
   if (/media|pulse|entertainment|main event/i.test(text)) return "Entertainment";
-  if (/boj|central bank|interest rate|inflation|gdp|economy|fiscal|imf/i.test(text)) return "Economy";
-  if (/jse|stock exchange|market|trading|index/i.test(text)) return "Market";
+  if (/oil|crude|opec|energy|gas|petroleum|brent|wti/i.test(text)) return "Energy";
+  if (/gold|silver|precious metal|bullion|commodity/i.test(text)) return "Commodities";
+  if (/bitcoin|crypto|ethereum|blockchain|digital asset/i.test(text)) return "Crypto";
+  if (/real estate|property|housing|mortgage|reit/i.test(text)) return "Real Estate";
+  if (/boj|central bank|interest rate|inflation|gdp|economy|fiscal|imf|fed|federal reserve|treasury/i.test(text)) return "Economy";
+  if (/jse|stock exchange|market|trading|index|nasdaq|s&p|dow/i.test(text)) return "Market";
   return "General";
 }
+
+function relTime(pubDate) {
+  if (!pubDate) return "Today";
+  const diff = Date.now() - new Date(pubDate).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "Just now";
+  if (m < 60) return `${m}m ago`;
+  if (m < 1440) return `${Math.floor(m / 60)}h ago`;
+  if (m < 2880) return "Yesterday";
+  return `${Math.floor(m / 1440)}d ago`;
+}
+
+const HTTP = { timeout: 12000, headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" } };
+
+// ── Caribbean sources ──────────────────────────────────────────────────────────
 
 async function scrapeGleaner() {
   const articles = [];
   try {
-    const urls = [
-      "https://jamaica-gleaner.com/business",
-      "https://jamaica-gleaner.com/latest"
-    ];
-    for (const url of urls) {
+    for (const url of ["https://jamaica-gleaner.com/business", "https://jamaica-gleaner.com/latest"]) {
       try {
-        const { data } = await axios.get(url, {
-          timeout: 10000,
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml",
-          },
-        });
+        const { data } = await axios.get(url, HTTP);
         const $ = cheerio.load(data);
-
-        // Try various selector patterns for Gleaner
-        const selectors = [
-          "article h2 a", "article h3 a", ".views-row h2 a", ".views-row h3 a",
-          ".node-article h2 a", ".field-content a", "h2.node-title a", "h3.node-title a",
-          ".view-content .views-row a", ".article-title a", ".teaser h2 a", ".teaser h3 a"
-        ];
-
-        for (const sel of selectors) {
+        const sels = ["article h2 a","article h3 a",".views-row h2 a",".views-row h3 a",".field-content a","h2.node-title a",".teaser h2 a",".teaser h3 a"];
+        for (const sel of sels) {
           $(sel).each((_, el) => {
             const title = $(el).text().trim();
             const link = $(el).attr("href");
-            if (title && title.length > 15) {
-              articles.push({
-                title,
-                source: "Jamaica Gleaner",
-                url: link?.startsWith("http") ? link : `https://jamaica-gleaner.com${link}`,
-                sector: detectSector(title),
-                symbol: detectSymbol(title),
-                sentiment: detectSentiment(title),
-              });
+            if (title && title.length > 20) {
+              const { sentiment, score } = detectSentiment(title);
+              articles.push({ title, source: "Jamaica Gleaner", url: link?.startsWith("http") ? link : `https://jamaica-gleaner.com${link}`, sector: detectSector(title), symbol: detectSymbol(title), sentiment, sentimentScore: score, region: "caribbean" });
             }
           });
           if (articles.length > 0) break;
         }
       } catch (_) {}
+      if (articles.length > 0) break;
     }
-  } catch (e) {
-    console.warn("Gleaner scrape error:", e.message?.slice(0, 80));
-  }
+  } catch (e) { console.warn("Gleaner:", e.message?.slice(0, 60)); }
   return articles;
 }
 
 async function scrapeObserver() {
   const articles = [];
   try {
-    const urls = [
-      "https://www.jamaicaobserver.com/business/",
-      "https://www.jamaicaobserver.com/latest-news/"
-    ];
-    for (const url of urls) {
+    for (const url of ["https://www.jamaicaobserver.com/business/","https://www.jamaicaobserver.com/latest-news/"]) {
       try {
-        const { data } = await axios.get(url, {
-          timeout: 10000,
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml",
-          },
-        });
+        const { data } = await axios.get(url, HTTP);
         const $ = cheerio.load(data);
-
-        const selectors = [
-          "article h2 a", "article h3 a", ".post-title a", ".entry-title a",
-          ".article-list h2 a", ".article-list h3 a", "h2.title a", "h3.title a",
-          ".article-item h2 a", ".article-item h3 a", ".card-title a",
-          ".article-card h2 a", ".article-card h3 a"
-        ];
-
-        for (const sel of selectors) {
+        const sels = ["article h2 a","article h3 a",".post-title a",".entry-title a",".card-title a",".article-card h2 a"];
+        for (const sel of sels) {
           $(sel).each((_, el) => {
             const title = $(el).text().trim();
             const link = $(el).attr("href");
-            if (title && title.length > 15) {
-              articles.push({
-                title,
-                source: "Jamaica Observer",
-                url: link?.startsWith("http") ? link : `https://www.jamaicaobserver.com${link}`,
-                sector: detectSector(title),
-                symbol: detectSymbol(title),
-                sentiment: detectSentiment(title),
-              });
+            if (title && title.length > 20) {
+              const { sentiment, score } = detectSentiment(title);
+              articles.push({ title, source: "Jamaica Observer", url: link?.startsWith("http") ? link : `https://www.jamaicaobserver.com${link}`, sector: detectSector(title), symbol: detectSymbol(title), sentiment, sentimentScore: score, region: "caribbean" });
             }
           });
           if (articles.length > 0) break;
         }
       } catch (_) {}
+      if (articles.length > 0) break;
     }
-  } catch (e) {
-    console.warn("Observer scrape error:", e.message?.slice(0, 80));
-  }
+  } catch (e) { console.warn("Observer:", e.message?.slice(0, 60)); }
   return articles;
 }
 
 async function scrapeLoopJamaica() {
   const articles = [];
   try {
-    const urls = [
-      "https://jamaica.loopnews.com/category/business",
-      "https://jamaica.loopnews.com/loopjamaica"
-    ];
-    for (const url of urls) {
-      try {
-        const { data } = await axios.get(url, {
-          timeout: 10000,
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml",
-          },
-        });
-        const $ = cheerio.load(data);
-
-        const selectors = [
-          "article h2 a", "article h3 a", ".card-title a", ".entry-title a",
-          ".news-card h2 a", ".news-card h3 a", "h2 a", "h3 a",
-          ".article-card h2 a", ".article-title a", ".loop-card-title a"
-        ];
-
-        for (const sel of selectors) {
-          $(sel).each((_, el) => {
-            const title = $(el).text().trim();
-            const link = $(el).attr("href");
-            if (title && title.length > 15) {
-              articles.push({
-                title,
-                source: "Loop Jamaica",
-                url: link?.startsWith("http") ? link : `https://jamaica.loopnews.com${link}`,
-                sector: detectSector(title),
-                symbol: detectSymbol(title),
-                sentiment: detectSentiment(title),
-              });
-            }
-          });
-          if (articles.length > 0) break;
-        }
-      } catch (_) {}
-    }
-  } catch (e) {
-    console.warn("Loop Jamaica scrape error:", e.message?.slice(0, 80));
-  }
+    const { data } = await axios.get("https://jamaica.loopnews.com/category/business", HTTP);
+    const $ = cheerio.load(data);
+    $("article h2 a, article h3 a, .card-title a, .loop-card-title a, h2 a, h3 a").each((_, el) => {
+      const title = $(el).text().trim();
+      const link = $(el).attr("href");
+      if (title && title.length > 20) {
+        const { sentiment, score } = detectSentiment(title);
+        articles.push({ title, source: "Loop Jamaica", url: link?.startsWith("http") ? link : `https://jamaica.loopnews.com${link}`, sector: detectSector(title), symbol: detectSymbol(title), sentiment, sentimentScore: score, region: "caribbean" });
+      }
+    });
+  } catch (e) { console.warn("Loop Jamaica:", e.message?.slice(0, 60)); }
   return articles;
 }
 
 async function scrapeRJRNews() {
   const articles = [];
   try {
-    const { data } = await axios.get("https://radiojamaicanewsonline.com/business", {
-      timeout: 10000,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml",
-      },
-    });
+    const { data } = await axios.get("https://radiojamaicanewsonline.com/business", HTTP);
     const $ = cheerio.load(data);
-
-    const selectors = [
-      "article h2 a", "article h3 a", ".post-title a", ".entry-title a",
-      "h2 a", "h3 a", ".card-title a"
-    ];
-
-    for (const sel of selectors) {
-      $(sel).each((_, el) => {
-        const title = $(el).text().trim();
-        const link = $(el).attr("href");
-        if (title && title.length > 15) {
-          articles.push({
-            title,
-            source: "RJR News",
-            url: link?.startsWith("http") ? link : `https://radiojamaicanewsonline.com${link}`,
-            sector: detectSector(title),
-            symbol: detectSymbol(title),
-            sentiment: detectSentiment(title),
-          });
-        }
-      });
-      if (articles.length > 0) break;
-    }
-  } catch (e) {
-    console.warn("RJR scrape error:", e.message?.slice(0, 80));
-  }
-  return articles;
-}
-
-async function scrapeJSEWebsite() {
-  const articles = [];
-  try {
-    const { data } = await axios.get("https://www.jamstockex.com/", {
-      timeout: 10000,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml",
-      },
-    });
-    const $ = cheerio.load(data);
-
-    $("a").each((_, el) => {
-      const title = $(el).text().trim().replace(/\s+/g, " ");
+    $("article h2 a, article h3 a, .post-title a, .entry-title a, h2 a, h3 a, .card-title a").each((_, el) => {
+      const title = $(el).text().trim();
       const link = $(el).attr("href");
-      // Filter out index data rows (they contain "Vol" and numbers), nav links, and short text
-      if (title && title.length > 25 && title.length < 200
-        && !/ Vol\n/i.test($(el).text())
-        && !/^\d/.test(title)
-        && !/^(Start|Login|Register|Home|About|Contact|Search)/i.test(title)
-        && /[a-zA-Z]{4,}/.test(title)
-        && /stock|market|trading|jse|index|dividend|announcement|investor|company|report|quarter/i.test(title)) {
-        articles.push({
-          title,
-          source: "JSE",
-          url: link?.startsWith("http") ? link : `https://www.jamstockex.com${link}`,
-          sector: "Market",
-          symbol: detectSymbol(title),
-          sentiment: detectSentiment(title),
-        });
+      if (title && title.length > 20) {
+        const { sentiment, score } = detectSentiment(title);
+        articles.push({ title, source: "RJR News", url: link?.startsWith("http") ? link : `https://radiojamaicanewsonline.com${link}`, sector: detectSector(title), symbol: detectSymbol(title), sentiment, sentimentScore: score, region: "caribbean" });
       }
     });
-  } catch (e) {
-    console.warn("JSE website scrape error:", e.message?.slice(0, 80));
-  }
+  } catch (e) { console.warn("RJR:", e.message?.slice(0, 60)); }
   return articles;
 }
 
-// Google News RSS feed for Jamaica business/finance news (very reliable)
-async function scrapeGoogleNewsRSS() {
+async function scrapeGoogleNewsRSS(queries, region) {
   const articles = [];
-  const queries = [
-    "Jamaica+stock+exchange",
-    "Jamaica+business+economy",
-    "JSE+Jamaica+financial",
-  ];
-
+  const gl = region === "caribbean" ? "JM" : "US";
+  const hl = region === "caribbean" ? "en-JM" : "en-US";
+  const ceid = region === "caribbean" ? "JM:en" : "US:en";
   for (const query of queries) {
     try {
-      const { data } = await axios.get(
-        `https://news.google.com/rss/search?q=${query}&hl=en-JM&gl=JM&ceid=JM:en`,
-        {
-          timeout: 10000,
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/rss+xml, application/xml, text/xml",
-          },
-        }
-      );
+      const { data } = await axios.get(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=${hl}&gl=${gl}&ceid=${ceid}`, { ...HTTP, headers: { ...HTTP.headers, Accept: "application/rss+xml,application/xml,text/xml" } });
       const $ = cheerio.load(data, { xmlMode: true });
-
       $("item").each((_, el) => {
         const title = $(el).find("title").text().trim();
         const link = $(el).find("link").text().trim();
         const pubDate = $(el).find("pubDate").text().trim();
         const sourceEl = $(el).find("source").text().trim();
-
-        if (title && title.length > 15) {
-          // Calculate relative time
-          let time = "Today";
-          if (pubDate) {
-            const diff = Date.now() - new Date(pubDate).getTime();
-            const hours = Math.floor(diff / 3600000);
-            if (hours < 1) time = "Just now";
-            else if (hours < 24) time = `${hours}h ago`;
-            else if (hours < 48) time = "Yesterday";
-            else time = `${Math.floor(hours / 24)}d ago`;
-          }
-
-          articles.push({
-            title,
-            source: sourceEl || "Google News",
-            url: link,
-            sector: detectSector(title),
-            symbol: detectSymbol(title),
-            sentiment: detectSentiment(title),
-            time,
-          });
+        const desc = $(el).find("description").text().trim().replace(/<[^>]+>/g, "").slice(0, 200);
+        if (title && title.length > 20) {
+          const { sentiment, score } = detectSentiment(title + " " + desc);
+          articles.push({ title, source: sourceEl || "Google News", url: link, sector: detectSector(title), symbol: detectSymbol(title), sentiment, sentimentScore: score, summary: desc || undefined, time: relTime(pubDate), publishedAt: pubDate ? new Date(pubDate).toISOString() : undefined, region });
         }
       });
-    } catch (e) {
-      console.warn("Google News RSS error:", e.message?.slice(0, 80));
-    }
+    } catch (e) { console.warn("Google News RSS:", e.message?.slice(0, 60)); }
   }
   return articles;
 }
 
-// Deduplicate by title similarity
-function deduplicateNews(articles) {
+// ── International RSS feeds ────────────────────────────────────────────────────
+
+async function scrapeRSSFeed(url, sourceName) {
+  const articles = [];
+  try {
+    const { data } = await axios.get(url, { ...HTTP, headers: { ...HTTP.headers, Accept: "application/rss+xml,application/xml,text/xml,*/*" } });
+    const $ = cheerio.load(data, { xmlMode: true });
+    $("item").each((_, el) => {
+      const title = ($("title", el).first().text() || $(el).find("title").text()).trim();
+      const link = ($("link", el).first().text() || $(el).find("link").text() || $(el).find("guid").text()).trim();
+      const pubDate = $(el).find("pubDate").text().trim() || $(el).find("dc\\:date").text().trim();
+      const desc = $(el).find("description").text().trim().replace(/<[^>]+>/g, "").slice(0, 300);
+      if (title && title.length > 15 && link) {
+        const { sentiment, score } = detectSentiment(title + " " + desc);
+        articles.push({ title, source: sourceName, url: link, sector: detectSector(title), symbol: null, sentiment, sentimentScore: score, summary: desc || undefined, time: relTime(pubDate), publishedAt: pubDate ? new Date(pubDate).toISOString() : undefined, region: "international" });
+      }
+    });
+  } catch (e) { console.warn(`RSS ${sourceName}:`, e.message?.slice(0, 60)); }
+  return articles;
+}
+
+async function scrapeInternationalNews() {
+  const feeds = [
+    // Reuters
+    { url: "https://feeds.reuters.com/reuters/businessNews",            name: "Reuters" },
+    { url: "https://feeds.reuters.com/reuters/financialsNews",          name: "Reuters" },
+    // BBC Business
+    { url: "https://feeds.bbci.co.uk/news/business/rss.xml",           name: "BBC Business" },
+    // The Guardian
+    { url: "https://www.theguardian.com/business/rss",                  name: "The Guardian" },
+    // CNBC
+    { url: "https://search.cnbc.com/rs/search/combinedcombined/combinedcombined.xml?partnerId=wrss01&id=100727362", name: "CNBC" },
+    { url: "https://search.cnbc.com/rs/search/combinedcombined/combinedcombined.xml?partnerId=wrss01&id=10000664",  name: "CNBC Markets" },
+    // MarketWatch
+    { url: "https://feeds.marketwatch.com/marketwatch/topstories/",     name: "MarketWatch" },
+    { url: "https://feeds.marketwatch.com/marketwatch/marketpulse/",    name: "MarketWatch" },
+    // Investing.com
+    { url: "https://www.investing.com/rss/news_25.rss",                 name: "Investing.com" },
+    { url: "https://www.investing.com/rss/news_14.rss",                 name: "Investing.com" },
+    // Yahoo Finance
+    { url: "https://finance.yahoo.com/news/rssindex",                   name: "Yahoo Finance" },
+    // FXStreet (Forex)
+    { url: "https://www.fxstreet.com/rss/news",                        name: "FXStreet" },
+    // Caribbean Business
+    { url: "https://caribbeanbusiness.com/feed/",                       name: "Caribbean Business" },
+  ];
+
+  const results = await Promise.allSettled(feeds.map(f => scrapeRSSFeed(f.url, f.name)));
+  let all = [];
+  results.forEach(r => { if (r.status === "fulfilled") all = all.concat(r.value); });
+  return all;
+}
+
+// ── Deduplication ──────────────────────────────────────────────────────────────
+
+function deduplicate(articles) {
   const seen = new Set();
   return articles.filter(a => {
     const key = a.title.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 50);
@@ -389,55 +266,52 @@ function deduplicateNews(articles) {
   });
 }
 
+// ── Main export ────────────────────────────────────────────────────────────────
+
 async function fetchAllNews() {
   const now = Date.now();
-  if (newsCache.length > 0 && now - lastFetch < CACHE_TTL) {
-    return newsCache;
-  }
+  if (newsCache.length > 0 && now - lastFetch < CACHE_TTL) return newsCache;
 
-  console.log("📰 Scraping Jamaican news sources...");
+  console.log("📰 Fetching news from all sources...");
 
-  // Scrape all sources in parallel
-  const results = await Promise.allSettled([
+  const [gleaner, observer, loop, rjr, caribbeanGoogle, intlGoogle, intlRSS] = await Promise.allSettled([
     scrapeGleaner(),
     scrapeObserver(),
     scrapeLoopJamaica(),
     scrapeRJRNews(),
-    scrapeJSEWebsite(),
-    scrapeGoogleNewsRSS(),
+    scrapeGoogleNewsRSS(
+      ["Jamaica stock exchange", "Jamaica business economy", "JSE Jamaica financial", "Caribbean finance investment"],
+      "caribbean"
+    ),
+    scrapeGoogleNewsRSS(
+      ["global stock market", "US Federal Reserve interest rates", "forex currency markets", "oil price OPEC", "S&P 500 Nasdaq earnings"],
+      "international"
+    ),
+    scrapeInternationalNews(),
   ]);
 
-  let allArticles = [];
-  results.forEach(result => {
-    if (result.status === "fulfilled" && result.value.length > 0) {
-      allArticles = allArticles.concat(result.value);
-    }
+  let all = [];
+  [gleaner, observer, loop, rjr, caribbeanGoogle, intlGoogle, intlRSS].forEach(r => {
+    if (r.status === "fulfilled" && r.value?.length) all = all.concat(r.value);
   });
 
-  // Deduplicate
-  allArticles = deduplicateNews(allArticles);
+  all = deduplicate(all);
 
-  // Add IDs and timestamps
-  allArticles = allArticles.map((a, i) => ({
+  all = all.map((a, i) => ({
     id: i + 1,
     ...a,
-    time: "Today",
+    time: a.time || "Today",
     scrapedAt: new Date().toISOString(),
   }));
 
-  // Limit to 50 most relevant
-  allArticles = allArticles.slice(0, 50);
+  const stats = {};
+  all.forEach(a => { stats[a.source] = (stats[a.source] || 0) + 1; });
+  const caribCount = all.filter(a => a.region === "caribbean").length;
+  const intlCount = all.filter(a => a.region === "international").length;
+  console.log(`📰 ${all.length} articles (${caribCount} Caribbean, ${intlCount} International):`, stats);
 
-  const sourceStats = {};
-  allArticles.forEach(a => { sourceStats[a.source] = (sourceStats[a.source] || 0) + 1; });
-  console.log(`📰 Scraped ${allArticles.length} articles:`, sourceStats);
-
-  if (allArticles.length > 0) {
-    newsCache = allArticles;
-    lastFetch = now;
-  }
-
-  return allArticles;
+  if (all.length > 0) { newsCache = all; lastFetch = now; }
+  return all;
 }
 
 module.exports = { fetchAllNews };

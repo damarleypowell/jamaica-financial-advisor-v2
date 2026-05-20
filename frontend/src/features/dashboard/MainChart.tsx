@@ -1,181 +1,289 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { createChart, AreaSeries, type IChartApi, type ISeriesApi } from 'lightweight-charts';
+import {
+  createChart, AreaSeries, CandlestickSeries, HistogramSeries,
+  type IChartApi, type ISeriesApi, type Time,
+} from 'lightweight-charts';
 import { Link } from 'react-router-dom';
 import { useMarketStore } from '../../stores/market';
 import { apiGet } from '../../lib/api';
 
-interface HistoryPoint { time: string; value: number; }
+interface HistoryPoint { time: string | number; value: number; }
+interface OHLCPoint   { time: number; open: number; high: number; low: number; close: number; volume?: number; }
 type TF = '1H' | '4H' | '1D' | 'ALL';
 const TFS: TF[] = ['1H', '4H', '1D', 'ALL'];
 
-export default function MainChart({ symbol }: { symbol: string }) {
+function toAreaData(pts: HistoryPoint[]): { time: Time; value: number }[] {
+  const seen = new Set<string>();
+  return pts
+    .map(p => ({ time: p.time as Time, value: p.value }))
+    .filter(p => { const k = String(p.time); if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => (a.time as number) - (b.time as number));
+}
+
+function ohlcToArea(candles: OHLCPoint[]): { time: Time; value: number }[] {
+  const seen = new Set<number>();
+  return candles
+    .filter(c => { if (seen.has(c.time)) return false; seen.add(c.time); return true; })
+    .sort((a, b) => a.time - b.time)
+    .map(c => ({ time: c.time as Time, value: c.close }));
+}
+
+function volData(candles: OHLCPoint[]): { time: Time; value: number; color: string }[] {
+  return candles.map(c => ({
+    time: c.time as Time,
+    value: c.volume ?? 0,
+    color: c.close >= c.open ? 'rgba(0,230,118,.4)' : 'rgba(255,82,82,.4)',
+  }));
+}
+
+export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Area'> | null>(null);
-  const [tf, setTf] = useState<TF>('ALL');
+  const chartRef     = useRef<IChartApi | null>(null);
+  const areaRef      = useRef<ISeriesApi<'Area'> | null>(null);
+  const candleRef    = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const volRef       = useRef<ISeriesApi<'Histogram'> | null>(null);
+
+  const [tf, setTf]     = useState<TF>('1D');
+  const [mode, setMode] = useState<'area' | 'candle'>('area');
+  const [showVol] = useState(true);
 
   const stocks = useMarketStore((s) => s.stocks);
-  const live = stocks.find((s) => s.symbol === symbol);
+  const live   = stocks.find((s) => s.symbol === symbol);
 
-  const { data, isLoading } = useQuery<HistoryPoint[]>({
-    queryKey: ['history', symbol, tf],
+  /* ── JSE scalar history ── */
+  const { data: jseData } = useQuery<HistoryPoint[]>({
+    queryKey: ['jse-history', symbol, tf],
     queryFn: async () => {
-      try {
-        const res = await apiGet<any>(`/api/history/${symbol}?period=${tf}`);
-        const raw: unknown[] = Array.isArray(res) ? res
-          : Array.isArray(res?.history) ? res.history
-          : Array.isArray(res?.data) ? res.data : [];
-        if (raw.length === 0) return [];
-        if (raw[0] != null && typeof raw[0] === 'object' && 'time' in (raw[0] as object))
-          return raw as HistoryPoint[];
-        const now = Math.floor(Date.now() / 1000);
-        return (raw as number[])
-          .map((v, i) => ({ time: (now - (raw.length - 1 - i) * 30) as unknown as string, value: typeof v === 'number' ? v : 0 }))
-          .filter(p => p.value > 0);
-      } catch { return []; }
+      const res = await apiGet<any>(`/api/history/${symbol}?period=${tf}`);
+      const raw: unknown[] = Array.isArray(res) ? res
+        : Array.isArray(res?.history) ? res.history
+        : Array.isArray(res?.data) ? res.data : [];
+      if (raw.length === 0) return [];
+      if (raw[0] != null && typeof raw[0] === 'object' && 'time' in (raw[0] as object))
+        return raw as HistoryPoint[];
+      const now = Math.floor(Date.now() / 1000);
+      return (raw as number[])
+        .map((v, i) => ({ time: now - (raw.length - 1 - i) * 30, value: typeof v === 'number' ? v : 0 }))
+        .filter(p => p.value > 0);
     },
-    enabled: !!symbol,
+    enabled: !!symbol && !isUS,
     staleTime: 30_000,
     retry: 0,
   });
 
+  /* ── US OHLCV history (Alpaca/Finnhub) ── */
+  const resMap: Record<TF, string> = { '1H': '60', '4H': '60', '1D': 'D', 'ALL': 'D' };
+  const { data: usData, isLoading: usLoading } = useQuery<{ candles?: OHLCPoint[]; history?: HistoryPoint[] } | OHLCPoint[]>({
+    queryKey: ['us-history', symbol, tf],
+    queryFn: () => apiGet<any>(`/api/stocks/${symbol}/history?resolution=${resMap[tf]}`),
+    enabled: !!symbol && !!isUS,
+    staleTime: 60_000,
+    retry: 0,
+  });
+
+  const isLoading = isUS ? usLoading : false;
+
+  /* ── Build display data ── */
+  const candles: OHLCPoint[] = (() => {
+    if (!isUS || !usData) return [];
+    const arr = Array.isArray(usData) ? usData : (usData as any).candles ?? [];
+    return arr as OHLCPoint[];
+  })();
+
+  const areaPoints = isUS
+    ? ohlcToArea(candles)
+    : toAreaData((jseData ?? []) as HistoryPoint[]);
+
+  const hasData = areaPoints.length > 1;
+  const pos = isUS
+    ? (candles.length > 1 ? candles[candles.length - 1].close >= candles[candles.length - 2].close : true)
+    : (live?.pctChange ?? 0) >= 0;
+  const livePrice = isUS
+    ? (candles[candles.length - 1]?.close ?? 0)
+    : (live?.price ?? 0);
+  const livePct = live?.pctChange ?? 0;
+
+  /* ── Chart init (once) ── */
   useEffect(() => {
     if (!containerRef.current) return;
     const chart = createChart(containerRef.current, {
       width: containerRef.current.clientWidth,
-      height: 300,
-      layout: { background: { color: 'transparent' }, textColor: 'rgba(74,96,128,0.8)', fontSize: 10 },
-      grid: { vertLines: { color: 'rgba(255,255,255,0.02)' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
+      height: 220,
+      layout: { background: { color: 'transparent' }, textColor: 'rgba(180,200,220,0.65)', fontSize: 10 },
+      grid: { vertLines: { color: 'rgba(255,255,255,0.025)' }, horzLines: { color: 'rgba(255,255,255,0.025)' } },
       crosshair: {
         vertLine: { color: 'rgba(0,230,118,0.4)', width: 1, style: 2 },
         horzLine: { color: 'rgba(0,230,118,0.4)', width: 1, style: 2 },
       },
-      rightPriceScale: { borderColor: 'rgba(255,255,255,0.03)', scaleMargins: { top: 0.15, bottom: 0.08 } },
-      timeScale: { borderColor: 'rgba(255,255,255,0.03)', timeVisible: true, fixLeftEdge: true },
+      rightPriceScale: { borderColor: 'rgba(255,255,255,0.03)', scaleMargins: { top: 0.08, bottom: showVol ? 0.18 : 0.04 } },
+      timeScale: { borderColor: 'rgba(255,255,255,0.03)', timeVisible: true, fixLeftEdge: true, rightOffset: 3 },
     });
-    const series = chart.addSeries(AreaSeries, {
-      topColor: 'rgba(0,230,118,0.2)',
-      bottomColor: 'rgba(0,230,118,0.0)',
-      lineColor: '#00e676',
-      lineWidth: 2,
+
+    areaRef.current = chart.addSeries(AreaSeries, {
+      topColor: 'rgba(0,230,118,0.18)', bottomColor: 'rgba(0,230,118,0.0)',
+      lineColor: '#00e676', lineWidth: 2,
     });
+
+    candleRef.current = chart.addSeries(CandlestickSeries, {
+      upColor: '#00e676', downColor: '#ff5252',
+      borderUpColor: '#00e676', borderDownColor: '#ff5252',
+      wickUpColor: '#00e676', wickDownColor: '#ff5252',
+    });
+    candleRef.current.applyOptions({ visible: false });
+
+    volRef.current = chart.addSeries(HistogramSeries, {
+      priceFormat: { type: 'volume' },
+      priceScaleId: 'vol',
+    });
+    chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+
     chartRef.current = chart;
-    seriesRef.current = series;
+
     const ro = new ResizeObserver(entries => {
       for (const e of entries) if (e.contentRect.width > 0) chart.applyOptions({ width: e.contentRect.width });
     });
     ro.observe(containerRef.current);
-    return () => { ro.disconnect(); chart.remove(); chartRef.current = null; seriesRef.current = null; };
-  }, []);
+    return () => { ro.disconnect(); chart.remove(); chartRef.current = null; areaRef.current = null; candleRef.current = null; volRef.current = null; };
+  }, []); // eslint-disable-line
 
+  /* ── Push data whenever it changes ── */
   useEffect(() => {
-    if (!seriesRef.current || !Array.isArray(data) || data.length === 0) return;
-    const clean = data.filter(p => p?.time != null && p?.value != null);
-    if (clean.length === 0) return;
-    try { seriesRef.current.setData(clean as any); chartRef.current?.timeScale().fitContent(); }
-    catch (e) { console.warn('[MainChart]', e); }
-  }, [data]);
+    if (!areaRef.current || areaPoints.length === 0) return;
+    try {
+      areaRef.current.setData(areaPoints);
+      if (candleRef.current && candles.length > 0) {
+        candleRef.current.setData(candles.map(c => ({ time: c.time as Time, open: c.open, high: c.high, low: c.low, close: c.close })));
+      }
+      if (volRef.current) {
+        const vd = isUS ? volData(candles) : areaPoints.map((p, i, arr) => ({
+          time: p.time, value: 0,
+          color: i === 0 || p.value >= arr[i - 1].value ? 'rgba(0,230,118,.3)' : 'rgba(255,82,82,.3)',
+        }));
+        volRef.current.setData(vd as any);
+      }
+      chartRef.current?.timeScale().fitContent();
+    } catch (e) { console.warn('[MainChart]', e); }
+  }, [areaPoints, candles, isUS]);
 
-  const pos = (live?.pctChange ?? 0) >= 0;
-  const hasData = Array.isArray(data) && data.length > 1;
+  /* ── Toggle area ↔ candle ── */
+  useEffect(() => {
+    areaRef.current?.applyOptions({ visible: mode === 'area' });
+    candleRef.current?.applyOptions({ visible: mode === 'candle' && isUS && candles.length > 0 });
+  }, [mode, isUS, candles.length]);
 
   return (
     <div className="card overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-4 px-5 py-4 flex-wrap" style={{ borderBottom: '1px solid var(--color-border)' }}>
-        <div className="flex-1 min-w-0">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: '1px solid var(--color-border)', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           {symbol ? (
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: pos ? 'rgba(0,230,118,.12)' : 'rgba(255,82,82,.12)', border: `1px solid ${pos ? 'rgba(0,230,118,.2)' : 'rgba(255,82,82,.2)'}` }}>
-                <span className="text-[10px] font-black num" style={{ color: pos ? 'var(--color-green)' : 'var(--color-red)' }}>
-                  {symbol.slice(0, 3)}
-                </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: pos ? 'rgba(0,230,118,.12)' : 'rgba(255,82,82,.12)', border: `1px solid ${pos ? 'rgba(0,230,118,.2)' : 'rgba(255,82,82,.2)'}` }}>
+                <span style={{ fontSize: 8, fontWeight: 900, color: pos ? '#00e676' : '#ff5252', letterSpacing: '-.01em' }}>{symbol.slice(0, 4)}</span>
               </div>
               <div>
-                <p className="text-base font-black num leading-none" style={{ color: 'var(--color-text)' }}>{symbol}</p>
-                {live?.name && <p className="text-[10px] mt-0.5 leading-none truncate max-w-[200px]" style={{ color: 'var(--color-muted)' }}>{live.name}</p>}
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: 'var(--color-text)', fontFamily: 'var(--font-mono)', letterSpacing: '-.01em' }}>{symbol}</p>
+                {live?.name && <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)', marginTop: 2 }}>{live.name}</p>}
+                {!live?.name && isUS && <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)', marginTop: 2 }}>US Equity</p>}
               </div>
-              {live && (
-                <div className="flex items-center gap-2.5 ml-1">
-                  <span className="text-xl font-black num" style={{ color: 'var(--color-text)' }}>
-                    ${(live.price ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {livePrice > 0 && (
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--color-text)', fontFamily: 'var(--font-mono)', letterSpacing: '-.02em' }}>
+                    ${livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
-                  <span className="text-sm font-bold num" style={{ color: pos ? 'var(--color-green)' : 'var(--color-red)' }}>
-                    {pos ? '+' : ''}{(live.pctChange ?? 0).toFixed(2)}%
-                  </span>
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black"
-                    style={{ background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.2)', color: 'var(--color-green)' }}>
-                    <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--color-green)' }} />
-                    LIVE
-                  </span>
+                  {!isUS && (
+                    <span style={{ fontSize: 13, fontWeight: 700, color: pos ? '#00e676' : '#ff5252', fontFamily: 'var(--font-mono)' }}>
+                      {pos ? '+' : ''}{livePct.toFixed(2)}%
+                    </span>
+                  )}
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-sm" style={{ color: 'var(--color-muted)' }}>Select a stock to view its chart</p>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--color-muted)' }}>Click any stock to view its chart</p>
           )}
         </div>
 
         {symbol && (
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center rounded-xl p-0.5" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
+            {/* Chart type toggle */}
+            {isUS && candles.length > 0 && (
+              <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,.08)' }}>
+                {(['area', 'candle'] as const).map(m => (
+                  <button key={m} onClick={() => setMode(m)}
+                    style={{ padding: '5px 10px', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, transition: 'all .15s', background: mode === m ? '#00c853' : 'transparent', color: mode === m ? '#04060d' : 'rgba(255,255,255,.4)' }}>
+                    <i className={`fa-solid ${m === 'area' ? 'fa-chart-area' : 'fa-chart-candlestick'}`} />
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Timeframe */}
+            <div style={{ display: 'flex', borderRadius: 10, padding: 2, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
               {TFS.map(t => (
                 <button key={t} onClick={() => setTf(t)}
-                  className="px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all"
-                  style={tf === t
-                    ? { background: 'var(--color-green)', color: 'var(--color-bg)', boxShadow: '0 2px 10px rgba(0,230,118,.3)' }
-                    : { color: 'var(--color-muted)' }}>
+                  style={{ padding: '5px 10px', fontSize: 10, fontWeight: 700, borderRadius: 8, border: 'none', cursor: 'pointer', transition: 'all .15s',
+                    background: tf === t ? '#00e676' : 'transparent',
+                    color: tf === t ? '#04060d' : 'var(--color-muted)' }}>
                   {t}
                 </button>
               ))}
             </div>
             <Link to={`/technicals/${symbol}`}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:opacity-80"
-              style={{ background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)' }}>
-              <i className="fa-solid fa-expand text-[9px]" /> Full Chart
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 9, background: 'rgba(0,230,118,.08)', border: '1px solid rgba(0,230,118,.2)', color: '#00e676', fontSize: 11, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              <i className="fa-solid fa-chart-candlestick" style={{ fontSize: 10 }} />
+              Full Chart
             </Link>
           </div>
         )}
       </div>
 
-      {/* Chart */}
-      <div className="relative flex-1">
+      {/* Chart canvas */}
+      <div style={{ position: 'relative', flex: 1 }}>
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center z-10" style={{ background: 'rgba(9,14,26,.7)', backdropFilter: 'blur(4px)' }}>
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--color-green)', borderTopColor: 'transparent' }} />
-              <span className="text-[10px]" style={{ color: 'var(--color-muted)' }}>Loading</span>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, background: 'rgba(8,13,24,.7)', backdropFilter: 'blur(4px)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #00e676', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+              <span style={{ fontSize: 10, color: 'var(--color-muted)' }}>Loading {symbol} data…</span>
             </div>
           </div>
         )}
 
-        <div ref={containerRef} className="w-full" style={{ height: 300 }}>
+        <div ref={containerRef} style={{ width: '100%', height: 220 }}>
           {!symbol && (
-            <div className="flex flex-col items-center justify-center h-full gap-3">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)' }}>
-                <i className="fa-solid fa-chart-area text-2xl" style={{ color: 'var(--color-muted)', opacity: .4 }} />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold" style={{ color: 'var(--color-text2)' }}>Select a stock</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>Click any stock in the panel to view its chart</p>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10 }}>
+              <i className="fa-solid fa-chart-area" style={{ fontSize: 32, color: 'var(--color-muted)', opacity: .2 }} />
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text2)', margin: 0 }}>Select a stock above</p>
+              <p style={{ fontSize: 11, color: 'var(--color-muted)', margin: 0 }}>Click any mover card to load its chart</p>
             </div>
           )}
           {symbol && !isLoading && !hasData && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)' }}>
-                <i className="fa-solid fa-satellite-dish text-xl" style={{ color: 'var(--color-muted)', opacity: .4 }} />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold" style={{ color: 'var(--color-text2)' }}>No price history yet</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>Chart populates as data streams in</p>
-              </div>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, pointerEvents: 'none' }}>
+              <i className="fa-solid fa-satellite-dish" style={{ fontSize: 24, color: 'var(--color-muted)', opacity: .3 }} />
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text2)', margin: 0 }}>
+                {isUS ? 'US chart data unavailable — Alpaca API not configured' : 'No price history yet'}
+              </p>
+              <p style={{ fontSize: 10, color: 'var(--color-muted)', margin: 0 }}>
+                {isUS ? 'Add ALPACA_API_KEY to your environment to enable US charts' : 'Chart data streams in as prices update'}
+              </p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Footer with Full Chart CTA */}
+      {symbol && (
+        <div style={{ padding: '8px 18px', borderTop: '1px solid rgba(255,255,255,.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,.01)' }}>
+          <span style={{ fontSize: 10, color: 'var(--color-muted)', opacity: .5 }}>
+            <i className="fa-solid fa-circle-info" style={{ marginRight: 4 }} />
+            Click <strong style={{ color: 'rgba(255,255,255,.4)' }}>Full Chart</strong> for candlesticks, EMA, RSI, Bollinger Bands &amp; drawing tools
+          </span>
+          <Link to={`/technicals/${symbol}`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: '#00e676', textDecoration: 'none', opacity: .8 }}>
+            Open Advanced Chart <i className="fa-solid fa-arrow-right" style={{ fontSize: 8 }} />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

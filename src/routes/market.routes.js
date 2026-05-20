@@ -701,33 +701,32 @@ router.get("/api/global-markets", async (_req, res) => {
 
 // ── News ────────────────────────────────────────────────────────────────────
 
-// Simple keyword-based sentiment scoring (no external API needed)
+// Sentiment scoring — threshold > 0 so short headlines get classified
 function scoreSentiment(text) {
   const t = (text || "").toLowerCase();
   const POSITIVE = [
-    "growth", "profit", "surge", "gain", "rally", "record", "strong",
-    "upgrade", "dividend", "expansion", "increase", "positive", "recovery",
-    "milestone", "success", "outperform", "bullish", "boost", "optimism",
-    "revenue", "earnings beat", "up ", "higher", "improved", "breakthrough",
+    "growth","profit","surge","gain","rally","record","strong","upgrade","dividend",
+    "expansion","increase","positive","recovery","milestone","success","outperform",
+    "bullish","boost","optimism","revenue","higher","improved","breakthrough","beat",
+    "rebound","advance","soar","climb","jump","deal","approval",
   ];
   const NEGATIVE = [
-    "loss", "decline", "drop", "fall", "crash", "risk", "weak",
-    "downgrade", "debt", "layoff", "fraud", "bankruptcy", "recession",
-    "bearish", "warning", "concern", "default", "plunge", "cut ",
-    "lower", "slump", "crisis", "penalty", "lawsuit", "sell-off",
+    "loss","decline","drop","fall","crash","risk","weak","downgrade","debt","layoff",
+    "fraud","bankruptcy","recession","bearish","warning","concern","default","plunge",
+    "lower","slump","crisis","penalty","lawsuit","sell-off","contraction","sanction",
+    "war","conflict","tariff","miss","fears","threat","cut",
   ];
   let score = 0;
   for (const word of POSITIVE) if (t.includes(word)) score += 1;
   for (const word of NEGATIVE) if (t.includes(word)) score -= 1;
-  if (score > 1) return { sentiment: "positive", score };
-  if (score < -1) return { sentiment: "negative", score };
+  if (score > 0) return { sentiment: "positive", score };
+  if (score < 0) return { sentiment: "negative", score };
   return { sentiment: "neutral", score };
 }
 
 router.get("/api/news", async (req, res) => {
-  const { sector, symbol } = req.query;
+  const { sector, symbol, region } = req.query;
   try {
-    // Fetch from both sources in parallel
     const [scraperNews, finnhubNews] = await Promise.allSettled([
       fetchAllNews(),
       finnhub.isConfigured() ? finnhub.getNews("general") : Promise.resolve([]),
@@ -735,17 +734,18 @@ router.get("/api/news", async (req, res) => {
 
     let news = scraperNews.status === "fulfilled" ? scraperNews.value : [];
 
-    // Merge Finnhub news (different format: { headline, url, source, datetime, summary, image })
+    // Merge Finnhub news and classify as international
     if (finnhubNews.status === "fulfilled" && Array.isArray(finnhubNews.value)) {
       const fhArticles = finnhubNews.value.slice(0, 20).map((a) => ({
         title: a.headline,
-        description: a.summary || "",
+        summary: a.summary || "",
         url: a.url,
         source: a.source || "Finnhub",
         publishedAt: a.datetime ? new Date(a.datetime * 1000).toISOString() : new Date().toISOString(),
         imageUrl: a.image || null,
         sector: null,
         symbol: null,
+        region: "international",
         dataSource: "finnhub",
       }));
       news = [...news, ...fhArticles];
@@ -753,17 +753,19 @@ router.get("/api/news", async (req, res) => {
 
     if (sector) news = news.filter((n) => n.sector === sector);
     if (symbol) news = news.filter((n) => n.symbol === symbol);
+    if (region) news = news.filter((n) => n.region === region);
 
-    // Add sentiment analysis to each article
+    // Re-score sentiment using combined title + summary (overrides scraper value for accuracy)
     const enriched = news.map((article) => {
-      const { sentiment, score } = scoreSentiment(
-        `${article.title || ""} ${article.summary || ""} ${article.description || ""}`
-      );
-      return { ...article, sentiment, sentimentScore: score };
+      const text = `${article.title || ""} ${article.summary || ""} ${article.description || ""}`;
+      const { sentiment, score } = scoreSentiment(text);
+      // Only override if scraper didn't produce a non-neutral result
+      const finalSentiment = (article.sentiment && article.sentiment !== "neutral") ? article.sentiment : sentiment;
+      return { ...article, sentiment: finalSentiment, sentimentScore: score };
     });
 
-    // Sort by date descending
-    enriched.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0));
+    // Sort newest first
+    enriched.sort((a, b) => new Date(b.publishedAt || b.scrapedAt || 0) - new Date(a.publishedAt || a.scrapedAt || 0));
 
     res.json(enriched);
   } catch (e) {

@@ -175,16 +175,21 @@ export interface NewsItem {
   id?: number;
   title: string;
   summary?: string;
+  description?: string;
   source: string;
   url: string;
   date?: string;
   time?: string;
+  publishedAt?: string;
   sentiment?: string;
+  sentimentScore?: number;
   score?: number;
   sector?: string;
   symbol?: string;
+  region?: 'caribbean' | 'international';
   dataSource?: string;
   image?: string;
+  imageUrl?: string;
   scrapedAt?: string;
 }
 
