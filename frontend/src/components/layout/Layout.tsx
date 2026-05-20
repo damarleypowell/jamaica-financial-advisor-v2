@@ -25,13 +25,8 @@ export default function Layout() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <Ticker />
-      <Header onToggleSidebar={toggleFocus} focusMode={focusMode} />
+      <Header onToggleSidebar={() => setSidebarOpen(v => !v)} focusMode={focusMode} sidebarOpen={sidebarOpen} />
       {!focusMode && (
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      )}
-
-      {/* Mobile sidebar — only when not in focus mode */}
-      {!focusMode && sidebarOpen && (
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       )}
 

@@ -135,7 +135,7 @@ function AuthSection({ user, isAuthenticated, openAuthModal, logout }: {
   );
 }
 
-export default function Header({ onToggleSidebar, focusMode: _focusMode }: { onToggleSidebar: () => void; focusMode?: boolean }) {
+export default function Header({ onToggleSidebar, focusMode: _focusMode, sidebarOpen }: { onToggleSidebar: () => void; focusMode?: boolean; sidebarOpen?: boolean }) {
   const location  = useLocation();
   const navigate  = useNavigate();
   const user      = useAuthStore(s => s.user);
@@ -201,13 +201,13 @@ export default function Header({ onToggleSidebar, focusMode: _focusMode }: { onT
       maxWidth: '100%',
     }}>
 
-      {/* Mobile menu toggle */}
+      {/* Mobile menu toggle — shows X when sidebar is open */}
       <button onClick={onToggleSidebar} aria-label="menu"
-        style={iconBtn}
+        style={{ ...iconBtn, background: sidebarOpen ? 'rgba(255,255,255,.08)' : 'transparent' }}
         className="md:hidden"
         onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.07)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-        <i className="fa-solid fa-bars" style={{ fontSize: 15, color: 'var(--color-text2)' }} />
+        onMouseLeave={e => (e.currentTarget.style.background = sidebarOpen ? 'rgba(255,255,255,.08)' : 'transparent')}>
+        <i className={sidebarOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'} style={{ fontSize: 15, color: 'var(--color-text2)' }} />
       </button>
 
       {/* Brand â€" single, always visible */}

@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.ts';
+import { useUIStore } from '../../stores/ui.ts';
 import type { SubscriptionTier } from '../../types/index.ts';
 
 const TIER_LEVEL: Record<SubscriptionTier, number> = {
@@ -31,6 +32,7 @@ function UpgradeWall({ requiredTier, featureName, userTier, signedIn }: {
 }) {
   const color = TIER_COLOR[requiredTier] ?? '#00e676';
   const features = TIER_FEATURES[requiredTier] ?? [];
+  const openAuthModal = useUIStore(s => s.openAuthModal);
 
   return (
     <div className="relative min-h-[60vh]">
@@ -113,31 +115,48 @@ function UpgradeWall({ requiredTier, featureName, userTier, signedIn }: {
           )}
 
           {/* CTA */}
-          <a
-            href="/subscription"
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              width: '100%', padding: '13px 0', borderRadius: 13,
-              background: color, color: '#04060d',
-              fontSize: 14, fontWeight: 800, textDecoration: 'none',
-              boxShadow: `0 4px 24px ${color}40`,
-              transition: 'box-shadow 180ms, transform 180ms',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 6px 32px ${color}60`;
-              (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 4px 24px ${color}40`;
-              (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)';
-            }}
-          >
-            <i className="fa-solid fa-arrow-up" style={{ fontSize: 12 }} />
-            Upgrade to {requiredTier}
-          </a>
+          {signedIn ? (
+            <a
+              href="/subscription"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                width: '100%', padding: '13px 0', borderRadius: 13,
+                background: color, color: '#04060d',
+                fontSize: 14, fontWeight: 800, textDecoration: 'none',
+                boxShadow: `0 4px 24px ${color}40`,
+                transition: 'box-shadow 180ms, transform 180ms',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 6px 32px ${color}60`;
+                (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 4px 24px ${color}40`;
+                (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)';
+              }}
+            >
+              <i className="fa-solid fa-arrow-up" style={{ fontSize: 12 }} />
+              Upgrade to {requiredTier}
+            </a>
+          ) : (
+            <button
+              onClick={() => openAuthModal('signup')}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                width: '100%', padding: '13px 0', borderRadius: 13,
+                background: color, color: '#04060d',
+                fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer',
+                boxShadow: `0 4px 24px ${color}40`,
+                transition: 'box-shadow 180ms, transform 180ms',
+              }}
+            >
+              <i className="fa-solid fa-user" style={{ fontSize: 12 }} />
+              Create Free Account
+            </button>
+          )}
 
           <p style={{ margin: '12px 0 0', fontSize: 11, color: 'var(--color-muted, #6b7280)' }}>
-            Cancel anytime · Secure payment via PayPal
+            {signedIn ? 'Cancel anytime · Secure payment' : 'Free to sign up · Upgrade anytime'}
           </p>
         </div>
       </div>
