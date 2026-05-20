@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   BookOpen, ChevronRight, ChevronLeft, CheckCircle, Clock,
   TrendingUp, Award, Zap, Play,
-  ExternalLink, HelpCircle, FileText, Activity,
+  ExternalLink, HelpCircle, FileText, Activity, Wifi,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -26,7 +27,7 @@ interface ModuleContent {
   callouts?: Callout[];
   diagramKey?: string;
   diagramCaption?: string;
-  exercise?: { scenario: string; steps: ExerciseStep[] };
+  exercise?: { scenario: string; steps: ExerciseStep[]; liveData?: boolean };
   quiz?: QuizQ[];
   links?: ExternalLink[];
   citations?: string[];
@@ -185,6 +186,22 @@ const COURSES: Course[] = [
           },
           links: [
             { title: 'JSE Market Data — Wisynco', url: 'https://www.jamstockex.com/market-data/stocks/wisynco-group-limited/', description: 'Live Wisynco quote and historic data on the JSE website.' },
+          ],
+        },
+      },
+      {
+        id: 'cb-live-exercise',
+        title: 'Live Exercise: Analyse a Real JSE Stock',
+        type: 'exercise',
+        duration: 10,
+        content: {
+          exercise: {
+            liveData: true,
+            scenario: '',
+            steps: [],
+          },
+          callouts: [
+            { type: 'info', text: 'This exercise uses live JSE market data. The stock and numbers change every session — this is as close to real trading as you can get without committing capital.' },
           ],
         },
       },
@@ -548,6 +565,22 @@ const COURSES: Course[] = [
         },
       },
       {
+        id: 'ta-live-exercise',
+        title: 'Live Exercise: Identify Signals on a Real JSE Chart',
+        type: 'exercise',
+        duration: 12,
+        content: {
+          exercise: {
+            liveData: true,
+            scenario: '',
+            steps: [],
+          },
+          callouts: [
+            { type: 'tip', text: 'Apply what you learned about candlesticks, RSI, and support/resistance to a stock from today\'s JSE session. After completing this, open the Charts tab and pull up the same symbol to see the full picture.' },
+          ],
+        },
+      },
+      {
         id: 'ta-quiz',
         title: 'Module Quiz: Technical Analysis',
         type: 'quiz',
@@ -593,6 +626,144 @@ const COURSES: Course[] = [
               ],
               correct: 1,
               explanation: 'The JSE has lower liquidity than major exchanges, making daily signals more prone to noise. Weekly charts filter out erratic single-trade spikes. Combining RSI + moving averages + support/resistance gives much higher probability signals.',
+            },
+          ],
+        },
+      },
+    ],
+  },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COURSE 4: Building Your First Portfolio
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'portfolio-building',
+    title: 'Building Your First Portfolio',
+    subtitle: 'Turn knowledge into a real investment plan',
+    description: 'Learn how to allocate capital across stocks, manage risk, hedge against JMD depreciation with USD assets, and construct a portfolio suited to your goals.',
+    level: 'Beginner',
+    color: '#ffd740',
+    estimatedHours: 4,
+    modules: [
+      {
+        id: 'pb-diversification',
+        title: 'Diversification: The Only Free Lunch in Investing',
+        type: 'lesson',
+        duration: 12,
+        content: {
+          paragraphs: [
+            'Diversification is the practice of spreading investments across different assets, sectors, and geographies so that no single failure can wipe out your portfolio. Nobel laureate Harry Markowitz called it "the only free lunch in investing" — you can reduce risk without necessarily reducing expected returns, simply by not concentrating everything in one place.',
+            'On the JSE, sector concentration is a real risk. Financial services companies (NCB, Sagicor, JMMB, Scotia) make up a large share of the index. If interest rates spike or a credit crisis hits the sector, a portfolio heavy in financials suffers disproportionately. Deliberately choosing stocks across manufacturing (Wisynco, Caribbean Cement), distribution (GraceKennedy, Lasco), and tourism (Pulse, Palace Amusement) creates natural balance.',
+            'Geographic diversification matters especially for Jamaican investors because the Jamaican dollar has historically depreciated against the US dollar at roughly 5–8% per year. A portfolio entirely in JMD assets loses purchasing power against USD-denominated goods every year. Holding even 20–30% of your portfolio in USD assets — US stocks, US-denominated bonds, or USD money market funds — is a structural hedge against this currency risk.',
+          ],
+          keyTerms: [
+            { term: 'Correlation', def: 'How two assets move relative to each other. Correlation of +1 = they move identically. Correlation of -1 = they move opposite. Portfolio risk falls when you combine assets with low or negative correlations.' },
+            { term: 'Sector Concentration', def: 'Owning too many stocks in the same industry. If that industry has a bad year, your whole portfolio suffers.' },
+            { term: 'Currency Risk', def: 'The risk that a depreciation of the Jamaican dollar erodes the real value of JMD-denominated investments over time.' },
+            { term: 'Rebalancing', def: 'Periodically adjusting your holdings back to your target allocation. If equities outperform and grow to 80% of your portfolio, rebalancing means selling some equities and buying bonds/cash to restore your target 60/40 split.' },
+          ],
+          callouts: [
+            { type: 'example', text: 'A simple diversified JSE portfolio: 25% NCB (financials), 20% Wisynco (consumer goods), 20% Caribbean Cement (industrials), 15% GraceKennedy (distribution), 20% Carib-USD money market fund. Five positions, four sectors, one USD hedge.' },
+            { type: 'tip', text: 'You don\'t need 20 stocks to be diversified. Research shows that 8–12 well-chosen stocks across 4–5 sectors captures most of the diversification benefit. Beyond 15 stocks, the marginal reduction in risk is minimal and tracking becomes a job.' },
+          ],
+          links: [
+            { title: 'Investopedia: Diversification Guide', url: 'https://www.investopedia.com/terms/d/diversification.asp', description: 'The theory and practice of diversification explained clearly.' },
+          ],
+          citations: ['Markowitz, H. (1952). Portfolio Selection. The Journal of Finance, 7(1), 77–91.'],
+        },
+      },
+      {
+        id: 'pb-risk-tolerance',
+        title: 'Risk Tolerance & Time Horizon',
+        type: 'lesson',
+        duration: 10,
+        content: {
+          paragraphs: [
+            'Your risk tolerance is how much volatility you can emotionally and financially withstand. It is distinct from risk capacity — how much risk you can mathematically afford based on your income, expenses, and goals. Many investors overestimate their tolerance until they see a 30% portfolio drop and panic-sell at the bottom.',
+            'Time horizon is the single most important factor in how aggressively you should invest. If you need the money in 2 years, a 40% drawdown is catastrophic — you might have to sell at a loss. If your horizon is 20 years, a 40% drawdown is temporary noise; the JSE has historically recovered from every downturn within 2–5 years.',
+            'A simple rule: subtract your age from 110 and that is roughly the percentage you should hold in equities. A 25-year-old: 85% equities, 15% bonds/cash. A 55-year-old: 55% equities, 45% bonds/cash. This is a starting point — adjust based on your actual income stability, obligations, and comfort with volatility.',
+          ],
+          diagramKey: 'risk-profiles',
+          diagramCaption: 'Three investor profiles with suggested JSE allocations based on risk tolerance and time horizon.',
+          keyTerms: [
+            { term: 'Risk Tolerance', def: 'How much portfolio volatility you can psychologically handle without making panic decisions.' },
+            { term: 'Risk Capacity', def: 'How much financial risk you can actually afford given your income, expenses, and goals.' },
+            { term: 'Drawdown', def: 'The peak-to-trough decline of a portfolio. A portfolio that falls from J$500,000 to J$350,000 has experienced a 30% drawdown.' },
+            { term: 'Time Horizon', def: 'How long before you need to access your invested capital. Longer horizon = more risk you can afford to take.' },
+          ],
+          callouts: [
+            { type: 'warning', text: 'Never invest money you might need within 12 months. Market timing is impossible, and you may be forced to sell at a loss right when the market is at its lowest.' },
+            { type: 'tip', text: 'Gotham\'s Portfolio Optimizer (under the Portfolio tab) calculates efficient allocations based on historical JSE and US stock data. Use it to test different allocation scenarios before committing real capital.' },
+          ],
+        },
+      },
+      {
+        id: 'pb-exercise',
+        title: 'Exercise: Design a J$500,000 Portfolio',
+        type: 'exercise',
+        duration: 15,
+        content: {
+          exercise: {
+            scenario: 'You are 28 years old with a stable income. You have J$500,000 to invest with a 10-year horizon. You consider yourself a moderate-risk investor — you can handle some volatility but not watching half your money disappear. Work through building your portfolio step by step.',
+            steps: [
+              {
+                instruction: 'Step 1 — Determine your equity/bond/cash allocation for a moderate 10-year horizon.',
+                answer: 'With a 10-year horizon and moderate risk: roughly 65–70% equities, 20–25% bonds/fixed income, 10% cash or cash equivalents. On J$500,000: J$325,000–350,000 in stocks, J$100,000–125,000 in bonds or fixed-rate instruments, J$50,000 cash buffer. The cash buffer prevents you from having to sell stocks in an emergency.',
+              },
+              {
+                instruction: 'Step 2 — Allocate your J$325,000 equity portion across at least 4 JSE stocks. Name the stocks, sectors, and approximate amounts.',
+                answer: 'Example: NCB Financial Group (Financials) — J$80,000 (25%); Wisynco Group (Consumer Goods) — J$80,000 (25%); GraceKennedy (Distribution/Financial Services) — J$65,000 (20%); Caribbean Cement (Industrials) — J$65,000 (20%); JMMB Group (Financials) — J$35,000 (10%). Four sectors, five stocks — no single stock above 25%. The financial sector exposure (NCB + JMMB + GK partially) is high, so watch for that concentration.',
+              },
+              {
+                instruction: 'Step 3 — You want 20% of your total portfolio in USD assets as a JMD hedge. How much is that, and what instrument would you use?',
+                answer: '20% of J$500,000 = J$100,000. At a rate of J$157/USD, this equals approximately US$637. Suitable instruments: a USD money market fund (offered by NCB Capital Markets, JMMB, or Sagicor), or directly purchasing US ETFs through Alpaca on the Gotham platform. The USD money market option is lower risk; the US ETF option (e.g. SPY, QQQ) offers growth potential but more volatility.',
+              },
+              {
+                instruction: 'Step 4 — What is the single biggest risk in this portfolio and how would you monitor it?',
+                answer: 'The biggest risk is financial sector concentration — NCB, JMMB, and GraceKennedy\'s financial division are all exposed to Jamaican interest rate and credit conditions. If the Bank of Jamaica raises rates sharply, loan books tighten and bank profits compress simultaneously across all three. Monitor by: watching Bank of Jamaica monetary policy announcements, tracking NCB\'s non-performing loan ratio in quarterly reports, and setting a rule to reduce financial exposure if it exceeds 40% of the equity portion.',
+              },
+            ],
+          },
+          callouts: [
+            { type: 'tip', text: 'There is no single "correct" answer to portfolio construction. The goal is a structured rationale: know why you own each position, know what would make you sell it, and know your maximum tolerable loss before rebalancing.' },
+          ],
+        },
+      },
+      {
+        id: 'pb-quiz',
+        title: 'Module Quiz: Portfolio Principles',
+        type: 'quiz',
+        duration: 10,
+        content: {
+          quiz: [
+            {
+              q: 'Which of the following best reduces portfolio risk without necessarily reducing expected return?',
+              options: ['Holding only the top-performing JSE stock', 'Diversifying across uncorrelated assets and sectors', 'Keeping everything in cash', 'Investing only in foreign stocks'],
+              correct: 1,
+              explanation: 'Diversification across uncorrelated assets is Markowitz\'s core insight — you get risk reduction "for free" by combining assets that don\'t move in lockstep. Cash eliminates growth. A single stock maximises concentration risk.',
+            },
+            {
+              q: 'A 25-year-old investor with a 20-year horizon should generally have:',
+              options: ['90% in cash for safety', 'Equal split: 50% stocks, 50% bonds', 'A higher allocation to equities than a 60-year-old retiree', 'Only international stocks, no JSE exposure'],
+              correct: 2,
+              explanation: 'Long time horizons allow for more equity exposure because you have time to recover from drawdowns. A 60-year-old retiree who needs income now cannot afford to wait 5 years for a market recovery — they need stability.',
+            },
+            {
+              q: 'Why should a Jamaican investor hold some USD-denominated assets?',
+              options: ['USD assets always outperform JMD assets', 'To hedge against the historical JMD depreciation trend vs USD', 'JSE stocks pay dividends in USD', 'Foreign investors require it'],
+              correct: 1,
+              explanation: 'The Jamaican dollar has historically depreciated against the USD at roughly 5–8% per year. Holding USD assets means that even if your JMD portfolio stays flat, the USD portion grows in JMD terms just from currency movement.',
+            },
+            {
+              q: 'What is portfolio rebalancing?',
+              options: ['Selling all stocks when the market drops', 'Periodically restoring your portfolio to its target allocation after drift', 'Adding new stocks every month', 'Moving to 100% bonds when approaching retirement'],
+              correct: 1,
+              explanation: 'Rebalancing means that if equities outperform and grow from 65% to 78% of your portfolio, you trim the excess back to 65% and add to underperforming assets. This forces disciplined "buy low, sell high" behaviour automatically.',
+            },
+            {
+              q: 'You have J$500,000 and a 2-year time horizon. Which approach is most appropriate?',
+              options: ['100% JSE growth stocks', '70% equities, 30% bonds', 'Conservative: more bonds/cash, minimal equity', 'All in a single high-yield JSE stock'],
+              correct: 2,
+              explanation: 'With only 2 years, a market drawdown could force you to sell equities at a loss. Conservative allocation (higher bonds/cash, lower equity) protects capital you\'ll need soon. Long horizons justify more equity; short horizons demand caution.',
             },
           ],
         },
@@ -834,6 +1005,45 @@ function DiagramQuote() {
   );
 }
 
+function DiagramRiskProfiles() {
+  const profiles = [
+    { label: 'Conservative', equities: 35, bonds: 45, cash: 20, color: '#40c4ff', eg: 'Retiree / <3yr horizon' },
+    { label: 'Moderate', equities: 65, bonds: 25, cash: 10, color: '#ffd740', eg: 'Working adult / 5–15yr' },
+    { label: 'Aggressive', equities: 85, bonds: 10, cash: 5, color: '#00e676', eg: 'Young investor / 15yr+' },
+  ];
+  return (
+    <svg viewBox="0 0 320 160" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
+      <rect width="320" height="160" fill="rgba(255,255,255,.02)" rx="8" />
+      {profiles.map((p, i) => {
+        const x = 30 + i * 95;
+        const barH = 80;
+        const eH = (p.equities / 100) * barH;
+        const bH = (p.bonds / 100) * barH;
+        const cH = (p.cash / 100) * barH;
+        let y = 20;
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width={50} height={eH} fill={p.color} opacity={0.85} rx={3} />
+            <rect x={x} y={y + eH} width={50} height={bH} fill="rgba(255,255,255,.25)" rx={0} />
+            <rect x={x} y={y + eH + bH} width={50} height={cH} fill="rgba(255,255,255,.1)" rx={3} />
+            <text x={x + 25} y={y + eH / 2 + 4} textAnchor="middle" fill="#000" fontSize="9" fontWeight="700" fontFamily="Inter,sans-serif">{p.equities}%</text>
+            <text x={x + 25} y={120} textAnchor="middle" fill={p.color} fontSize="9" fontWeight="700" fontFamily="Inter,sans-serif">{p.label}</text>
+            <text x={x + 25} y={133} textAnchor="middle" fill="rgba(255,255,255,.4)" fontSize="8" fontFamily="Inter,sans-serif">{p.eg}</text>
+          </g>
+        );
+      })}
+      <g>
+        <rect x={230} y={20} width={10} height={8} fill="rgba(255,255,255,.6)" rx={1} />
+        <text x={245} y={28} fill="rgba(255,255,255,.5)" fontSize="8" fontFamily="Inter,sans-serif">Equities</text>
+        <rect x={230} y={33} width={10} height={8} fill="rgba(255,255,255,.25)" rx={1} />
+        <text x={245} y={41} fill="rgba(255,255,255,.5)" fontSize="8" fontFamily="Inter,sans-serif">Bonds</text>
+        <rect x={230} y={46} width={10} height={8} fill="rgba(255,255,255,.1)" rx={1} />
+        <text x={245} y={54} fill="rgba(255,255,255,.5)" fontSize="8" fontFamily="Inter,sans-serif">Cash</text>
+      </g>
+    </svg>
+  );
+}
+
 function DiagramRenderer({ diagramKey }: { diagramKey: string }) {
   if (diagramKey === 'candlestick') return <DiagramCandlestick />;
   if (diagramKey === 'moving-average') return <DiagramMovingAverage />;
@@ -843,6 +1053,7 @@ function DiagramRenderer({ diagramKey }: { diagramKey: string }) {
   if (diagramKey === 'exchanges') return <DiagramExchanges />;
   if (diagramKey === 'income-statement') return <DiagramIncomeStatement />;
   if (diagramKey === 'quote') return <DiagramQuote />;
+  if (diagramKey === 'risk-profiles') return <DiagramRiskProfiles />;
   return null;
 }
 
@@ -877,6 +1088,169 @@ const calloutStyle = (type: Callout['type']): { border: string; bg: string; icon
   info: { border: 'rgba(64,196,255,.3)', bg: 'rgba(64,196,255,.06)', icon: 'ℹ️', iconColor: '#40c4ff' },
   example: { border: 'rgba(206,147,216,.3)', bg: 'rgba(206,147,216,.06)', icon: '📊', iconColor: '#ce93d8' },
 }[type]);
+
+// ── Live Exercise Panel ───────────────────────────────────────────────────────
+
+function LiveExercisePanel({ mode }: { mode: 'quote' | 'technical' }) {
+  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  const [grades, setGrades] = useState<Record<number, { score: number; label: string; color: string; feedback: string }>>({});
+  const [revealed, setRevealed] = useState<Set<number>>(new Set());
+
+  const { data: stocks, isLoading, error } = useQuery<any[]>({
+    queryKey: ['jse-live-learn'],
+    queryFn: async () => { const r = await fetch('/api/stocks'); return r.json(); },
+    staleTime: 60000,
+  });
+
+  const stock = useMemo(() => {
+    if (!stocks) return null;
+    const valid = stocks.filter((s: any) => s.price > 0 && s.prevClose > 0 && s.symbol);
+    if (!valid.length) return null;
+    const idx = Math.floor(Date.now() / 60000) % Math.min(valid.length, 15);
+    return valid[idx];
+  }, [stocks]);
+
+  function gradeStep(i: number, modelAnswer: string) {
+    const userText = userAnswers[i] ?? '';
+    const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s.%$]/g, ' ').trim();
+    const stopWords = new Set(['the','a','an','is','are','was','were','it','in','on','of','to','and','or','that','this','with','for','from','as','at','be','by','not','we','you','i','they','he','she','its','has','have','had','will','would','can','could','should','been','being','do','does','did','about','up','out','if','so','but','what','which','who','when','where','how']);
+    const tokens = (normalize(modelAnswer).match(/\b[\w.%$]+\b/g) ?? []).filter(t => t.length > 2 && !stopWords.has(t));
+    const keywords = [...new Set(tokens)];
+    if (!keywords.length) return;
+    const matched = keywords.filter(kw => normalize(userText).includes(kw));
+    const score = matched.length / keywords.length;
+    const label = score >= 0.6 ? 'Excellent' : score >= 0.35 ? 'Partial Credit' : 'Needs Work';
+    const color = score >= 0.6 ? '#00e676' : score >= 0.35 ? '#ffd740' : '#ff5252';
+    const feedback = score >= 0.6 ? `You hit ${matched.length} of ${keywords.length} key points.` : score >= 0.35 ? `${matched.length}/${keywords.length} key points — review what you missed.` : `Only ${matched.length}/${keywords.length} key points found.`;
+    setGrades(prev => ({ ...prev, [i]: { score, label, color, feedback } }));
+    setRevealed(prev => new Set([...prev, i]));
+  }
+
+  if (isLoading) return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 0', color: 'rgba(255,255,255,.4)', fontSize: 13 }}>
+      <Wifi size={16} style={{ animation: 'pulse 1.5s infinite' }} /> Fetching live JSE market data…
+    </div>
+  );
+  if (error || !stock) return (
+    <div style={{ padding: '16px', background: 'rgba(255,82,82,.06)', border: '1px solid rgba(255,82,82,.2)', borderRadius: 10, fontSize: 13, color: 'rgba(255,255,255,.5)' }}>
+      Live data unavailable. Markets may be closed or the API is unreachable. Try again during JSE trading hours (9:30 AM – 1:30 PM Jamaica time).
+    </div>
+  );
+
+  const pctChange = ((stock.price - stock.prevClose) / stock.prevClose) * 100;
+  const rangeWidth = stock.high52 && stock.low52 ? stock.high52 - stock.low52 : null;
+  const posInRange = rangeWidth ? ((stock.price - stock.low52) / rangeWidth) * 100 : null;
+
+  const quoteSteps = [
+    {
+      instruction: `Calculate the percentage change from ${stock.symbol}'s previous close of J$${stock.prevClose?.toFixed(2)} to today's price of J$${stock.price?.toFixed(2)}.`,
+      answer: `Change = (${stock.price.toFixed(2)} – ${stock.prevClose.toFixed(2)}) / ${stock.prevClose.toFixed(2)} × 100 = ${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(2)}%. ${stock.symbol} is ${pctChange >= 0 ? 'up' : 'down'} ${Math.abs(pctChange).toFixed(2)}% on the session.`,
+    },
+    ...(stock.high52 && stock.low52 ? [{
+      instruction: `Where does J$${stock.price.toFixed(2)} sit within ${stock.symbol}'s 52-week range of J$${stock.low52.toFixed(2)} – J$${stock.high52.toFixed(2)}? What does this tell you?`,
+      answer: `Range width = J$${rangeWidth?.toFixed(2)}. Current price is ${posInRange?.toFixed(0)}% from the 52-week low. ${posInRange! > 75 ? 'The stock is in the upper quarter of its 52-week range — trading near historical highs. Momentum is strong but limited upside headroom before hitting resistance.' : posInRange! < 25 ? 'Near the 52-week low — either a value opportunity or continued weakness. Investigate recent news before buying.' : 'In the middle of the range — no extreme technical signal either way. The stock is in equilibrium.'}`,
+    }] : []),
+    {
+      instruction: `Based on the data above, write a one-sentence short-term assessment of ${stock.symbol} and whether you would investigate further.`,
+      answer: `${stock.symbol} is ${pctChange >= 0 ? 'showing positive momentum' : 'under selling pressure'} with a ${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(2)}% move today. ${Math.abs(pctChange) > 3 ? 'A move this size warrants checking for news — earnings announcement, dividend declaration, or sector catalyst.' : 'The quiet price action suggests no major catalyst; monitor for a breakout with volume confirmation.'} ${posInRange !== null ? (posInRange > 70 ? 'Near the 52-week high — any entry here needs a clear catalyst.' : posInRange < 30 ? 'Near the 52-week low — potential support zone.' : '') : ''}`,
+    },
+  ];
+
+  const techSteps = [
+    {
+      instruction: `${stock.symbol} has moved ${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(2)}% today. If you saw this as a single candlestick on a daily chart, what type would it likely be (bullish/bearish) and what does it signal?`,
+      answer: `${pctChange > 2 ? `A +${pctChange.toFixed(2)}% day produces a bullish (green) candle. If the close is near the day's high, it signals strong buying conviction — buyers were in control all session. This is a positive momentum signal.` : pctChange < -2 ? `A ${pctChange.toFixed(2)}% day produces a bearish (red) candle. If price closed near the day's low, sellers dominated throughout — a bearish continuation signal.` : `A small ${Math.abs(pctChange).toFixed(2)}% move creates a narrow candle body — potentially a Doji if open and close are very close. Doji signals market indecision and often precedes a directional breakout.`}`,
+    },
+    ...(stock.high52 && stock.low52 ? [{
+      instruction: `${stock.symbol} is at J$${stock.price.toFixed(2)} vs its 52-week low of J$${stock.low52.toFixed(2)} and high of J$${stock.high52.toFixed(2)}. Identify potential support and resistance levels.`,
+      answer: `Key support: J$${stock.low52.toFixed(2)} (52-week low — psychological floor, many buyers watch this level). Key resistance: J$${stock.high52.toFixed(2)} (52-week high — where sellers previously emerged). ${posInRange! < 30 ? `Current price is near support — high risk/reward if the level holds. Stop-loss would go just below J$${(stock.low52 * 0.97).toFixed(2)}.` : posInRange! > 70 ? `Current price is near resistance — a breakout above J$${stock.high52.toFixed(2)} on strong volume would be a significant bullish signal. Failure here risks a pullback.` : `Price is between key levels — wait for a move toward one extreme with volume before taking a position.`}`,
+    }] : []),
+    {
+      instruction: `If RSI for ${stock.symbol} were at ${Math.abs(pctChange) > 3 ? (pctChange > 0 ? '72' : '26') : '52'}, what would that suggest and how would you combine it with today's price action?`,
+      answer: `${Math.abs(pctChange) > 3 && pctChange > 0 ? 'RSI at 72 = overbought territory. Combined with a strong +' + pctChange.toFixed(2) + '% day, this suggests momentum but also that the rally may be extended. Look for confirmation (continued buying next session) before entering — or wait for a pullback to a better entry.' : Math.abs(pctChange) > 3 && pctChange < 0 ? 'RSI at 26 = oversold territory. Combined with a sharp decline, this could signal a selling climax — the last sellers capitulating. A bounce from here with a bullish candle would be a high-probability reversal setup.' : 'RSI at 52 = neutral zone. No overbought/oversold signal. The indicator is not providing a directional edge — rely on trend direction (price vs moving averages) and support/resistance levels instead.'}`,
+    },
+  ];
+
+  const steps = mode === 'quote' ? quoteSteps : techSteps;
+
+  return (
+    <div>
+      <div style={{ background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.25)', borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <Wifi size={13} color="#00e676" />
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#00e676' }}>Live JSE Data</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', marginLeft: 'auto' }}>Updates every 30s</span>
+        </div>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff' }}>
+          {stock.name ?? stock.symbol} <span style={{ color: 'rgba(255,255,255,.4)', fontWeight: 400 }}>({stock.symbol})</span>
+          <span style={{ marginLeft: 12, color: pctChange >= 0 ? '#00e676' : '#ff5252', fontSize: 13 }}>
+            J${stock.price.toFixed(2)} &nbsp;{pctChange >= 0 ? '▲' : '▼'} {Math.abs(pctChange).toFixed(2)}%
+          </span>
+        </p>
+        <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(255,255,255,.45)' }}>
+          Prev Close J${stock.prevClose.toFixed(2)}
+          {stock.high52 ? ` · 52W H J$${stock.high52.toFixed(2)}` : ''}
+          {stock.low52 ? ` · 52W L J$${stock.low52.toFixed(2)}` : ''}
+          {stock.volume ? ` · Vol ${stock.volume.toLocaleString()}` : ''}
+        </p>
+      </div>
+
+      {steps.map((step, i) => {
+        const grade = grades[i];
+        const isRevealed = revealed.has(i);
+        return (
+          <div key={i} style={{ marginBottom: 14 }}>
+            <div style={{ background: 'rgba(255,255,255,.03)', border: `1px solid ${grade ? grade.color + '40' : 'rgba(255,255,255,.08)'}`, borderRadius: 12, padding: '14px 16px', transition: 'border-color .3s' }}>
+              <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.85)', lineHeight: 1.5 }}>
+                <span style={{ color: '#00e676', fontWeight: 800, marginRight: 6 }}>Q{i + 1}.</span>{step.instruction}
+              </p>
+              {!grade && (
+                <div style={{ marginBottom: 10 }}>
+                  <textarea
+                    value={userAnswers[i] ?? ''}
+                    onChange={e => setUserAnswers(prev => ({ ...prev, [i]: e.target.value }))}
+                    placeholder="Type your answer here…"
+                    rows={3}
+                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 8, padding: '10px 12px', color: 'rgba(255,255,255,.85)', fontSize: 13, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit' }}
+                  />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button onClick={() => gradeStep(i, step.answer)} disabled={!(userAnswers[i] ?? '').trim()} style={{ padding: '7px 18px', borderRadius: 8, background: (userAnswers[i] ?? '').trim() ? 'rgba(0,230,118,.15)' : 'rgba(255,255,255,.04)', border: `1px solid ${(userAnswers[i] ?? '').trim() ? 'rgba(0,230,118,.35)' : 'rgba(255,255,255,.08)'}`, color: (userAnswers[i] ?? '').trim() ? '#00e676' : 'rgba(255,255,255,.25)', fontSize: 11, fontWeight: 700, cursor: (userAnswers[i] ?? '').trim() ? 'pointer' : 'not-allowed' }}>
+                      Submit &amp; Grade
+                    </button>
+                    <button onClick={() => setRevealed(prev => new Set([...prev, i]))} style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', color: 'rgba(255,255,255,.35)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                      Skip — Reveal Answer
+                    </button>
+                  </div>
+                </div>
+              )}
+              {grade && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, padding: '8px 12px', borderRadius: 8, background: grade.color + '14', border: `1px solid ${grade.color}33` }}>
+                  <span style={{ fontSize: 18 }}>{grade.label === 'Excellent' ? '🎯' : grade.label === 'Partial Credit' ? '📝' : '💡'}</span>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: grade.color }}>{grade.label} — {Math.round(grade.score * 100)}%</p>
+                    <p style={{ margin: '1px 0 0', fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{grade.feedback}</p>
+                  </div>
+                </div>
+              )}
+              {grade && userAnswers[i] && (
+                <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
+                  <p style={{ margin: '0 0 3px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.3)' }}>Your Answer</p>
+                  <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.6)', lineHeight: 1.6 }}>{userAnswers[i]}</p>
+                </div>
+              )}
+              {isRevealed && (
+                <div style={{ background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.2)', borderRadius: 8, padding: '10px 14px' }}>
+                  <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(0,230,118,.6)' }}>Model Answer</p>
+                  <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.75)', lineHeight: 1.65 }}>{step.answer}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 // ── Module Viewer ─────────────────────────────────────────────────────────────
 
@@ -1003,6 +1377,9 @@ function ModuleViewer({
       {/* Exercise */}
       {content.exercise && (
         <div style={{ marginBottom: 24 }}>
+          {content.exercise.liveData ? (
+            <LiveExercisePanel mode={module.id.startsWith('ta-') ? 'technical' : 'quote'} />
+          ) : (<>
           <div style={{ background: 'rgba(206,147,216,.06)', border: '1px solid rgba(206,147,216,.2)', borderRadius: 14, padding: '16px 18px', marginBottom: 16 }}>
             <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#ce93d8' }}>Scenario</p>
             <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,.8)', lineHeight: 1.7 }}>{content.exercise.scenario}</p>
@@ -1075,6 +1452,7 @@ function ModuleViewer({
               </div>
             );
           })}
+          </>)}
         </div>
       )}
 
