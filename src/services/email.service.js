@@ -6,42 +6,52 @@ const nodemailer = require("nodemailer");
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
-const EMAIL_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST || "smtp.gmail.com";
-const EMAIL_PORT = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT, 10) || 587;
-const EMAIL_USER = process.env.SMTP_USER || process.env.EMAIL_USER || "";
-const EMAIL_PASS = (process.env.SMTP_PASS || process.env.EMAIL_PASS || "").replace(/\s/g, "");
-const EMAIL_FROM = process.env.EMAIL_FROM || `"Gotham Financial" <${EMAIL_USER || "noreply@gothamfinancial.com"}>`;
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || "";
+const EMAIL_FROM = process.env.EMAIL_FROM || "Gotham Financial <noreply@gothamfinancial.com>";
 const APP_URL = process.env.APP_URL || "https://gotham-latk.onrender.com";
 
 // ── Transport ────────────────────────────────────────────────────────────────
 
 let transporter;
 
-if (EMAIL_USER && EMAIL_PASS) {
+if (SENDGRID_API_KEY) {
+  // SendGrid SMTP relay — most reliable, free up to 100 emails/day
   transporter = nodemailer.createTransport({
-    host: EMAIL_HOST,
-    port: EMAIL_PORT,
-    secure: EMAIL_PORT === 465,
-    auth: {
-      user: EMAIL_USER,
-      pass: EMAIL_PASS,
-    },
+    host: "smtp.sendgrid.net",
+    port: 587,
+    secure: false,
+    auth: { user: "apikey", pass: SENDGRID_API_KEY },
   });
-  console.log(`  [Email] SMTP transport configured (${EMAIL_HOST}:${EMAIL_PORT})`);
+  console.log("  [Email] SendGrid SMTP transport configured");
 } else {
-  // Console transport for development — logs email content instead of sending
-  transporter = {
-    sendMail: async (mailOptions) => {
-      console.log("\n──────────────────────────────────────────────────");
-      console.log("[Email - Dev Console Transport]");
-      console.log(`  To:      ${mailOptions.to}`);
-      console.log(`  Subject: ${mailOptions.subject}`);
-      console.log(`  Text:    ${(mailOptions.text || "").substring(0, 200)}...`);
-      console.log("──────────────────────────────────────────────────\n");
-      return { messageId: `dev-${Date.now()}@console` };
-    },
-  };
-  console.log("  [Email] Console transport active (no EMAIL_USER configured)");
+  // Fallback: custom SMTP (Gmail, etc.)
+  const EMAIL_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST || "smtp.gmail.com";
+  const EMAIL_PORT = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT, 10) || 587;
+  const EMAIL_USER = process.env.SMTP_USER || process.env.EMAIL_USER || "";
+  const EMAIL_PASS = (process.env.SMTP_PASS || process.env.EMAIL_PASS || "").replace(/\s/g, "");
+
+  if (EMAIL_USER && EMAIL_PASS) {
+    transporter = nodemailer.createTransport({
+      host: EMAIL_HOST,
+      port: EMAIL_PORT,
+      secure: EMAIL_PORT === 465,
+      auth: { user: EMAIL_USER, pass: EMAIL_PASS },
+    });
+    console.log(`  [Email] SMTP transport configured (${EMAIL_HOST}:${EMAIL_PORT})`);
+  } else {
+    transporter = {
+      sendMail: async (mailOptions) => {
+        console.log("\n──────────────────────────────────────────────────");
+        console.log("[Email - Dev Console Transport]");
+        console.log(`  To:      ${mailOptions.to}`);
+        console.log(`  Subject: ${mailOptions.subject}`);
+        console.log(`  Text:    ${(mailOptions.text || "").substring(0, 200)}...`);
+        console.log("──────────────────────────────────────────────────\n");
+        return { messageId: `dev-${Date.now()}@console` };
+      },
+    };
+    console.log("  [Email] Console transport active (no email provider configured)");
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
