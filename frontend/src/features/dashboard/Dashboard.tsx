@@ -291,6 +291,22 @@ function MoverCard({ s, isSelected, onSelect, moverTab }: {
   );
 }
 
+/* ── Paywall block ────────────────────────────────────────────── */
+function PaywallBlock({ feature, tier }: { feature: string; tier: string }) {
+  return (
+    <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,200,83,.2)', background: 'rgba(0,0,0,.3)', backdropFilter: 'blur(8px)', padding: '36px 24px', textAlign: 'center' }}>
+      <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(0,200,83,.1)', border: '1px solid rgba(0,200,83,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+        <i className="fa-solid fa-lock" style={{ fontSize: 20, color: '#00c853' }} />
+      </div>
+      <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 800, color: '#fff' }}>{feature}</p>
+      <p style={{ margin: '0 0 18px', fontSize: 12, color: 'rgba(255,255,255,.45)' }}>Requires a <strong style={{ color: '#00c853' }}>{tier}</strong> plan or higher</p>
+      <a href="/subscription" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 22px', borderRadius: 10, background: '#00c853', color: '#000', fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>
+        <i className="fa-solid fa-arrow-up" style={{ fontSize: 10 }} /> Upgrade Now
+      </a>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════ */
 
 export default function Dashboard() {
@@ -380,15 +396,30 @@ export default function Dashboard() {
   const currentMovers = movers[moverTab];
   const activeTabDef = MOVER_TABS.find(t => t.key === moverTab)!;
   const firstName = user?.name?.split(' ')[0] ?? 'Investor';
+  const isFree = !user || (user.subscriptionTier === 'FREE');
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* ── FREE tier upgrade banner ──────────────────────── */}
+      {isFree && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '14px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(0,200,83,.08) 0%, rgba(0,180,255,.06) 100%)', border: '1px solid rgba(0,200,83,.2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 22 }}>🚀</span>
+            <div>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff' }}>You're on the Free plan — limited to JSE preview only</p>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,.5)' }}>Upgrade to Basic for full JSE + US Markets, charts, portfolio, alerts & more.</p>
+            </div>
+          </div>
+          <a href="/subscription" style={{ flexShrink: 0, padding: '8px 20px', borderRadius: 10, background: '#00c853', color: '#000', fontSize: 12, fontWeight: 800, textDecoration: 'none', letterSpacing: '.02em' }}>Upgrade — $19.99/mo</a>
+        </div>
+      )}
 
       {/* ── 0. Market toggle ─────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
           {([['us', '🇺🇸 US Markets'], ['caribbean', '🌴 Caribbean']] as const).map(([key, label]) => (
-            <button key={key} onClick={() => setMarket(key)}
+            <button key={key} onClick={() => { if (isFree && key === 'us') { window.location.href = '/subscription'; return; } setMarket(key); }}
               style={{
                 padding: '7px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 700, fontFamily: INTER, transition: 'all .15s',
@@ -515,28 +546,33 @@ export default function Dashboard() {
             </a>
           ) : undefined
         }>Chart &amp; Analysis</SectionLabel>
-        <div className="dashboard-grid">
-          <div style={{
-            borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)',
-            background: '#080d18', boxShadow: '0 4px 32px rgba(0,0,0,.4)',
-          }}>
-            <MainChart symbol={selectedSymbol} isUS={market === 'us'} />
+        {isFree ? (
+          <PaywallBlock feature="Advanced Charts & Real-Time Data" tier="BASIC" />
+        ) : (
+          <div className="dashboard-grid">
+            <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)', background: '#080d18', boxShadow: '0 4px 32px rgba(0,0,0,.4)' }}>
+              <MainChart symbol={selectedSymbol} isUS={market === 'us'} />
+            </div>
+            <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)', background: '#080d18' }}>
+              <StockPanel stocks={market === 'us' ? usStocks : undefined} isUS={market === 'us'} />
+            </div>
           </div>
-          <div style={{
-            borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)',
-            background: '#080d18',
-          }}>
-            <StockPanel stocks={market === 'us' ? usStocks : undefined} isUS={market === 'us'} />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* ── 5. Securities table (market-aware) ─────────────────── */}
-      <div>
+      <div style={{ position: 'relative' }}>
         <SectionLabel count={market === 'us' ? usStocks.length : stocks.filter(s => (s.price ?? 0) > 0).length}>
           {market === 'us' ? 'US Equities' : 'JSE Securities'}
         </SectionLabel>
-        {market === 'us' ? (
+        {isFree ? (
+          <>
+            <div style={{ pointerEvents: 'none', filter: 'blur(4px)', opacity: 0.35, userSelect: 'none' }}>
+              <StockTable defaultLimit={5} />
+            </div>
+            <PaywallBlock feature="Full JSE Securities Table" tier="BASIC" />
+          </>
+        ) : market === 'us' ? (
           <StockTable stocks={usStocks} isUS title="US Equities" defaultLimit={20} />
         ) : (
           <StockTable defaultLimit={25} />

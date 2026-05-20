@@ -424,7 +424,7 @@ router.post("/api/auth/login", rateLimit.login(), async (req, res) => {
       });
 
       // Fetch subscription tier
-      let subscriptionTier = "BASIC";
+      let subscriptionTier = "FREE";
       try {
         const sub = await prisma.subscription.findUnique({ where: { userId: user.id } });
         if (sub && sub.status === "ACTIVE" && sub.plan) subscriptionTier = sub.plan;
@@ -524,7 +524,7 @@ router.get("/api/auth/me", authMiddleware, async (req, res) => {
       if (!user) return res.status(404).json({ error: "User not found" });
 
       // Fetch subscription tier
-      let subscriptionTier = "BASIC";
+      let subscriptionTier = "FREE";
       try {
         const sub = await prisma.subscription.findUnique({ where: { userId: user.id } });
         if (sub && sub.status === "ACTIVE" && sub.plan) subscriptionTier = sub.plan;

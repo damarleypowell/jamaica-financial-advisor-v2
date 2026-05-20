@@ -15,9 +15,20 @@ const USE_DB = !!(process.env.DATABASE_URL && prisma);
 // ── Tier Definitions ────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-const TIER_ORDER = ["BASIC", "PRO", "ENTERPRISE"];
+const TIER_ORDER = ["FREE", "BASIC", "PRO", "ENTERPRISE"];
 
 const TIER_LIMITS = {
+  FREE: {
+    maxTrades: 0,
+    maxWatchlists: 0,
+    maxAlerts: 0,
+    aiChats: 0,
+    usStocks: false,
+    advancedAnalytics: false,
+    mlPredictions: false,
+    voiceAgent: false,
+    tradeServiceCharge: null,
+  },
   BASIC: {
     maxTrades: 50,          // per month
     maxWatchlists: 5,
@@ -108,7 +119,7 @@ async function getUserTier(userId) {
   const cached = getCachedTier(userId);
   if (cached) return cached;
 
-  let tier = "BASIC";
+  let tier = "FREE";
 
   if (USE_DB) {
     try {
