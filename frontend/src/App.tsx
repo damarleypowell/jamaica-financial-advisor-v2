@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from './components/layout/Layout.tsx';
@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ui/ProtectedRoute.tsx';
 import StockDetailModal from './components/modals/StockDetailModal.tsx';
 import ComplianceModal from './components/modals/ComplianceModal.tsx';
 import AuthModal from './components/modals/AuthModal.tsx';
+import FeatureGuide from './components/ui/FeatureGuide.tsx';
 import { useMarketStore } from './stores/market.ts';
 import { useAuthStore } from './stores/auth.ts';
 import FloatingAIAdvisor from './components/FloatingAIAdvisor.tsx';
@@ -52,6 +53,10 @@ function PageLoader() {
   );
 }
 
+function W(C: React.LazyExoticComponent<any>) {
+  return <Suspense fallback={<PageLoader />}><C /></Suspense>;
+}
+
 /* ---------- App ---------- */
 export default function App() {
   const connectSSE = useMarketStore((s) => s.connectSSE);
@@ -69,109 +74,51 @@ export default function App() {
       <BrowserRouter>
         <AuthModal />
         <FloatingAIAdvisor />
+        <FeatureGuide />
         <Routes>
-          {/* Onboarding â€” full-screen, no sidebar layout */}
-          <Route
-            path="onboarding"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Onboarding />
-              </Suspense>
-            }
-          />
-          <Route
-            path="verify-email"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <VerifyEmail />
-              </Suspense>
-            }
-          />
+          {/* Full-screen routes — no sidebar */}
+          <Route path="onboarding" element={<Suspense fallback={<PageLoader />}><Onboarding /></Suspense>} />
+          <Route path="verify-email" element={<Suspense fallback={<PageLoader />}><VerifyEmail /></Suspense>} />
 
           <Route element={<Layout />}>
-            {/* FREE — dashboard (limited), subscription, settings always accessible */}
-            <Route
-              index
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <Dashboard />
-                </Suspense>
-              }
-            />
-            <Route
-              path="subscription"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <Subscription />
-                </Suspense>
-              }
-            />
-            <Route
-              path="settings"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <Settings />
-                </Suspense>
-              }
-            />
+            {/* ── Open to all (FREE) ─────────────────────────────── */}
+            <Route index element={W(Dashboard)} />
+            <Route path="subscription" element={W(Subscription)} />
+            <Route path="settings" element={W(Settings)} />
+            <Route path="news" element={W(News)} />
+            <Route path="watchlists" element={W(Watchlists)} />
+            <Route path="portfolio" element={W(Portfolio)} />
+            <Route path="orders" element={W(Orders)} />
+            <Route path="alerts" element={W(Alerts)} />
+            <Route path="learn" element={W(Learn)} />
+            <Route path="technicals" element={W(AdvancedChart)} />
+            <Route path="technicals/:symbol" element={W(AdvancedChart)} />
+            <Route path="us-stocks" element={W(USStocks)} />
 
-            {/* BASIC+ routes */}
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="News & Sentiment" />}>
-              <Route path="news" element={<Suspense fallback={<PageLoader />}><News /></Suspense>} />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Watchlists" />}>
-              <Route path="watchlists" element={<Suspense fallback={<PageLoader />}><Watchlists /></Suspense>} />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Portfolio Tracker" />}>
-              <Route path="portfolio" element={<Suspense fallback={<PageLoader />}><Portfolio /></Suspense>} />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Paper Trading" />}>
-              <Route path="orders" element={<Suspense fallback={<PageLoader />}><Orders /></Suspense>} />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Price Alerts" />}>
-              <Route path="alerts" element={<Suspense fallback={<PageLoader />}><Alerts /></Suspense>} />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Learning Academy" />}>
-              <Route path="learn" element={<Suspense fallback={<PageLoader />}><Learn /></Suspense>} />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Advanced Charts" />}>
-              <Route path="technicals" element={<Suspense fallback={<PageLoader />}><AdvancedChart /></Suspense>} />
-              <Route path="technicals/:symbol" element={<Suspense fallback={<PageLoader />}><AdvancedChart /></Suspense>} />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="US Stocks" />}>
-              <Route path="us-stocks" element={<Suspense fallback={<PageLoader />}><USStocks /></Suspense>} />
+            {/* ── BASIC+ required (sign in + paid plan) ─────────── */}
+            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Stock Screener" />}>
+              <Route path="screener" element={W(Screener)} />
             </Route>
 
-            {/* PRO+ routes */}
-            <Route element={<ProtectedRoute requiredTier="PRO" featureName="Stock Screener" />}>
-              <Route path="screener" element={<Suspense fallback={<PageLoader />}><Screener /></Suspense>} />
-            </Route>
+            {/* ── PRO required ──────────────────────────────────── */}
             <Route element={<ProtectedRoute requiredTier="PRO" featureName="AI Chat Advisor" />}>
-              <Route path="chat" element={<Suspense fallback={<PageLoader />}><AIChat /></Suspense>} />
+              <Route path="chat" element={W(AIChat)} />
             </Route>
             <Route element={<ProtectedRoute requiredTier="PRO" featureName="AI Stock Analysis" />}>
-              <Route path="analysis" element={<Suspense fallback={<PageLoader />}><AIAnalysis /></Suspense>} />
+              <Route path="analysis" element={W(AIAnalysis)} />
             </Route>
 
-            {/* Admin route */}
+            {/* ── Admin ─────────────────────────────────────────── */}
             <Route element={<ProtectedRoute requiredTier="ENTERPRISE" featureName="Admin Panel" />}>
-              <Route
-                path="admin"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Admin />
-                  </Suspense>
-                }
-              />
+              <Route path="admin" element={W(Admin)} />
             </Route>
           </Route>
         </Routes>
 
-        {/* Global modals â€” rendered outside the route tree */}
+        {/* Global modals */}
         <StockDetailModal />
         <ComplianceModal />
       </BrowserRouter>
     </QueryClientProvider>
   );
 }
-
