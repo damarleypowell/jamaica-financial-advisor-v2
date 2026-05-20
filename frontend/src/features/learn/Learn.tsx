@@ -1,592 +1,1396 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
-  BookOpen, ChevronDown, ChevronUp, CheckCircle, Clock,
-  TrendingUp, BarChart2, Star, X, ArrowRight, Award, Zap,
+  BookOpen, ChevronRight, ChevronLeft, CheckCircle, Clock,
+  TrendingUp, Award, Zap, Play,
+  ExternalLink, HelpCircle, FileText, Activity,
 } from 'lucide-react';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-interface Lesson {
-  id: string;
-  title: string;
-  category: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  readTime: number;
-  description: string;
-  content: string[];
+interface ExternalLink { title: string; url: string; description: string; }
+
+interface QuizQ {
+  q: string;
+  options: string[];
+  correct: number;
+  explanation: string;
 }
 
-interface LearningPath {
+interface Callout { type: 'tip' | 'warning' | 'info' | 'example'; text: string; }
+
+interface ExerciseStep { instruction: string; answer: string; }
+
+interface ModuleContent {
+  paragraphs?: string[];
+  keyTerms?: { term: string; def: string }[];
+  callouts?: Callout[];
+  diagramKey?: string;
+  diagramCaption?: string;
+  exercise?: { scenario: string; steps: ExerciseStep[] };
+  quiz?: QuizQ[];
+  links?: ExternalLink[];
+  citations?: string[];
+}
+
+interface Module {
   id: string;
   title: string;
-  lessonCount: number;
+  type: 'lesson' | 'exercise' | 'quiz';
+  duration: number;
+  content: ModuleContent;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
   color: string;
   tag?: string;
-  icon: React.ReactNode;
+  estimatedHours: number;
+  modules: Module[];
 }
 
-interface GlossaryTerm {
-  term: string;
-  definition: string;
-}
+// ── Course Data ───────────────────────────────────────────────────────────────
 
-// ─── Data ────────────────────────────────────────────────────────────────────
-
-const LESSONS: Lesson[] = [
+const COURSES: Course[] = [
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COURSE 1: Caribbean Markets 101
+  // ═══════════════════════════════════════════════════════════════════════════
   {
-    id: 'jse-intro',
-    title: 'What Is the Jamaica Stock Exchange?',
-    category: 'Market Basics',
-    difficulty: 'Beginner',
-    readTime: 5,
-    description:
-      'The JSE was founded in 1969 and is one of the oldest exchanges in the Caribbean. Learn how it operates, what companies are listed, and how trading works.',
-    content: [
-      'The Jamaica Stock Exchange (JSE) was established in 1969 and stands as one of the oldest and most developed securities markets in the Caribbean region. It serves as the primary marketplace for buying and selling shares of publicly listed Jamaican companies. The exchange currently has approximately 40 listed companies spanning multiple sectors including financial services, manufacturing, distribution, and tourism.',
-      'The JSE operates under the supervision of the Financial Services Commission (FSC) of Jamaica. Two main indices track overall market performance: the JSE All Jamaican Composite Index, which includes all listed ordinary stocks, and the JSE Select Index, which tracks the top 10 companies by market capitalisation. These indices serve as benchmarks for measuring portfolio performance against the broader market.',
-      'Trading on the JSE takes place Monday through Friday from 9:30 AM to 1:30 PM Jamaica Standard Time. All transactions are settled in Jamaican Dollars (JMD), though the Junior Market — a segment for smaller emerging companies — also plays an important role in the ecosystem by offering tax incentives to attract growing businesses.',
-      'To invest on the JSE, you need to open a brokerage account with a licensed broker-dealer. These brokers execute trades on your behalf through the exchange\'s electronic trading platform. The JSE also operates a US Dollar Equities Market, allowing investors to trade USD-denominated shares of certain listed companies, providing a degree of currency diversification within the local market.',
-    ],
-  },
-  {
-    id: 'stock-quote',
-    title: 'How to Read a Stock Quote',
-    category: 'Market Basics',
-    difficulty: 'Beginner',
-    readTime: 4,
-    description:
-      'Stock quotes contain a wealth of information — open, high, low, close (OHLC), bid/ask spread, volume, and more. Learn to decode them using real JSE examples.',
-    content: [
-      'A stock quote is a snapshot of a security\'s price and trading activity at a given point in time. The most fundamental piece of data is the OHLC: the Opening price (first trade of the day), the High (the highest price reached), the Low (the lowest price reached), and the Close (the final trade price). On the JSE, you can find these figures for any listed stock through your broker\'s platform or the JSE\'s official website.',
-      'The bid price is the highest amount a buyer is currently willing to pay, while the ask price is the lowest amount a seller is willing to accept. The difference between the two is the bid-ask spread. A narrow spread typically indicates a liquid, actively traded stock, whereas a wide spread can signal low trading activity and potential difficulty entering or exiting a position at your desired price.',
-      'Volume refers to the total number of shares traded during the session. High volume on a price move generally confirms the strength of that move, while low-volume price changes may be less reliable signals. For context on the JSE, blue-chip stocks like GraceKennedy (GK) or NCB Financial Group (NCBFG) tend to have significantly higher daily volumes than smaller-cap listings.',
-      'The Price-to-Earnings (P/E) ratio compares a company\'s share price to its earnings per share. For example, if GraceKennedy trades at J$70 and has earnings per share of J$5, its P/E ratio is 14x. A lower P/E may suggest undervaluation relative to peers, though it is essential to compare within the same sector and consider the company\'s growth prospects before drawing conclusions.',
-    ],
-  },
-  {
-    id: 'dividends',
-    title: 'Understanding Dividends',
-    category: 'Income Investing',
-    difficulty: 'Beginner',
-    readTime: 6,
-    description:
-      'Dividends are a key source of passive income for JSE investors. Discover ex-dividend dates, payment timelines, and how to calculate dividend yield.',
-    content: [
-      'A dividend is a portion of a company\'s profits distributed to shareholders. On the JSE, dividends are most commonly paid in cash, though some companies offer stock dividends instead. Consistent dividend payers like GraceKennedy and NCB Financial Group are popular among income-oriented investors who seek regular cash returns in addition to capital appreciation.',
-      'Two critical dates govern dividend entitlement. The ex-dividend date is the cutoff — if you purchase shares on or after this date, you will not receive the upcoming dividend; the seller retains the right to it. The record date, typically one or two days after the ex-dividend date, is when the company takes its official snapshot of shareholders eligible for payment. The payment date is when the cash actually arrives in your account.',
-      'Dividend yield is calculated by dividing the annual dividend per share by the current share price. For example, if a JSE stock pays J$2.50 annually in dividends and its current price is J$50, the dividend yield is 5%. This metric allows you to compare the income-generating potential of different stocks — and even compare stocks against fixed-income alternatives like Government of Jamaica bonds.',
-      'It is important not to chase yield blindly. An unusually high dividend yield can sometimes be a warning sign: the share price may have fallen sharply due to deteriorating business performance, which inflates the yield figure artificially. Always examine whether the company\'s earnings are sufficient to sustain its dividend payout — a payout ratio (dividends divided by net earnings) above 100% is unsustainable over the long term.',
-    ],
-  },
-  {
-    id: 'rsi-macd',
-    title: 'Technical Indicators: RSI & MACD',
-    category: 'Technical Analysis',
-    difficulty: 'Intermediate',
-    readTime: 8,
-    description:
-      'RSI and MACD are two of the most widely used technical indicators. Learn to interpret their signals and apply them to JSE stock charts.',
-    content: [
-      'The Relative Strength Index (RSI) is a momentum oscillator that measures the speed and magnitude of a stock\'s recent price changes on a scale from 0 to 100. Developed by J. Welles Wilder, the conventional interpretation is that an RSI reading above 70 indicates the stock may be overbought — potentially due for a pullback — while a reading below 30 suggests oversold conditions, which can precede a price rebound. On JSE stocks, RSI is best used in conjunction with other signals rather than in isolation.',
-      'The Moving Average Convergence Divergence (MACD) indicator consists of two exponential moving averages (typically the 12-period and 26-period EMAs) and a signal line (the 9-period EMA of the MACD line). When the MACD line crosses above the signal line, it generates a bullish crossover — a potential buy signal. A crossover below the signal line is bearish, suggesting downward momentum may be building.',
-      'Applying these tools to JSE stocks requires awareness of the market\'s lower liquidity compared to major exchanges. Because fewer shares change hands each day, individual large trades can create short-term price spikes that produce false RSI or MACD signals. To filter out noise, many technical analysts on the JSE apply these indicators to weekly charts rather than daily charts, which smooth out erratic intraday movements.',
-      'Divergence is one of the most powerful signals both indicators offer. Bullish divergence occurs when a stock\'s price makes a new low but the RSI or MACD fails to confirm with a new low — suggesting selling momentum is weakening. Bearish divergence is the opposite: price makes a new high but the indicator lags. Used thoughtfully alongside fundamental analysis, these indicators can meaningfully improve your entry and exit timing on JSE positions.',
-    ],
-  },
-  {
-    id: 'diversification',
-    title: 'Portfolio Diversification on the JSE',
-    category: 'Portfolio Strategy',
-    difficulty: 'Intermediate',
-    readTime: 7,
-    description:
-      'Concentrating in a single stock or sector dramatically increases risk. Discover how to build a diversified JSE portfolio across sectors and asset classes.',
-    content: [
-      'Diversification is the practice of spreading investments across different assets so that the poor performance of any single holding does not devastate your entire portfolio. On the JSE, the primary sectors available to investors include Financial Services, Manufacturing, Distribution, Tourism and Entertainment, and Conglomerates. Each sector tends to respond differently to economic cycles, making cross-sector diversification particularly effective at reducing portfolio volatility.',
-      'A simple example of a diversified JSE portfolio might include NCB Financial Group (Financials), GraceKennedy (Conglomerate/Distribution), Carreras Group (Consumer Goods), Sagicor Group Jamaica (Insurance/Financials), and a tourism-linked company such as Pulse Investments. Spreading across these different business models means that a downturn in one sector — say, a drop in tourism revenue — will be partially offset by stability or growth in others.',
-      'Beyond equities, Jamaican investors can further diversify through Government of Jamaica bonds, unit trusts, and USD-denominated instruments on the JSE\'s USD Equities Market. This multi-asset approach guards against both company-specific risk and broader sector risk. Currency diversification — holding some assets in USD — also protects against JMD depreciation, which has been a persistent long-term trend.',
-      'A common mistake among new JSE investors is concentrating heavily in financial sector stocks because of their high visibility and dividend payouts. While financials are an important component, over-concentration in any one sector can expose your portfolio to systemic risk. As a general rule of thumb, no single stock should represent more than 15–20% of your total portfolio, and no single sector more than 30–35%.',
-    ],
-  },
-  {
-    id: 'financial-statements',
-    title: 'Reading Financial Statements',
-    category: 'Fundamental Analysis',
-    difficulty: 'Intermediate',
-    readTime: 10,
-    description:
-      'Annual reports and quarterly financials are the backbone of fundamental analysis. Learn to find and interpret key metrics from JSE company filings.',
-    content: [
-      'Every company listed on the JSE is required to publish audited annual financial statements and unaudited quarterly reports. These documents are available on the Jamaica Stock Exchange\'s official website (www.jamstockex.com) under each company\'s profile page. They include three core financial statements: the Income Statement (Profit & Loss), the Balance Sheet (Statement of Financial Position), and the Cash Flow Statement — each telling a different part of the company\'s financial story.',
-      'On the Income Statement, focus first on revenue growth — is the company growing its top line year over year? Then move to operating profit and net profit margins. Earnings Per Share (EPS) — net profit divided by the number of shares outstanding — is particularly important because it directly feeds into the P/E ratio calculation and reflects what each share of ownership is earning for you. GraceKennedy\'s annual reports, for example, clearly break down revenue by segment, making it easy to see which business units are driving growth.',
-      'The Balance Sheet reveals the company\'s financial health at a point in time. Key metrics include the Debt-to-Equity (D/E) ratio, which compares total liabilities to shareholder equity. A high D/E ratio means the company is heavily leveraged — potentially risky if revenues decline. Also examine current assets versus current liabilities: if current liabilities exceed current assets, the company may face short-term cash flow difficulties. A strong balance sheet with manageable debt provides a margin of safety for investors.',
-      'The Cash Flow Statement is often considered the most reliable of the three, because unlike profits (which can be influenced by accounting choices), cash is harder to manipulate. Pay attention to cash flow from operations — positive and growing operating cash flow is a sign of a genuinely healthy business. Also note capital expenditure (capex): high capex may signal an investment phase, while low capex in a capital-intensive business could indicate underinvestment. Over time, free cash flow (operating cash flow minus capex) is the fuel that funds dividends, buybacks, and growth.',
-    ],
-  },
-];
-
-const PATHS: LearningPath[] = [
-  {
-    id: 'all',
-    title: 'All Lessons',
-    lessonCount: 6,
-    color: 'var(--color-green)',
+    id: 'caribbean-basics',
+    title: 'Caribbean Markets 101',
+    subtitle: 'Your first step into investing',
+    description: 'Understand how Caribbean stock exchanges work, how to read stock data, and how to think about your first investment.',
+    level: 'Beginner',
+    color: '#00e676',
     tag: 'Start Here',
-    icon: <BookOpen size={20} />,
+    estimatedHours: 4,
+    modules: [
+      {
+        id: 'cb-what-is-investing',
+        title: 'What Is Investing?',
+        type: 'lesson',
+        duration: 8,
+        content: {
+          paragraphs: [
+            'Investing is putting money to work so it grows over time. Unlike leaving cash in a savings account — where inflation slowly erodes its purchasing power — investing means you own a piece of a real business, and you benefit as that business grows and generates profit.',
+            'In Jamaica, the inflation rate has averaged 5–8% per year over the past decade. A savings account paying 2% interest actually loses you money in real terms. Meanwhile, the Jamaica Stock Exchange (JSE) has delivered average annual returns exceeding 20% in some years, making it one of the best-performing exchanges in the world for its size.',
+            'When you buy shares in a company listed on the JSE, you become a part-owner. If the company earns more profit, your shares become more valuable. If the company pays dividends, you receive a portion of those profits in cash — directly into your brokerage account. The goal of this course is to teach you how to identify which companies are worth owning and when.',
+          ],
+          keyTerms: [
+            { term: 'Stock / Share', def: 'A unit of ownership in a company. Owning 100 shares of GraceKennedy means you own a small fraction of that entire business.' },
+            { term: 'Dividend', def: 'A cash payment made by a company to its shareholders, usually quarterly or annually, from its profits.' },
+            { term: 'Capital Appreciation', def: 'The increase in a stock\'s price over time. If you bought GK at $70 and it rises to $100, your $30 gain is capital appreciation.' },
+            { term: 'Inflation', def: 'The rate at which prices rise each year. If inflation is 7% and your savings account pays 2%, you\'re losing 5% in real purchasing power.' },
+          ],
+          callouts: [
+            { type: 'info', text: 'The JSE All Jamaican Composite Index returned over 300% between 2013 and 2023 — outperforming most global stock markets over the same period.' },
+            { type: 'tip', text: 'You don\'t need to be rich to start investing. Some JSE stocks trade for under J$10 per share. Starting small and learning is better than waiting until you have "enough" money.' },
+          ],
+          links: [
+            { title: 'Jamaica Stock Exchange — Getting Started', url: 'https://www.jamstockex.com/invest/', description: 'Official JSE guide for first-time investors.' },
+            { title: 'FSC Jamaica — Investor Education', url: 'https://www.fscommission.gov.jm/investor-education', description: 'Financial Services Commission educational resources.' },
+          ],
+          citations: [
+            'Jamaica Stock Exchange Annual Report 2023 — Performance Review.',
+            'Bank of Jamaica: Consumer Price Index Historical Data (2013–2023).',
+          ],
+        },
+      },
+      {
+        id: 'cb-exchanges',
+        title: 'Caribbean Stock Exchanges: JSE, TTSE & ECSE',
+        type: 'lesson',
+        duration: 12,
+        content: {
+          paragraphs: [
+            'The Caribbean has four main stock exchanges where you can invest. Each serves a different country or region and lists different companies. Understanding which exchange a company trades on matters because it affects currency, trading hours, and the rules that govern disclosures.',
+            'The Jamaica Stock Exchange (JSE), founded in 1969, is the oldest and largest in the English-speaking Caribbean. It lists approximately 40 companies across financials, manufacturing, distribution, and tourism. It also has a Junior Market for smaller growing companies, with tax incentives that make Junior Market IPOs especially popular.',
+            'The Trinidad and Tobago Stock Exchange (TTSE) is the second-largest, listing companies like Republic Financial Holdings and Guardian Media. Many Trinidadian companies are regionally significant — Republic Bank, for example, operates across multiple Caribbean territories. The TTSE uses TT Dollars (TTD).',
+            'The Eastern Caribbean Securities Exchange (ECSE) serves eight island nations — Antigua, Dominica, Grenada, Montserrat, St Kitts, St Lucia, St Vincent, and Anguilla. It is smaller but growing. The Barbados Stock Exchange (BSE) serves Barbados and lists companies like Massy Holdings and Goddard Enterprises.',
+          ],
+          diagramKey: 'exchanges',
+          diagramCaption: 'Caribbean exchanges by country, currency, and approximate number of listed companies.',
+          keyTerms: [
+            { term: 'JSE Junior Market', def: 'A segment of the JSE for smaller companies with annual tax relief for 10 years post-listing. A proven launchpad for fast-growing Jamaican businesses.' },
+            { term: 'Settlement', def: 'The process of transferring shares and money after a trade. JSE settles in T+2 (two business days after the trade date).' },
+            { term: 'Market Maker', def: 'A broker who quotes both buy and sell prices to ensure liquidity in a stock, making it easier for investors to trade.' },
+          ],
+          callouts: [
+            { type: 'example', text: 'NCB Financial Group (NCBFG) is listed on the JSE and trades in Jamaican Dollars. Guardian Holdings is listed on the TTSE and trades in TT Dollars. If you buy both, you\'re exposed to two currencies.' },
+            { type: 'tip', text: 'JSE trading hours are 9:30 AM – 1:30 PM Jamaica Standard Time (UTC-5), Monday through Friday. The JSE is closed on Jamaican public holidays.' },
+          ],
+          links: [
+            { title: 'Jamaica Stock Exchange', url: 'https://www.jamstockex.com', description: 'Official JSE website — stock prices, company filings, news.' },
+            { title: 'TTSE — Trinidad & Tobago Stock Exchange', url: 'https://www.stockex.co.tt', description: 'Live prices and company information for TTSE listings.' },
+            { title: 'Eastern Caribbean Securities Exchange', url: 'https://www.ecseonline.com', description: 'ECSE market data and listed companies.' },
+            { title: 'Barbados Stock Exchange', url: 'https://www.bse.com.bb', description: 'BSE listings and daily market summaries.' },
+          ],
+        },
+      },
+      {
+        id: 'cb-stock-quote',
+        title: 'Reading a Stock Quote',
+        type: 'lesson',
+        duration: 10,
+        content: {
+          paragraphs: [
+            'A stock quote is a real-time or delayed snapshot of a security\'s price and trading activity. Every number on a quote page tells you something specific. Knowing what each figure means is your most fundamental skill as an investor.',
+            'The most important figures are: Last Price (the most recent transaction), Open (first trade of the day), High and Low (the day\'s price range), Volume (total shares traded), and Percentage Change (how much the price moved from yesterday\'s close). On Gotham, all these are shown when you click any stock card.',
+            'The bid-ask spread is the gap between what buyers will pay (bid) and what sellers will accept (ask). On liquid stocks like NCB, this spread is tiny — maybe a few cents. On thinly traded Junior Market stocks, the spread can be J$2–5, meaning you immediately lose that amount the moment you buy.',
+          ],
+          diagramKey: 'quote',
+          diagramCaption: 'Anatomy of a stock quote — every field explained with a GraceKennedy (GK) example.',
+          keyTerms: [
+            { term: 'Bid Price', def: 'The highest price a buyer is currently willing to pay for a share.' },
+            { term: 'Ask Price', def: 'The lowest price a seller is currently willing to accept.' },
+            { term: 'Spread', def: 'Ask minus Bid. A wide spread means lower liquidity and higher implicit cost to trade.' },
+            { term: 'Volume', def: 'Total shares traded during the session. High volume on a price move confirms its validity.' },
+            { term: '52-Week High/Low', def: 'The highest and lowest price the stock has traded at over the past year — useful context for whether the price is near historical extremes.' },
+          ],
+          callouts: [
+            { type: 'warning', text: 'On low-volume JSE stocks, a single large buy order can move the price significantly. Always check volume before trading — a "price increase" on zero volume is meaningless.' },
+            { type: 'example', text: 'GraceKennedy (GK): Last J$75.50 | Open J$74.00 | High J$76.00 | Low J$73.80 | Volume 45,200 | Change +2.03%' },
+          ],
+        },
+      },
+      {
+        id: 'cb-exercise-quote',
+        title: 'Exercise: Analyse a Stock Quote',
+        type: 'exercise',
+        duration: 10,
+        content: {
+          exercise: {
+            scenario: 'You are looking at Wisynco Group Ltd (WISYNCO) on the JSE. The quote shows: Last Price J$22.50 | Previous Close J$21.80 | Open J$21.90 | High J$22.70 | Low J$21.75 | Volume 123,400 | 52-Week High J$28.00 | 52-Week Low J$18.50. Work through each question step by step.',
+            steps: [
+              {
+                instruction: 'Step 1 — Calculate the percentage change from yesterday\'s close.',
+                answer: 'Change = (22.50 – 21.80) / 21.80 × 100 = 0.70 / 21.80 × 100 ≈ +3.21%. The stock is up 3.21% on the day.',
+              },
+              {
+                instruction: 'Step 2 — Is today\'s volume high or low? What does it tell you?',
+                answer: '123,400 shares traded is relatively strong volume for a JSE mid-cap stock. This confirms that the price increase is backed by genuine buying interest — not just a single large order moving a thin market.',
+              },
+              {
+                instruction: 'Step 3 — Where is the current price relative to its 52-week range?',
+                answer: 'Range = J$28.00 – J$18.50 = J$9.50 wide. Current price J$22.50 is J$4.00 above the low and J$5.50 below the high. The stock is roughly in the middle of its 52-week range — not at an extreme. This is a neutral technical signal.',
+              },
+              {
+                instruction: 'Step 4 — The stock opened at J$21.90, hit a low of J$21.75, then rallied to close at J$22.50. What does this intraday pattern suggest?',
+                answer: 'The stock dipped early (low J$21.75 is below open J$21.90) then recovered strongly to close near the day\'s high (J$22.70). This is a bullish intraday pattern — sellers tried to push the price down but buyers overwhelmed them. A close near the day\'s high on strong volume is a positive short-term signal.',
+              },
+            ],
+          },
+          links: [
+            { title: 'JSE Market Data — Wisynco', url: 'https://www.jamstockex.com/market-data/stocks/wisynco-group-limited/', description: 'Live Wisynco quote and historic data on the JSE website.' },
+          ],
+        },
+      },
+      {
+        id: 'cb-quiz',
+        title: 'Module Quiz: Caribbean Markets Basics',
+        type: 'quiz',
+        duration: 10,
+        content: {
+          quiz: [
+            {
+              q: 'Which Caribbean stock exchange was founded first?',
+              options: ['TTSE (Trinidad)', 'BSE (Barbados)', 'JSE (Jamaica)', 'ECSE (Eastern Caribbean)'],
+              correct: 2,
+              explanation: 'The Jamaica Stock Exchange (JSE) was founded in 1969, making it the oldest English-speaking Caribbean exchange. The TTSE was established in 1981.',
+            },
+            {
+              q: 'If GraceKennedy has a Bid of J$74.50 and an Ask of J$75.20, what is the spread?',
+              options: ['J$74.50', 'J$0.70', 'J$75.20', 'J$149.70'],
+              correct: 1,
+              explanation: 'Spread = Ask – Bid = 75.20 – 74.50 = J$0.70. This is the implicit cost of immediately entering and exiting a position.',
+            },
+            {
+              q: 'A stock closes at J$50 on Monday and J$53 on Tuesday. What is the percentage change?',
+              options: ['+3%', '+5.66%', '+6%', '+5%'],
+              correct: 2,
+              explanation: 'Change = (53 – 50) / 50 × 100 = 3 / 50 × 100 = 6%. Always divide by the starting price, not the ending price.',
+            },
+            {
+              q: 'What is the main tax benefit of JSE Junior Market companies?',
+              options: ['No corporation tax ever', '10-year corporation tax relief post-listing', 'Dividends are tax-free for investors', 'Stamp duty exemption on all trades'],
+              correct: 1,
+              explanation: 'Junior Market companies receive a 10-year income tax holiday after listing. The first 5 years are fully exempt, years 6–10 at 50% of the standard rate. This incentive makes Junior Market IPOs very popular.',
+            },
+            {
+              q: 'High volume on a price increase generally indicates:',
+              options: ['The increase is likely a data error', 'Strong buying conviction behind the move', 'The stock is about to reverse', 'Market manipulation'],
+              correct: 1,
+              explanation: 'Volume confirms price moves. A price increase on high volume means many buyers participated — it\'s a genuine signal. A price increase on very low volume could just be one small trade moving a thin market.',
+            },
+          ],
+        },
+      },
+    ],
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COURSE 2: Fundamental Analysis
+  // ═══════════════════════════════════════════════════════════════════════════
   {
-    id: 'technical',
+    id: 'fundamental-analysis',
+    title: 'Fundamental Analysis',
+    subtitle: 'Read financial statements like a pro',
+    description: 'Learn to analyse income statements, balance sheets, key ratios, and dividend history to determine whether a stock is worth buying.',
+    level: 'Intermediate',
+    color: '#40c4ff',
+    estimatedHours: 6,
+    modules: [
+      {
+        id: 'fa-income-statement',
+        title: 'The Income Statement Explained',
+        type: 'lesson',
+        duration: 15,
+        content: {
+          paragraphs: [
+            'The income statement (also called the Profit & Loss or P&L) shows how much money a company earned and spent over a specific period — usually a quarter or a full year. It answers the fundamental question: is this business actually making money?',
+            'Revenue (or Turnover) is the top line — total sales before any costs are deducted. For GraceKennedy, this includes revenue from their banking subsidiary (NCB-linked businesses), food distribution, insurance, and manufacturing. Revenue growth year-over-year is the first thing to check: is the business expanding?',
+            'After deducting Cost of Goods Sold (COGS) — the direct cost to produce what they sell — you get Gross Profit. Deducting operating expenses (salaries, rent, marketing) gives Operating Profit (EBIT). After interest payments and taxes, you reach Net Profit — the "bottom line." Earnings Per Share (EPS) is simply net profit divided by shares outstanding.',
+          ],
+          diagramKey: 'income-statement',
+          diagramCaption: 'Income statement waterfall: from Revenue down to Net Profit, with each line explained.',
+          keyTerms: [
+            { term: 'Revenue', def: 'Total income from sales before any costs. Also called "turnover" or "top line."' },
+            { term: 'Gross Profit Margin', def: 'Gross Profit ÷ Revenue. Shows how efficiently a company produces its product. Higher is better.' },
+            { term: 'EBITDA', def: 'Earnings Before Interest, Taxes, Depreciation & Amortisation. Used to compare profitability across companies with different capital structures.' },
+            { term: 'EPS (Earnings Per Share)', def: 'Net Profit ÷ Total Shares Outstanding. This is what the company earned per share you own.' },
+            { term: 'Operating Leverage', def: 'How sensitive profits are to revenue changes. High fixed costs = high operating leverage = profits jump dramatically when revenue grows.' },
+          ],
+          callouts: [
+            { type: 'example', text: 'GraceKennedy 2022: Revenue J$159B | Gross Profit J$52B | Net Profit J$14B | EPS J$5.38. Gross margin = 52/159 = 33% — meaning GK keeps 33 cents of every dollar in revenue after direct production costs.' },
+            { type: 'warning', text: 'Revenue growth means nothing if costs grow faster. Always check whether net profit margin is expanding, stable, or shrinking over time.' },
+          ],
+          links: [
+            { title: 'JSE Annual Reports — GraceKennedy', url: 'https://www.jamstockex.com/market-data/stocks/gracekennedy-limited/', description: 'GraceKennedy\'s full annual reports and quarterly financials.' },
+            { title: 'Investopedia: Income Statement', url: 'https://www.investopedia.com/terms/i/incomestatement.asp', description: 'Detailed guide to every line of the income statement.' },
+          ],
+          citations: ['GraceKennedy Limited Annual Report 2022 — Financial Statements.'],
+        },
+      },
+      {
+        id: 'fa-balance-sheet',
+        title: 'The Balance Sheet',
+        type: 'lesson',
+        duration: 12,
+        content: {
+          paragraphs: [
+            'The balance sheet is a snapshot of what a company owns (assets), what it owes (liabilities), and what\'s left for shareholders (equity) at a specific date. The fundamental accounting equation: Assets = Liabilities + Equity. This always balances — hence the name.',
+            'Current assets are things that will be converted to cash within a year: cash itself, accounts receivable (money owed by customers), and inventory. Current liabilities are obligations due within a year. The Current Ratio = Current Assets ÷ Current Liabilities — a ratio above 1.5 generally means the company can comfortably meet its short-term obligations.',
+            'Long-term debt is the big risk area. Debt-to-Equity (D/E) ratio = Total Debt ÷ Shareholders\' Equity. A high D/E means the company is heavily reliant on borrowed money — fine during good times, dangerous when revenues fall. Caribbean banks tend to have naturally high D/E ratios due to their structure; compare within sectors only.',
+          ],
+          diagramKey: 'balance-sheet',
+          diagramCaption: 'Balance sheet structure: Assets on the left, Liabilities + Equity on the right — always equal.',
+          keyTerms: [
+            { term: 'Current Ratio', def: 'Current Assets ÷ Current Liabilities. Measures short-term financial health. Below 1.0 is a red flag.' },
+            { term: 'Debt-to-Equity (D/E)', def: 'Total Debt ÷ Shareholders\' Equity. High D/E amplifies both gains and losses.' },
+            { term: 'Book Value Per Share', def: 'Total Equity ÷ Shares Outstanding. The theoretical value per share if the company were liquidated today.' },
+            { term: 'Working Capital', def: 'Current Assets minus Current Liabilities. Positive working capital means the business can fund its day-to-day operations.' },
+          ],
+          callouts: [
+            { type: 'tip', text: 'Goodwill on a balance sheet represents the premium paid for acquired companies. Goodwill is only worth something if the acquisition performs. Always question large goodwill figures on Caribbean conglomerates.' },
+            { type: 'example', text: 'If NCB Financial Group has J$1.2 trillion in assets but J$1.05 trillion in liabilities (largely customer deposits), equity is J$150 billion. As a bank, this high leverage is normal — it\'s how banking works.' },
+          ],
+          links: [
+            { title: 'Investopedia: Balance Sheet', url: 'https://www.investopedia.com/terms/b/balancesheet.asp', description: 'Complete guide to reading a balance sheet.' },
+            { title: 'NCB Financial Group — Annual Reports', url: 'https://www.jamstockex.com/market-data/stocks/ncb-financial-group/', description: 'NCB\'s full financial statements on the JSE.' },
+          ],
+        },
+      },
+      {
+        id: 'fa-ratios',
+        title: 'Key Valuation Ratios',
+        type: 'lesson',
+        duration: 15,
+        content: {
+          paragraphs: [
+            'Valuation ratios help you decide whether a stock is cheap, fair, or expensive relative to its earnings, book value, or cash flow. No single ratio tells the whole story — use them together and always compare within the same sector.',
+            'The Price-to-Earnings (P/E) ratio is the most used metric: Share Price ÷ EPS. A P/E of 12 means you\'re paying J$12 for every J$1 of annual earnings. JSE financial sector stocks have historically traded at P/Es of 8–15x. If a stock trades at 25x when peers are at 10x, there needs to be a compelling growth reason.',
+            'Price-to-Book (P/B) compares market price to book value per share. Banks and insurance companies are especially well-suited to P/B analysis. A P/B below 1.0 means the stock trades below what shareholders would theoretically receive if the company were dissolved — potentially a deep value opportunity or a sign of serious problems.',
+          ],
+          diagramKey: 'pe-comparison',
+          diagramCaption: 'P/E ratio comparison across selected JSE stocks vs regional and global sector averages.',
+          keyTerms: [
+            { term: 'P/E Ratio', def: 'Price ÷ Earnings Per Share. The most common valuation metric. Compare only within the same sector.' },
+            { term: 'P/B Ratio', def: 'Price ÷ Book Value Per Share. Especially useful for banks and asset-heavy companies.' },
+            { term: 'Dividend Yield', def: 'Annual Dividends Per Share ÷ Price × 100. A 5% yield means you earn 5 cents for every dollar invested, just from dividends.' },
+            { term: 'PEG Ratio', def: 'P/E ÷ Earnings Growth Rate. A PEG below 1.0 suggests the stock may be undervalued relative to its growth.' },
+          ],
+          callouts: [
+            { type: 'warning', text: 'A very low P/E can signal a value trap — a company so troubled that earnings will collapse, making today\'s P/E misleading. Always ask why a stock is cheap.' },
+            { type: 'example', text: 'If Sagicor Financial trades at J$50 with EPS of J$6.25, its P/E = 8x. If the sector average is 12x, the stock may be undervalued — or the market sees something concerning. Investigate before concluding it\'s a bargain.' },
+            { type: 'tip', text: 'Use Gotham\'s AI Analysis tab to get instant ratio calculations and peer comparisons for any JSE or US stock.' },
+          ],
+          links: [
+            { title: 'Finviz — US Stock Valuation Screener', url: 'https://finviz.com/screener.ashx', description: 'Screen US stocks by P/E, P/B, yield and 70+ other metrics.' },
+            { title: 'Investopedia: P/E Ratio Guide', url: 'https://www.investopedia.com/terms/p/price-earningsratio.asp', description: 'Complete explanation with examples and limitations.' },
+          ],
+        },
+      },
+      {
+        id: 'fa-exercise',
+        title: 'Exercise: Analyse NCB Financial Group',
+        type: 'exercise',
+        duration: 15,
+        content: {
+          exercise: {
+            scenario: 'NCB Financial Group (NCBFG) reports the following for FY2022: Revenue J$78B | Net Profit J$18.5B | Total Shares 2.86B | Share Price J$120 | Total Equity J$185B | Annual Dividend J$2.50/share. Work through each valuation step.',
+            steps: [
+              {
+                instruction: 'Step 1 — Calculate Earnings Per Share (EPS).',
+                answer: 'EPS = Net Profit ÷ Shares Outstanding = J$18,500,000,000 ÷ 2,860,000,000 = J$6.47 per share.',
+              },
+              {
+                instruction: 'Step 2 — Calculate the P/E ratio and interpret it.',
+                answer: 'P/E = Price ÷ EPS = J$120 ÷ J$6.47 = 18.5x. This means investors are paying J$18.50 for every J$1 of annual earnings. For a Caribbean financial conglomerate with regional operations, this is in the upper range — implying expectations of continued growth.',
+              },
+              {
+                instruction: 'Step 3 — Calculate the dividend yield.',
+                answer: 'Yield = Annual Dividend ÷ Price × 100 = J$2.50 ÷ J$120 × 100 = 2.08%. This is modest but NCB also returns capital through retained earnings. Check whether the dividend has grown year-over-year — a growing dividend signals management confidence.',
+              },
+              {
+                instruction: 'Step 4 — Calculate the payout ratio and assess sustainability.',
+                answer: 'Payout Ratio = DPS ÷ EPS = J$2.50 ÷ J$6.47 = 38.6%. NCB pays out 38.6% of earnings as dividends and retains 61.4% for reinvestment. This is a healthy, sustainable ratio — plenty of room to maintain or grow the dividend even if earnings dip slightly.',
+              },
+              {
+                instruction: 'Step 5 — Book Value Per Share and P/B.',
+                answer: 'BVPS = Total Equity ÷ Shares = J$185B ÷ 2.86B = J$64.69. P/B = Price ÷ BVPS = J$120 ÷ J$64.69 = 1.85x. NCB trades at 1.85× book value — the market values it at nearly twice what shareholders would receive in liquidation, suggesting confidence in management\'s ability to generate above-average returns on capital.',
+              },
+            ],
+          },
+          citations: ['NCB Financial Group Annual Report 2022. Note: figures are illustrative approximations for educational purposes.'],
+        },
+      },
+      {
+        id: 'fa-quiz',
+        title: 'Module Quiz: Fundamental Analysis',
+        type: 'quiz',
+        duration: 12,
+        content: {
+          quiz: [
+            {
+              q: 'A company has Revenue of J$100M and Cost of Goods Sold of J$60M. What is the Gross Profit Margin?',
+              options: ['60%', '40%', '6%', '160%'],
+              correct: 1,
+              explanation: 'Gross Profit = Revenue – COGS = J$100M – J$60M = J$40M. Gross Profit Margin = J$40M ÷ J$100M = 40%. This means the company keeps 40 cents of every revenue dollar after direct production costs.',
+            },
+            {
+              q: 'Current Assets = J$50M, Current Liabilities = J$40M. What is the Current Ratio?',
+              options: ['0.8x', '1.25x', '10x', '90x'],
+              correct: 1,
+              explanation: 'Current Ratio = Current Assets ÷ Current Liabilities = 50 ÷ 40 = 1.25x. Above 1.0 is generally healthy, meaning the company can cover short-term obligations. A ratio of 1.25 indicates adequate but not excessive liquidity.',
+            },
+            {
+              q: 'A stock has a P/E of 8x when its sector average P/E is 15x. What is most likely true?',
+              options: [
+                'The stock is definitely a great bargain',
+                'The stock may be undervalued OR the market sees a problem — investigate further',
+                'The stock is overvalued',
+                'The company has no earnings',
+              ],
+              correct: 1,
+              explanation: 'A below-average P/E could be a value opportunity OR a value trap. The market is efficient enough that cheap stocks usually have a reason to be cheap. Always ask: why is this trading at a discount? Is it temporary or structural?',
+            },
+            {
+              q: 'EPS = J$5.00 and Dividends Per Share = J$2.50. What is the payout ratio?',
+              options: ['200%', '25%', '50%', '125%'],
+              correct: 2,
+              explanation: 'Payout Ratio = DPS ÷ EPS = 2.50 ÷ 5.00 = 50%. The company distributes half its earnings as dividends and retains the other half. A 50% payout ratio is considered very sustainable.',
+            },
+            {
+              q: 'Which financial statement shows a company\'s financial position at a specific point in time?',
+              options: ['Income Statement', 'Cash Flow Statement', 'Balance Sheet', 'Statement of Changes in Equity'],
+              correct: 2,
+              explanation: 'The Balance Sheet (Statement of Financial Position) is a snapshot at a specific date showing Assets = Liabilities + Equity. The Income Statement covers a period (quarterly or annual), and the Cash Flow Statement tracks cash movements over a period.',
+            },
+          ],
+        },
+      },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COURSE 3: Technical Analysis
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'technical-analysis',
     title: 'Technical Analysis',
-    lessonCount: 2,
-    color: '#4f9eff',
-    icon: <BarChart2 size={20} />,
-  },
-  {
-    id: 'advanced',
-    title: 'Advanced Investing',
-    lessonCount: 3,
-    color: '#f5c842',
-    tag: 'PRO',
-    icon: <TrendingUp size={20} />,
+    subtitle: 'Chart patterns, indicators & timing',
+    description: 'Master candlestick charts, moving averages, RSI, MACD, and support/resistance levels to time your entries and exits.',
+    level: 'Intermediate',
+    color: '#ce93d8',
+    estimatedHours: 5,
+    modules: [
+      {
+        id: 'ta-candlesticks',
+        title: 'Candlestick Charts',
+        type: 'lesson',
+        duration: 15,
+        content: {
+          paragraphs: [
+            'Candlestick charts originated in 18th-century Japan and remain the dominant chart type used by traders worldwide. Each candlestick represents a specific time period (1 day, 1 hour, 15 minutes, etc.) and encodes four pieces of information: the Open, High, Low, and Close — collectively known as OHLC data.',
+            'The body of the candle shows the distance between Open and Close. A green (or white) candle means the price closed higher than it opened — buyers won the period. A red (or black) candle means price closed lower — sellers dominated. The thin lines above and below the body are called "wicks" or "shadows" and show the High and Low extremes reached during the period.',
+            'Certain candlestick patterns have predictive value when they appear at key price levels. A "Doji" — where Open and Close are nearly equal, creating a very thin body — signals indecision and potential reversal. A "Hammer" — a small body with a long lower wick — at the bottom of a downtrend suggests buyers pushed back hard and a reversal may be coming.',
+          ],
+          diagramKey: 'candlestick',
+          diagramCaption: 'Five common candlestick patterns with bullish/bearish interpretations.',
+          keyTerms: [
+            { term: 'Bullish Candle', def: 'Close > Open. Price rose during the period. Typically shown in green.' },
+            { term: 'Bearish Candle', def: 'Close < Open. Price fell during the period. Typically shown in red.' },
+            { term: 'Wick / Shadow', def: 'The thin lines above and below the candle body showing the period\'s High and Low.' },
+            { term: 'Doji', def: 'A candle where Open ≈ Close, creating a very small or nonexistent body. Signals indecision.' },
+            { term: 'Hammer', def: 'Small body near the top, long lower wick. Bullish reversal signal when seen at a downtrend low.' },
+            { term: 'Shooting Star', def: 'Small body near the bottom, long upper wick. Bearish reversal signal when seen at a trend high.' },
+          ],
+          callouts: [
+            { type: 'tip', text: 'Single candlestick patterns are weak signals. Always confirm with the next candle or two, and look for patterns at significant support/resistance levels — not in random locations.' },
+            { type: 'info', text: 'All charts on Gotham use candlestick format by default. You can see daily OHLC data for any JSE or US stock by clicking on it from the Dashboard.' },
+          ],
+          links: [
+            { title: 'TradingView — Live Charts', url: 'https://www.tradingview.com', description: 'Best free charting platform. Search any JSE or US stock.' },
+            { title: 'Investopedia: Candlestick Patterns', url: 'https://www.investopedia.com/articles/active-trading/092315/5-most-powerful-candlestick-patterns.asp', description: 'Top 5 candlestick patterns with visual examples.' },
+          ],
+        },
+      },
+      {
+        id: 'ta-moving-averages',
+        title: 'Moving Averages',
+        type: 'lesson',
+        duration: 12,
+        content: {
+          paragraphs: [
+            'A moving average (MA) smooths out price data by calculating the average price over a set number of periods. This removes short-term noise and reveals the underlying trend direction. The two main types are Simple Moving Averages (SMA) and Exponential Moving Averages (EMA).',
+            'The SMA calculates an equal-weighted average over N periods. A 50-day SMA sums the last 50 closing prices and divides by 50. The EMA gives more weight to recent prices, making it more responsive to new data. Most traders use EMAs for shorter timeframes (9, 12, 26 days) and SMAs for longer trend analysis (50, 100, 200 days).',
+            'The most powerful moving average signal is the crossover: when a shorter MA crosses above a longer MA, it generates a "golden cross" — a bullish signal. When the shorter MA crosses below the longer MA, it creates a "death cross" — bearish. On JSE stocks with lower liquidity, the 20/50 day MA crossover works better than the typical 50/200 because the signal is faster.',
+          ],
+          diagramKey: 'moving-average',
+          diagramCaption: 'Price line with 20-day and 50-day MAs. Golden cross and death cross marked.',
+          keyTerms: [
+            { term: 'SMA (Simple Moving Average)', def: 'Equally-weighted average of closing prices over N periods.' },
+            { term: 'EMA (Exponential Moving Average)', def: 'Weighted average giving more importance to recent prices. More responsive than SMA.' },
+            { term: 'Golden Cross', def: 'Short MA crosses above long MA — bullish trend signal.' },
+            { term: 'Death Cross', def: 'Short MA crosses below long MA — bearish trend signal.' },
+            { term: 'Price Above MA', def: 'When price is above its MA, the trend is up. When below, the trend is down. MAs act as dynamic support/resistance.' },
+          ],
+          callouts: [
+            { type: 'warning', text: 'Moving averages are lagging indicators — they confirm trend changes after they happen, not before. Use them for trend direction, not for predicting reversals.' },
+            { type: 'example', text: 'NCB Financial Group: If the 20-day EMA crosses above the 50-day SMA while price is also above both, that\'s a strong buy confirmation. Entering here gives you a trailing stop you can place below the 50-day MA.' },
+          ],
+          links: [
+            { title: 'TradingView: NCBFG Chart', url: 'https://www.tradingview.com/symbols/JSE-NCBFG/', description: 'Live NCB Financial Group chart with MA overlay capability.' },
+          ],
+        },
+      },
+      {
+        id: 'ta-rsi',
+        title: 'RSI: Overbought & Oversold',
+        type: 'lesson',
+        duration: 12,
+        content: {
+          paragraphs: [
+            'The Relative Strength Index (RSI) is a momentum oscillator that measures the speed and magnitude of recent price changes on a scale of 0 to 100. Created by J. Welles Wilder in 1978, it remains one of the most widely used technical indicators. RSI = 100 – (100 / (1 + RS)), where RS = average gain / average loss over 14 periods.',
+            'The conventional interpretation: RSI above 70 = overbought (stock may be due for a pullback). RSI below 30 = oversold (stock may be due for a bounce). However, overbought doesn\'t mean "sell immediately" — in strong uptrends, RSI can stay above 70 for weeks. Context matters.',
+            'The most reliable RSI signal is divergence. Bullish divergence: price makes a new lower low, but RSI makes a higher low — momentum is improving even though price is still falling. This often precedes a reversal. Bearish divergence: price makes a new higher high but RSI makes a lower high — momentum is deteriorating even though price is still rising.',
+          ],
+          diagramKey: 'rsi',
+          diagramCaption: 'RSI oscillator with overbought (70), oversold (30) zones and a bullish divergence example.',
+          keyTerms: [
+            { term: 'RSI', def: 'Relative Strength Index. Oscillates 0–100. Above 70 = overbought, below 30 = oversold.' },
+            { term: 'Overbought', def: 'RSI > 70. The stock has risen rapidly and may be due for a pause or pullback.' },
+            { term: 'Oversold', def: 'RSI < 30. The stock has fallen rapidly and buyers may step in soon.' },
+            { term: 'Bullish Divergence', def: 'Price makes lower low, RSI makes higher low. Momentum improving = potential bottom.' },
+            { term: 'Bearish Divergence', def: 'Price makes higher high, RSI makes lower high. Momentum weakening = potential top.' },
+          ],
+          callouts: [
+            { type: 'tip', text: 'On JSE stocks (lower liquidity), use weekly RSI rather than daily. Daily RSI on thin-volume stocks produces many false signals from single large trades.' },
+            { type: 'warning', text: 'Never use RSI alone. Combine it with trend direction (MAs) and support/resistance levels for higher-probability setups.' },
+          ],
+          links: [
+            { title: 'Investopedia: RSI Indicator', url: 'https://www.investopedia.com/terms/r/rsi.asp', description: 'Full RSI guide with formula, calculation, and examples.' },
+            { title: 'TradingView RSI Tutorial', url: 'https://www.tradingview.com/scripts/relativestrengthindex/', description: 'How to add and configure RSI on TradingView charts.' },
+          ],
+          citations: ['Wilder, J. Welles. New Concepts in Technical Trading Systems (1978). Trend Research.'],
+        },
+      },
+      {
+        id: 'ta-exercise',
+        title: 'Exercise: Identify Chart Signals',
+        type: 'exercise',
+        duration: 12,
+        content: {
+          exercise: {
+            scenario: 'You are analysing JMMBGL (JMMB Group Limited) on the JSE. The weekly chart shows: Price has been declining for 6 weeks from J$40 to J$32. This week\'s candle: Open J$32.50, High J$34.80, Low J$31.20, Close J$34.60 (a strong green candle). The 14-week RSI is at 28. The price is sitting right on the 52-week low of J$31.50. Work through the analysis.',
+            steps: [
+              {
+                instruction: 'Step 1 — Analyse the candlestick pattern for this week.',
+                answer: 'This is a strong bullish candle: Open J$32.50, Close J$34.60 — the price rose J$2.10 during the week. The wick extends down to J$31.20 (below the open) meaning sellers pushed lower but buyers overwhelmed them and closed the price near the high. The long lower wick + strong close = bullish hammer-like structure. This is significant.',
+              },
+              {
+                instruction: 'Step 2 — What does the RSI reading of 28 tell you?',
+                answer: 'RSI 28 is in oversold territory (below 30). The stock has fallen rapidly and the selling momentum is exhausted. Oversold on a weekly chart is a stronger signal than on a daily chart because it represents weeks of selling pressure. Combined with the strong green candle, this suggests the selling climax may be over.',
+              },
+              {
+                instruction: 'Step 3 — Why is the 52-week low at J$31.50 important?',
+                answer: 'The 52-week low is a key support level — many investors who track the stock have marked it mentally. When price approached J$31.50 but rejected sharply (the wick touched J$31.20 but closed at J$34.60), it shows that buyers aggressively defended this level. This "test and rejection" of support is a high-probability bullish signal.',
+              },
+              {
+                instruction: 'Step 4 — Construct a trade setup: entry, stop-loss, and target.',
+                answer: 'Entry: J$34.60 (current close) or wait for next week\'s open. Stop-Loss: Below J$31.00 — just under the 52-week low. If the stock breaks that level, the thesis is wrong and you exit. Target: Previous support at ~J$40 (the starting point of this decline) = potential J$5.40 gain. Risk = J$3.60 (entry to stop). Risk/Reward = 5.40/3.60 = 1.5:1. This is acceptable; ideally you want 2:1 or better.',
+              },
+            ],
+          },
+        },
+      },
+      {
+        id: 'ta-quiz',
+        title: 'Module Quiz: Technical Analysis',
+        type: 'quiz',
+        duration: 10,
+        content: {
+          quiz: [
+            {
+              q: 'A candlestick where Open = J$50 and Close = J$47 with a high of J$52 and low of J$46 is best described as:',
+              options: ['Bullish candle with upper wick', 'Bearish candle with wicks', 'Doji', 'Hammer'],
+              correct: 1,
+              explanation: 'Close (J$47) < Open (J$50) = bearish (red) candle. The wick above the open (to J$52) is the upper wick, and the wick below the close (to J$46) is the lower wick. Both buyer and seller extremes are visible.',
+            },
+            {
+              q: 'A 20-day EMA crosses above a 50-day SMA. This is called a:',
+              options: ['Death Cross', 'Doji', 'Golden Cross', 'RSI Divergence'],
+              correct: 2,
+              explanation: 'When a shorter moving average crosses above a longer moving average, it\'s a Golden Cross — a bullish signal indicating that recent price momentum is stronger than the longer-term trend.',
+            },
+            {
+              q: 'RSI is at 72 on a strong uptrending stock. You should:',
+              options: ['Sell immediately — it\'s overbought', 'Investigate context; strong trends can sustain RSI > 70 for extended periods', 'Buy more immediately', 'Ignore RSI for uptrending stocks'],
+              correct: 1,
+              explanation: 'RSI > 70 does not automatically mean "sell." In strong uptrends, stocks can remain overbought for weeks or months. Look for bearish divergence or a break of the trend before acting on an overbought reading.',
+            },
+            {
+              q: 'Bullish divergence means:',
+              options: [
+                'Price makes a higher high and RSI makes a higher high',
+                'Price makes a lower low but RSI makes a higher low',
+                'Price makes a higher high but RSI makes a lower high',
+                'Price and RSI both fall simultaneously',
+              ],
+              correct: 1,
+              explanation: 'Bullish divergence: price keeps making lower lows (trend still down on the chart) but RSI is making higher lows (selling momentum weakening). This disconnect often precedes a price reversal to the upside.',
+            },
+            {
+              q: 'Which is the best description of how to use technical analysis on JSE stocks?',
+              options: [
+                'Apply daily signals aggressively to every stock',
+                'Use weekly charts and combine multiple indicators due to lower liquidity',
+                'Technical analysis doesn\'t work on JSE stocks',
+                'Only use RSI, ignore all other indicators',
+              ],
+              correct: 1,
+              explanation: 'The JSE has lower liquidity than major exchanges, making daily signals more prone to noise. Weekly charts filter out erratic single-trade spikes. Combining RSI + moving averages + support/resistance gives much higher probability signals.',
+            },
+          ],
+        },
+      },
+    ],
   },
 ];
 
-const GLOSSARY: GlossaryTerm[] = [
-  {
-    term: 'Market Capitalisation',
-    definition:
-      'The total market value of a company\'s outstanding shares, calculated by multiplying the current share price by the total number of shares. On the JSE, market cap is used to classify companies as large-cap, mid-cap, or small-cap, each carrying different risk and liquidity profiles.',
-  },
-  {
-    term: 'P/E Ratio (Price-to-Earnings)',
-    definition:
-      'A valuation metric that compares a stock\'s price to its earnings per share. A P/E of 15 means investors are paying J$15 for every J$1 of annual earnings. Lower P/E stocks may be undervalued relative to peers, but always compare within the same sector.',
-  },
-  {
-    term: 'Dividend Yield',
-    definition:
-      'The annual dividend per share expressed as a percentage of the current share price. For example, a J$2 annual dividend on a J$40 stock equals a 5% yield. Dividend yield helps compare the income potential of different stocks and against fixed-income alternatives.',
-  },
-  {
-    term: 'Beta',
-    definition:
-      'A measure of a stock\'s price volatility relative to the overall market. A beta of 1.0 means the stock moves in line with the index. Beta above 1.0 implies greater volatility; below 1.0 means the stock tends to be more stable. Higher beta stocks carry higher risk and potentially higher reward.',
-  },
-  {
-    term: 'Volume',
-    definition:
-      'The total number of shares traded during a given period. High volume on a price move validates the direction of the move. Low volume can indicate weak conviction. On the JSE, volume is particularly important because lower-liquidity stocks can see outsized price moves on relatively small trades.',
-  },
-];
+// ── localStorage helpers ──────────────────────────────────────────────────────
 
-// ─── Style helpers ────────────────────────────────────────────────────────────
+const LS_KEY = 'gotham_learn_progress_v2';
 
-const difficultyStyle = (d: Lesson['difficulty']): React.CSSProperties => {
-  if (d === 'Beginner') return { background: 'rgba(0,230,118,.12)', color: 'var(--color-green)', border: '1px solid rgba(0,230,118,.25)' };
-  if (d === 'Intermediate') return { background: 'rgba(79,158,255,.12)', color: '#4f9eff', border: '1px solid rgba(79,158,255,.25)' };
-  return { background: 'rgba(245,200,66,.12)', color: '#f5c842', border: '1px solid rgba(245,200,66,.25)' };
+function loadProgress(): Record<string, boolean> {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
+}
+function saveProgress(p: Record<string, boolean>) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(p)); } catch { /* noop */ }
+}
+
+// ── Inline Diagrams ───────────────────────────────────────────────────────────
+
+function DiagramCandlestick() {
+  const candles = [
+    { o: 60, h: 80, l: 45, c: 75, bull: true, label: 'Bullish' },
+    { o: 75, h: 85, l: 68, c: 70, bull: false, label: 'Bearish' },
+    { o: 70, h: 71, l: 55, c: 70.5, bull: true, label: 'Doji' },
+    { o: 68, h: 72, l: 42, c: 71, bull: true, label: 'Hammer' },
+    { o: 75, h: 98, l: 73, c: 74, bull: false, label: 'Shooting Star' },
+  ];
+  const scaleY = (v: number) => 10 + (100 - v) * 1.4;
+  return (
+    <svg viewBox="0 0 320 180" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
+      <rect width="320" height="180" fill="rgba(255,255,255,.02)" rx="8" />
+      {candles.map((c, i) => {
+        const x = 30 + i * 58;
+        const top = scaleY(Math.max(c.o, c.c));
+        const bot = scaleY(Math.min(c.o, c.c));
+        const bodyH = Math.max(bot - top, 2);
+        const color = c.bull ? '#00e676' : '#ff5252';
+        return (
+          <g key={i}>
+            {/* Wick */}
+            <line x1={x} y1={scaleY(c.h)} x2={x} y2={scaleY(c.l)} stroke={color} strokeWidth="1.5" />
+            {/* Body */}
+            <rect x={x - 8} y={top} width="16" height={bodyH} fill={color} opacity={0.85} rx="1" />
+            {/* Label */}
+            <text x={x} y={165} textAnchor="middle" fill="rgba(255,255,255,.5)" fontSize="9" fontFamily="Inter, sans-serif">{c.label}</text>
+          </g>
+        );
+      })}
+      <text x="160" y="12" textAnchor="middle" fill="rgba(255,255,255,.35)" fontSize="9" fontFamily="Inter, sans-serif">OPEN — CLOSE = BODY · HIGH/LOW = WICKS</text>
+    </svg>
+  );
+}
+
+function DiagramMovingAverage() {
+  const prices = [42, 44, 41, 45, 48, 46, 50, 49, 53, 55, 52, 57, 60, 58, 62];
+  const ma20 = prices.map((_, i) => i < 3 ? null : prices.slice(Math.max(0, i - 4), i + 1).reduce((a, b) => a + b, 0) / Math.min(i + 1, 5));
+  const ma50 = prices.map((_, i) => i < 6 ? null : prices.slice(Math.max(0, i - 8), i + 1).reduce((a, b) => a + b, 0) / Math.min(i + 1, 9));
+  const minP = 35, maxP = 70;
+  const scaleY = (v: number) => 10 + ((maxP - v) / (maxP - minP)) * 140;
+  const scaleX = (i: number) => 20 + i * (280 / (prices.length - 1));
+  const pricePath = prices.map((p, i) => `${i === 0 ? 'M' : 'L'}${scaleX(i)},${scaleY(p)}`).join(' ');
+  const ma20Path = ma20.reduce((acc, v, i) => v === null ? acc : acc + `${acc === '' ? 'M' : 'L'}${scaleX(i)},${scaleY(v)} `, '');
+  const ma50Path = ma50.reduce((acc, v, i) => v === null ? acc : acc + `${acc === '' ? 'M' : 'L'}${scaleX(i)},${scaleY(v)} `, '');
+  return (
+    <svg viewBox="0 0 320 170" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
+      <rect width="320" height="170" fill="rgba(255,255,255,.02)" rx="8" />
+      <path d={pricePath} fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="1.5" />
+      <path d={ma20Path} fill="none" stroke="#40c4ff" strokeWidth="1.5" strokeDasharray="none" />
+      <path d={ma50Path} fill="none" stroke="#ffd740" strokeWidth="1.5" />
+      {/* Golden cross annotation */}
+      <circle cx={scaleX(9)} cy={scaleY(55)} r="5" fill="none" stroke="#00e676" strokeWidth="1.5" />
+      <text x={scaleX(9) + 8} y={scaleY(55) - 4} fill="#00e676" fontSize="8" fontFamily="Inter, sans-serif">Golden Cross</text>
+      {/* Legend */}
+      <line x1="10" y1="158" x2="25" y2="158" stroke="rgba(255,255,255,.35)" strokeWidth="1.5" />
+      <text x="28" y="161" fill="rgba(255,255,255,.5)" fontSize="8" fontFamily="Inter">Price</text>
+      <line x1="60" y1="158" x2="75" y2="158" stroke="#40c4ff" strokeWidth="1.5" />
+      <text x="78" y="161" fill="#40c4ff" fontSize="8" fontFamily="Inter">20-day EMA</text>
+      <line x1="140" y1="158" x2="155" y2="158" stroke="#ffd740" strokeWidth="1.5" />
+      <text x="158" y="161" fill="#ffd740" fontSize="8" fontFamily="Inter">50-day SMA</text>
+    </svg>
+  );
+}
+
+function DiagramRSI() {
+  const rsiVals = [65, 70, 74, 78, 72, 65, 58, 45, 38, 32, 28, 35, 42, 50, 55];
+  const priceVals = [50, 54, 58, 62, 60, 57, 54, 50, 47, 44, 40, 43, 46, 50, 53];
+  const scaleY = (v: number, min: number, max: number, top: number, height: number) =>
+    top + ((max - v) / (max - min)) * height;
+  const scaleX = (i: number) => 20 + i * (280 / (rsiVals.length - 1));
+  const pricePath = priceVals.map((p, i) => `${i === 0 ? 'M' : 'L'}${scaleX(i)},${scaleY(p, 35, 70, 10, 55)}`).join(' ');
+  const rsiPath = rsiVals.map((p, i) => `${i === 0 ? 'M' : 'L'}${scaleX(i)},${scaleY(p, 0, 100, 80, 75)}`).join(' ');
+  return (
+    <svg viewBox="0 0 320 175" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
+      <rect width="320" height="175" fill="rgba(255,255,255,.02)" rx="8" />
+      {/* Price panel */}
+      <text x="8" y="12" fill="rgba(255,255,255,.4)" fontSize="8" fontFamily="Inter">PRICE</text>
+      <path d={pricePath} fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="1.5" />
+      {/* Divider */}
+      <line x1="0" y1="72" x2="320" y2="72" stroke="rgba(255,255,255,.1)" strokeWidth="1" />
+      {/* RSI panel */}
+      <text x="8" y="84" fill="rgba(255,255,255,.4)" fontSize="8" fontFamily="Inter">RSI (14)</text>
+      <rect x="0" y={scaleY(70, 0, 100, 80, 75)} width="320" height={scaleY(30, 0, 100, 80, 75) - scaleY(70, 0, 100, 80, 75)} fill="rgba(255,82,82,.06)" />
+      <rect x="0" y={scaleY(30, 0, 100, 80, 75)} width="320" height={75 - (scaleY(30, 0, 100, 80, 75) - 80)} fill="rgba(0,230,118,.06)" />
+      <line x1="0" y1={scaleY(70, 0, 100, 80, 75)} x2="320" y2={scaleY(70, 0, 100, 80, 75)} stroke="rgba(255,82,82,.4)" strokeWidth="1" strokeDasharray="3,3" />
+      <line x1="0" y1={scaleY(30, 0, 100, 80, 75)} x2="320" y2={scaleY(30, 0, 100, 80, 75)} stroke="rgba(0,230,118,.4)" strokeWidth="1" strokeDasharray="3,3" />
+      <text x="298" y={scaleY(70, 0, 100, 80, 75) - 2} fill="rgba(255,82,82,.7)" fontSize="7" fontFamily="Inter">70</text>
+      <text x="298" y={scaleY(30, 0, 100, 80, 75) - 2} fill="rgba(0,230,118,.7)" fontSize="7" fontFamily="Inter">30</text>
+      <path d={rsiPath} fill="none" stroke="#ce93d8" strokeWidth="1.5" />
+      {/* Oversold label */}
+      <text x="85" y="168" fill="rgba(0,230,118,.7)" fontSize="8" fontFamily="Inter">← Oversold zone (RSI &lt; 30)</text>
+    </svg>
+  );
+}
+
+function DiagramPEComparison() {
+  const stocks = [
+    { name: 'NCBFG', pe: 14, color: '#40c4ff' },
+    { name: 'GraceKennedy', pe: 18, color: '#00e676' },
+    { name: 'Sagicor', pe: 9, color: '#ffd740' },
+    { name: 'Wisynco', pe: 22, color: '#ce93d8' },
+    { name: 'Sector Avg', pe: 13, color: 'rgba(255,255,255,.3)' },
+  ];
+  const maxPE = 25;
+  return (
+    <svg viewBox="0 0 320 160" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
+      <rect width="320" height="160" fill="rgba(255,255,255,.02)" rx="8" />
+      {stocks.map((s, i) => {
+        const barW = (s.pe / maxPE) * 220;
+        const y = 15 + i * 28;
+        return (
+          <g key={s.name}>
+            <text x="5" y={y + 13} fill="rgba(255,255,255,.6)" fontSize="9" fontFamily="Inter">{s.name}</text>
+            <rect x="90" y={y} width={barW} height="18" fill={s.color} opacity={0.7} rx="3" />
+            <text x={90 + barW + 5} y={y + 13} fill="rgba(255,255,255,.7)" fontSize="9" fontFamily="Inter" fontWeight="700">{s.pe}x</text>
+          </g>
+        );
+      })}
+      <text x="160" y="152" textAnchor="middle" fill="rgba(255,255,255,.3)" fontSize="8" fontFamily="Inter">P/E Ratio — Lower may indicate undervaluation vs peers</text>
+    </svg>
+  );
+}
+
+function DiagramBalanceSheet() {
+  return (
+    <svg viewBox="0 0 320 160" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
+      <rect width="320" height="160" fill="rgba(255,255,255,.02)" rx="8" />
+      {/* Left: Assets */}
+      <rect x="10" y="20" width="130" height="30" fill="rgba(0,230,118,.15)" rx="4" />
+      <text x="75" y="40" textAnchor="middle" fill="#00e676" fontSize="10" fontFamily="Inter" fontWeight="700">Current Assets</text>
+      <rect x="10" y="58" width="130" height="70" fill="rgba(0,230,118,.08)" rx="4" />
+      <text x="75" y="97" textAnchor="middle" fill="rgba(0,230,118,.8)" fontSize="10" fontFamily="Inter">Non-Current Assets</text>
+      <text x="75" y="140" textAnchor="middle" fill="rgba(255,255,255,.4)" fontSize="9" fontFamily="Inter">ASSETS</text>
+      {/* Right: Liabilities + Equity */}
+      <rect x="180" y="20" width="130" height="30" fill="rgba(255,82,82,.15)" rx="4" />
+      <text x="245" y="40" textAnchor="middle" fill="#ff5252" fontSize="10" fontFamily="Inter" fontWeight="700">Current Liabilities</text>
+      <rect x="180" y="58" width="130" height="40" fill="rgba(255,82,82,.08)" rx="4" />
+      <text x="245" y="82" textAnchor="middle" fill="rgba(255,82,82,.8)" fontSize="10" fontFamily="Inter">Long-Term Debt</text>
+      <rect x="180" y="106" width="130" height="22" fill="rgba(64,196,255,.15)" rx="4" />
+      <text x="245" y="121" textAnchor="middle" fill="#40c4ff" fontSize="10" fontFamily="Inter" fontWeight="700">Shareholders' Equity</text>
+      <text x="245" y="140" textAnchor="middle" fill="rgba(255,255,255,.4)" fontSize="9" fontFamily="Inter">LIABILITIES + EQUITY</text>
+      {/* = sign */}
+      <text x="160" y="90" textAnchor="middle" fill="rgba(255,255,255,.5)" fontSize="18" fontFamily="Inter">=</text>
+    </svg>
+  );
+}
+
+function DiagramExchanges() {
+  const exchanges = [
+    { name: 'JSE', country: 'Jamaica', currency: 'JMD', listings: '~40', color: '#00e676', x: 40, y: 40 },
+    { name: 'TTSE', country: 'Trinidad & Tobago', currency: 'TTD', listings: '~35', color: '#40c4ff', x: 200, y: 40 },
+    { name: 'ECSE', country: '8 Eastern Caribbean Nations', currency: 'XCD', listings: '~25', color: '#ffd740', x: 40, y: 110 },
+    { name: 'BSE', country: 'Barbados', currency: 'BBD', listings: '~20', color: '#ce93d8', x: 200, y: 110 },
+  ];
+  return (
+    <svg viewBox="0 0 320 175" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
+      <rect width="320" height="175" fill="rgba(255,255,255,.02)" rx="8" />
+      {exchanges.map(e => (
+        <g key={e.name}>
+          <rect x={e.x} y={e.y} width="118" height="58" fill={`${e.color}12`} stroke={`${e.color}40`} strokeWidth="1" rx="6" />
+          <text x={e.x + 59} y={e.y + 18} textAnchor="middle" fill={e.color} fontSize="13" fontFamily="Inter" fontWeight="800">{e.name}</text>
+          <text x={e.x + 59} y={e.y + 33} textAnchor="middle" fill="rgba(255,255,255,.55)" fontSize="8" fontFamily="Inter">{e.country}</text>
+          <text x={e.x + 59} y={e.y + 46} textAnchor="middle" fill="rgba(255,255,255,.35)" fontSize="8" fontFamily="Inter">{e.currency} · {e.listings} listed</text>
+        </g>
+      ))}
+      <text x="160" y="168" textAnchor="middle" fill="rgba(255,255,255,.25)" fontSize="8" fontFamily="Inter">Caribbean exchanges — each has unique listing requirements & trading hours</text>
+    </svg>
+  );
+}
+
+function DiagramIncomeStatement() {
+  const items = [
+    { label: 'Revenue', value: 159, color: '#00e676', w: 280 },
+    { label: '– Cost of Goods Sold', value: -107, color: '#ff5252', w: 190 },
+    { label: '= Gross Profit', value: 52, color: '#40c4ff', w: 92 },
+    { label: '– Operating Expenses', value: -28, color: '#ff5252', w: 50 },
+    { label: '= Operating Profit (EBIT)', value: 24, color: '#ffd740', w: 42 },
+    { label: '– Tax & Interest', value: -10, color: '#ff5252', w: 18 },
+    { label: '= Net Profit', value: 14, color: '#00e676', w: 25 },
+  ];
+  return (
+    <svg viewBox="0 0 320 175" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
+      <rect width="320" height="175" fill="rgba(255,255,255,.02)" rx="8" />
+      {items.map((item, i) => (
+        <g key={i}>
+          <text x="5" y={14 + i * 23} fill="rgba(255,255,255,.55)" fontSize="8" fontFamily="Inter">{item.label}</text>
+          <rect x="155" y={5 + i * 23} width={item.w} height="14" fill={`${item.color}25`} stroke={`${item.color}50`} strokeWidth="0.5" rx="2" />
+          <text x={155 + item.w + 5} y={15 + i * 23} fill={item.color} fontSize="8" fontFamily="Inter" fontWeight="700">
+            {item.value > 0 ? `J$${item.value}B` : `J$${Math.abs(item.value)}B`}
+          </text>
+        </g>
+      ))}
+      <text x="160" y="168" textAnchor="middle" fill="rgba(255,255,255,.25)" fontSize="7" fontFamily="Inter">Illustrative GraceKennedy 2022 figures (approximate, in billions JMD)</text>
+    </svg>
+  );
+}
+
+function DiagramQuote() {
+  return (
+    <svg viewBox="0 0 320 170" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
+      <rect width="320" height="170" fill="rgba(0,0,0,.2)" rx="8" stroke="rgba(0,230,118,.2)" strokeWidth="1" />
+      <text x="12" y="22" fill="#00e676" fontSize="14" fontFamily="Inter" fontWeight="800">GK</text>
+      <text x="50" y="22" fill="rgba(255,255,255,.5)" fontSize="10" fontFamily="Inter">GraceKennedy Ltd · JSE</text>
+      <text x="12" y="48" fill="#fff" fontSize="24" fontFamily="Inter" fontWeight="800">J$75.50</text>
+      <text x="140" y="48" fill="#00e676" fontSize="11" fontFamily="Inter" fontWeight="700">▲ +2.03%</text>
+      {[
+        ['Open', 'J$74.00'], ['Prev Close', 'J$73.99'], ['High', 'J$76.00'],
+        ['Low', 'J$73.80'], ['Volume', '45,200'], ['52W High', 'J$92.00'],
+        ['52W Low', 'J$58.50'], ['Bid', 'J$75.20'], ['Ask', 'J$75.80'],
+      ].map(([label, val], i) => (
+        <g key={label}>
+          <text x={12 + (i % 3) * 104} y={72 + Math.floor(i / 3) * 28} fill="rgba(255,255,255,.35)" fontSize="8" fontFamily="Inter">{label}</text>
+          <text x={12 + (i % 3) * 104} y={86 + Math.floor(i / 3) * 28} fill="rgba(255,255,255,.85)" fontSize="10" fontFamily="Inter" fontWeight="600">{val}</text>
+        </g>
+      ))}
+      <text x="160" y="162" textAnchor="middle" fill="rgba(255,255,255,.2)" fontSize="7" fontFamily="Inter">Spread = Ask – Bid = J$0.60 · Settlement T+2</text>
+    </svg>
+  );
+}
+
+function DiagramRenderer({ diagramKey }: { diagramKey: string }) {
+  if (diagramKey === 'candlestick') return <DiagramCandlestick />;
+  if (diagramKey === 'moving-average') return <DiagramMovingAverage />;
+  if (diagramKey === 'rsi') return <DiagramRSI />;
+  if (diagramKey === 'pe-comparison') return <DiagramPEComparison />;
+  if (diagramKey === 'balance-sheet') return <DiagramBalanceSheet />;
+  if (diagramKey === 'exchanges') return <DiagramExchanges />;
+  if (diagramKey === 'income-statement') return <DiagramIncomeStatement />;
+  if (diagramKey === 'quote') return <DiagramQuote />;
+  return null;
+}
+
+// ── Style helpers ─────────────────────────────────────────────────────────────
+
+const levelStyle = (l: Course['level']): React.CSSProperties => {
+  if (l === 'Beginner') return { background: 'rgba(0,230,118,.12)', color: '#00e676', border: '1px solid rgba(0,230,118,.25)' };
+  if (l === 'Intermediate') return { background: 'rgba(64,196,255,.12)', color: '#40c4ff', border: '1px solid rgba(64,196,255,.25)' };
+  return { background: 'rgba(206,147,216,.12)', color: '#ce93d8', border: '1px solid rgba(206,147,216,.25)' };
 };
 
-const badgePill: React.CSSProperties = {
+const pill: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 4,
   padding: '2px 9px', borderRadius: 999, fontSize: 10, fontWeight: 700,
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+const moduleTypeIcon = (t: Module['type']) => {
+  if (t === 'quiz') return <HelpCircle size={13} />;
+  if (t === 'exercise') return <Activity size={13} />;
+  return <FileText size={13} />;
+};
 
-function PathCard({ path, isActive, onClick }: { path: LearningPath; isActive: boolean; onClick: () => void }) {
+const moduleTypeColor = (t: Module['type']) => {
+  if (t === 'quiz') return '#ffd740';
+  if (t === 'exercise') return '#ce93d8';
+  return 'rgba(255,255,255,.5)';
+};
+
+const calloutStyle = (type: Callout['type']): { border: string; bg: string; icon: string; iconColor: string } => ({
+  tip: { border: 'rgba(0,230,118,.3)', bg: 'rgba(0,230,118,.06)', icon: '💡', iconColor: '#00e676' },
+  warning: { border: 'rgba(255,215,64,.3)', bg: 'rgba(255,215,64,.06)', icon: '⚠️', iconColor: '#ffd740' },
+  info: { border: 'rgba(64,196,255,.3)', bg: 'rgba(64,196,255,.06)', icon: 'ℹ️', iconColor: '#40c4ff' },
+  example: { border: 'rgba(206,147,216,.3)', bg: 'rgba(206,147,216,.06)', icon: '📊', iconColor: '#ce93d8' },
+}[type]);
+
+// ── Module Viewer ─────────────────────────────────────────────────────────────
+
+function ModuleViewer({
+  module, moduleIndex, totalModules, isComplete, onComplete, onPrev, onNext, onBack,
+}: {
+  module: Module; moduleIndex: number; totalModules: number;
+  isComplete: boolean; onComplete: () => void;
+  onPrev: (() => void) | null; onNext: (() => void) | null; onBack: () => void;
+}) {
+  const [revealedSteps, setRevealedSteps] = useState<Set<number>>(new Set());
+  const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
+  const { content } = module;
+
+  const revealStep = (i: number) => setRevealedSteps(prev => new Set([...prev, i]));
+
+  const allStepsRevealed = content.exercise
+    ? content.exercise.steps.every((_, i) => revealedSteps.has(i))
+    : false;
+
+  const allQuizAnswered = content.quiz
+    ? content.quiz.every((_, i) => quizAnswers[i] !== undefined)
+    : false;
+
+  const quizScore = content.quiz
+    ? content.quiz.filter((q, i) => quizAnswers[i] === q.correct).length
+    : 0;
+
   return (
-    <div
-      onClick={onClick}
-      style={{
-        minWidth: 200, flex: '0 0 200px',
-        background: isActive ? `${path.color}12` : 'var(--color-bg2)',
-        border: `1px solid ${isActive ? path.color + '55' : 'var(--color-border)'}`,
-        borderRadius: 18, padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 12,
-        cursor: 'pointer', transition: 'all .2s', position: 'relative', overflow: 'hidden',
-        boxShadow: isActive ? `0 4px 20px ${path.color}18` : 'none',
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = path.color;
-        (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = isActive ? path.color + '55' : 'var(--color-border)';
-        (e.currentTarget as HTMLElement).style.transform = '';
-      }}
-    >
-      {/* Glow blob */}
-      <div style={{
-        position: 'absolute', top: -30, right: -30, width: 100, height: 100,
-        borderRadius: '50%', background: path.color, opacity: .06, pointerEvents: 'none',
-      }} />
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `${path.color}22`, color: path.color,
-        }}>
-          {path.icon}
-        </div>
-        {path.tag && (
-          <span style={{
-            ...badgePill,
-            background: path.tag === 'PRO' ? 'rgba(245,200,66,.15)' : 'rgba(0,230,118,.15)',
-            color: path.tag === 'PRO' ? '#f5c842' : 'var(--color-green)',
-            border: `1px solid ${path.tag === 'PRO' ? 'rgba(245,200,66,.3)' : 'rgba(0,230,118,.3)'}`,
-            fontSize: 9,
-          }}>
-            {path.tag === 'PRO' && <Star size={8} />}
-            {path.tag}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, minHeight: '100%' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+          <ChevronLeft size={13} /> Back to roadmap
+        </button>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)' }}>Module {moduleIndex + 1} of {totalModules}</span>
+        {isComplete && (
+          <span style={{ ...pill, background: 'rgba(0,230,118,.12)', color: '#00e676', border: '1px solid rgba(0,230,118,.25)', marginLeft: 'auto' }}>
+            <CheckCircle size={10} /> Completed
           </span>
         )}
       </div>
 
-      <div>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>{path.title}</p>
-        <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--color-text2)' }}>{path.lessonCount} lessons</p>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 'auto', color: path.color }}>
-        <span style={{ fontSize: 11, fontWeight: 700 }}>Explore path</span>
-        <ArrowRight size={12} />
-      </div>
-    </div>
-  );
-}
-
-function LessonCard({ lesson, isRead, onClick }: { lesson: Lesson; isRead: boolean; onClick: () => void }) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        background: 'var(--color-bg2)', border: `1px solid ${isRead ? 'rgba(0,230,118,.3)' : 'var(--color-border)'}`,
-        borderRadius: 18, padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 10,
-        cursor: 'pointer', transition: 'all .2s', position: 'relative',
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,230,118,.4)';
-        (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = isRead ? 'rgba(0,230,118,.3)' : 'var(--color-border)';
-        (e.currentTarget as HTMLElement).style.transform = '';
-      }}
-    >
-      {/* Read badge */}
-      {isRead && (
-        <div style={{ position: 'absolute', top: 14, right: 14 }}>
-          <CheckCircle size={16} color="var(--color-green)" />
-        </div>
-      )}
-
-      {/* Tags row */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <span style={{ ...badgePill, background: 'rgba(255,255,255,.06)', color: 'var(--color-text2)', border: '1px solid rgba(255,255,255,.08)', fontSize: 10 }}>
-          {lesson.category}
-        </span>
-        <span style={{ ...badgePill, ...difficultyStyle(lesson.difficulty) }}>
-          {lesson.difficulty}
-        </span>
-      </div>
-
       {/* Title */}
-      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.4, paddingRight: isRead ? 24 : 0 }}>
-        {lesson.title}
-      </p>
-
-      {/* Description */}
-      <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text2)', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-        {lesson.description}
-      </p>
-
-      {/* Footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--color-text2)' }}>
-          <Clock size={11} />
-          <span style={{ fontSize: 11 }}>{lesson.readTime} min read</span>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ color: moduleTypeColor(module.type) }}>{moduleTypeIcon(module.type)}</span>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: moduleTypeColor(module.type) }}>
+            {module.type === 'quiz' ? 'Knowledge Check' : module.type === 'exercise' ? 'Hands-On Exercise' : 'Lesson'}
+          </span>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Clock size={9} /> {module.duration} min
+          </span>
         </div>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-green)', display: 'flex', alignItems: 'center', gap: 4 }}>
-          {isRead ? 'Review' : 'Read lesson'}
-          <ArrowRight size={11} />
-        </span>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{module.title}</h2>
       </div>
-    </div>
-  );
-}
 
-function GlossaryRow({ item }: { item: GlossaryTerm }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div
-      style={{
-        background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 14,
-        overflow: 'hidden', transition: 'border-color .2s',
-      }}
-    >
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          width: '100%', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'transparent', border: 'none', cursor: 'pointer', gap: 12,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Zap size={13} color="var(--color-green)" />
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', textAlign: 'left' }}>{item.term}</span>
-        </div>
-        {open ? <ChevronUp size={15} color="var(--color-text2)" /> : <ChevronDown size={15} color="var(--color-text2)" />}
-      </button>
-      {open && (
-        <div style={{ padding: '0 18px 16px', borderTop: '1px solid var(--color-border)' }}>
-          <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--color-text2)', lineHeight: 1.65 }}>{item.definition}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LessonModal({ lesson, isRead, onMarkRead, onClose }: {
-  lesson: Lesson; isRead: boolean; onMarkRead: () => void; onClose: () => void;
-}) {
-  // Close on backdrop click
-  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [onClose]);
-
-  return (
-    <div
-      onClick={handleBackdrop}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 999,
-        background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '16px',
-      }}
-    >
-      <div style={{
-        background: 'var(--color-bg2)', border: '1px solid var(--color-border)',
-        borderRadius: 22, width: '100%', maxWidth: 680, maxHeight: '90vh',
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      }}>
-        {/* Header */}
-        <div style={{ padding: '22px 24px 18px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-              <span style={{ ...badgePill, background: 'rgba(255,255,255,.06)', color: 'var(--color-text2)', border: '1px solid rgba(255,255,255,.08)' }}>
-                {lesson.category}
-              </span>
-              <span style={{ ...badgePill, ...difficultyStyle(lesson.difficulty) }}>{lesson.difficulty}</span>
-              <span style={{ ...badgePill, background: 'transparent', color: 'var(--color-text2)', border: 'none', gap: 4 }}>
-                <Clock size={10} /> {lesson.readTime} min read
-              </span>
-            </div>
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.35 }}>{lesson.title}</h2>
-          </div>
-          <button
-            onClick={onClose}
-            style={{ background: 'rgba(255,255,255,.07)', border: '1px solid var(--color-border)', borderRadius: 10, padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--color-text2)', flexShrink: 0 }}
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {lesson.content.map((para, i) => (
-            <p key={i} style={{ margin: 0, fontSize: 14, color: 'var(--color-text)', lineHeight: 1.8, fontWeight: i === 0 ? 500 : 400 }}>
-              {para}
-            </p>
+      {/* Lesson content */}
+      {content.paragraphs && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+          {content.paragraphs.map((p, i) => (
+            <p key={i} style={{ margin: 0, fontSize: 14, color: i === 0 ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.75)', lineHeight: 1.85, fontWeight: i === 0 ? 500 : 400 }}>{p}</p>
           ))}
         </div>
+      )}
 
-        {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          {isRead ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--color-green)' }}>
-              <CheckCircle size={15} />
-              <span style={{ fontSize: 13, fontWeight: 700 }}>Lesson completed</span>
-            </div>
-          ) : (
-            <span style={{ fontSize: 12, color: 'var(--color-text2)' }}>Finished reading?</span>
+      {/* Diagram */}
+      {content.diagramKey && (
+        <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 14, padding: '20px 16px', marginBottom: 24 }}>
+          <DiagramRenderer diagramKey={content.diagramKey} />
+          {content.diagramCaption && (
+            <p style={{ margin: '12px 0 0', fontSize: 11, color: 'rgba(255,255,255,.35)', textAlign: 'center', lineHeight: 1.5 }}>{content.diagramCaption}</p>
           )}
-          <div style={{ display: 'flex', gap: 10, marginLeft: 'auto' }}>
-            <button
-              onClick={onClose}
-              style={{ padding: '9px 18px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-text2)' }}
-            >
-              Close
-            </button>
-            {!isRead && (
-              <button
-                onClick={onMarkRead}
-                style={{ padding: '9px 20px', borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: 'pointer', border: 'none', background: 'var(--color-green)', color: 'var(--color-bg)', display: 'flex', alignItems: 'center', gap: 7 }}
-              >
-                <CheckCircle size={13} />
-                Mark as Read
-              </button>
-            )}
+        </div>
+      )}
+
+      {/* Callouts */}
+      {content.callouts?.map((c, i) => {
+        const s = calloutStyle(c.type);
+        return (
+          <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 12, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>{s.icon}</span>
+            <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,.8)', lineHeight: 1.6 }}>{c.text}</p>
           </div>
+        );
+      })}
+
+      {/* Key Terms */}
+      {content.keyTerms && content.keyTerms.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(255,255,255,.35)' }}>Key Terms</p>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {content.keyTerms.map(t => (
+              <div key={t.term} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10, padding: '10px 14px' }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#00e676' }}>{t.term}</span>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', marginLeft: 8 }}>— {t.def}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Exercise */}
+      {content.exercise && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ background: 'rgba(206,147,216,.06)', border: '1px solid rgba(206,147,216,.2)', borderRadius: 14, padding: '16px 18px', marginBottom: 16 }}>
+            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#ce93d8' }}>Scenario</p>
+            <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,.8)', lineHeight: 1.7 }}>{content.exercise.scenario}</p>
+          </div>
+          {content.exercise.steps.map((step, i) => (
+            <div key={i} style={{ marginBottom: 12 }}>
+              <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12, padding: '14px 16px' }}>
+                <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.85)', lineHeight: 1.5 }}>
+                  <span style={{ color: '#ce93d8', fontWeight: 800, marginRight: 6 }}>Q{i + 1}.</span>{step.instruction}
+                </p>
+                {revealedSteps.has(i) ? (
+                  <div style={{ background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.2)', borderRadius: 8, padding: '10px 14px' }}>
+                    <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.75)', lineHeight: 1.65 }}>{step.answer}</p>
+                  </div>
+                ) : (
+                  <button onClick={() => revealStep(i)} style={{ padding: '7px 16px', borderRadius: 8, background: 'rgba(206,147,216,.12)', border: '1px solid rgba(206,147,216,.25)', color: '#ce93d8', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                    Reveal Answer
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Quiz */}
+      {content.quiz && (
+        <div style={{ marginBottom: 24 }}>
+          {allQuizAnswered && (
+            <div style={{ background: quizScore >= content.quiz.length * 0.8 ? 'rgba(0,230,118,.08)' : 'rgba(255,215,64,.08)', border: `1px solid ${quizScore >= content.quiz.length * 0.8 ? 'rgba(0,230,118,.3)' : 'rgba(255,215,64,.3)'}`, borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Award size={20} color={quizScore >= content.quiz.length * 0.8 ? '#00e676' : '#ffd740'} />
+              <div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#fff' }}>{quizScore}/{content.quiz.length} correct — {Math.round(quizScore / content.quiz.length * 100)}%</p>
+                <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{quizScore >= content.quiz.length * 0.8 ? 'Excellent work!' : 'Review the explanations below and try again.'}</p>
+              </div>
+            </div>
+          )}
+          {content.quiz.map((q, qi) => {
+            const answered = quizAnswers[qi] !== undefined;
+            const correct = quizAnswers[qi] === q.correct;
+            return (
+              <div key={qi} style={{ marginBottom: 16, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: '16px 18px' }}>
+                <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#fff', lineHeight: 1.5 }}>
+                  <span style={{ color: '#ffd740', fontWeight: 800, marginRight: 6 }}>Q{qi + 1}.</span>{q.q}
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {q.options.map((opt, oi) => {
+                    let bg = 'rgba(255,255,255,.04)';
+                    let border = 'rgba(255,255,255,.08)';
+                    let color = 'rgba(255,255,255,.75)';
+                    if (answered) {
+                      if (oi === q.correct) { bg = 'rgba(0,230,118,.1)'; border = 'rgba(0,230,118,.35)'; color = '#00e676'; }
+                      else if (oi === quizAnswers[qi] && !correct) { bg = 'rgba(255,82,82,.1)'; border = 'rgba(255,82,82,.35)'; color = '#ff5252'; }
+                    }
+                    return (
+                      <button key={oi}
+                        onClick={() => !answered && setQuizAnswers(prev => ({ ...prev, [qi]: oi }))}
+                        style={{ padding: '10px 14px', borderRadius: 9, background: bg, border: `1px solid ${border}`, color, fontSize: 12, fontWeight: answered && oi === q.correct ? 700 : 400, cursor: answered ? 'default' : 'pointer', textAlign: 'left', transition: 'all .15s' }}
+                      >{opt}</button>
+                    );
+                  })}
+                </div>
+                {answered && (
+                  <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(64,196,255,.06)', border: '1px solid rgba(64,196,255,.2)', borderRadius: 8 }}>
+                    <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,.65)', lineHeight: 1.6 }}><span style={{ color: '#40c4ff', fontWeight: 700 }}>Explanation: </span>{q.explanation}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* External Links */}
+      {content.links && content.links.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(255,255,255,.35)' }}>Further Reading</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {content.links.map(link => (
+              <a key={link.url} href={link.url} target="_blank" rel="noreferrer"
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', textDecoration: 'none', transition: 'border-color .15s' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(64,196,255,.3)')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,.07)')}
+              >
+                <ExternalLink size={13} color="#40c4ff" style={{ flexShrink: 0, marginTop: 1 }} />
+                <div>
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#40c4ff' }}>{link.title}</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,.45)' }}>{link.description}</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Citations */}
+      {content.citations && content.citations.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(255,255,255,.25)' }}>Sources</p>
+          {content.citations.map((c, i) => (
+            <p key={i} style={{ margin: '0 0 4px', fontSize: 10, color: 'rgba(255,255,255,.3)', lineHeight: 1.5 }}>• {c}</p>
+          ))}
+        </div>
+      )}
+
+      {/* Footer nav */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,.07)', flexWrap: 'wrap', marginTop: 'auto' }}>
+        <button onClick={onPrev ?? undefined} disabled={!onPrev}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)', color: onPrev ? 'rgba(255,255,255,.6)' : 'rgba(255,255,255,.2)', fontSize: 12, fontWeight: 600, cursor: onPrev ? 'pointer' : 'not-allowed' }}>
+          <ChevronLeft size={13} /> Previous
+        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {!isComplete && (
+            <button
+              onClick={onComplete}
+              disabled={module.type === 'exercise' ? !allStepsRevealed : module.type === 'quiz' ? !allQuizAnswered : false}
+              style={{ padding: '9px 20px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 12, fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: (module.type === 'exercise' && !allStepsRevealed) || (module.type === 'quiz' && !allQuizAnswered) ? 0.4 : 1 }}>
+              <CheckCircle size={13} /> Mark Complete
+            </button>
+          )}
+          {onNext && (
+            <button onClick={onNext}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(0,230,118,.12)', border: '1px solid rgba(0,230,118,.25)', color: '#00e676', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              Next <ChevronRight size={13} />
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ── Course Roadmap ────────────────────────────────────────────────────────────
 
-const LS_KEY = 'gotham_learn_read';
+function CourseRoadmap({
+  course, progress, onSelectModule, onBack,
+}: {
+  course: Course; progress: Record<string, boolean>;
+  onSelectModule: (idx: number) => void; onBack: () => void;
+}) {
+  const completed = course.modules.filter(m => progress[m.id]).length;
+  const pct = Math.round((completed / course.modules.length) * 100);
 
-function loadRead(): Set<string> {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return new Set();
-    return new Set(JSON.parse(raw) as string[]);
-  } catch {
-    return new Set();
-  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {/* Back */}
+      <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)', fontSize: 11, fontWeight: 600, cursor: 'pointer', marginBottom: 20, width: 'fit-content' }}>
+        <ChevronLeft size={13} /> All Courses
+      </button>
+
+      {/* Course header */}
+      <div style={{ background: `linear-gradient(135deg, ${course.color}0a 0%, transparent 60%), rgba(255,255,255,.02)`, border: `1px solid ${course.color}25`, borderRadius: 18, padding: '24px 22px', marginBottom: 24 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+          <span style={{ ...pill, ...levelStyle(course.level) }}>{course.level}</span>
+          {course.tag && <span style={{ ...pill, background: `${course.color}18`, color: course.color, border: `1px solid ${course.color}35` }}>{course.tag}</span>}
+          <span style={{ ...pill, background: 'transparent', color: 'rgba(255,255,255,.35)', border: 'none', gap: 4 }}>
+            <Clock size={9} /> {course.estimatedHours}h estimated
+          </span>
+        </div>
+        <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: '#fff' }}>{course.title}</h1>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: 'rgba(255,255,255,.55)', lineHeight: 1.6 }}>{course.description}</p>
+        {/* Progress bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ flex: 1, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${pct}%`, background: course.color, borderRadius: 99, transition: 'width .5s cubic-bezier(.4,0,.2,1)' }} />
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 700, color: course.color, flexShrink: 0 }}>{pct}% complete</span>
+        </div>
+      </div>
+
+      {/* Module list */}
+      <p style={{ margin: '0 0 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(255,255,255,.35)' }}>
+        Course Curriculum — {course.modules.length} modules
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {course.modules.map((mod, idx) => {
+          const done = progress[mod.id];
+          const tc = moduleTypeColor(mod.type);
+          return (
+            <button key={mod.id} onClick={() => onSelectModule(idx)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
+                borderRadius: 14, background: done ? `${course.color}08` : 'rgba(255,255,255,.03)',
+                border: `1px solid ${done ? course.color + '30' : 'rgba(255,255,255,.07)'}`,
+                cursor: 'pointer', textAlign: 'left', transition: 'all .15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = course.color + '40'; (e.currentTarget as HTMLElement).style.transform = 'translateX(3px)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = done ? course.color + '30' : 'rgba(255,255,255,.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+            >
+              {/* Step number / check */}
+              <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: done ? course.color + '20' : 'rgba(255,255,255,.05)', border: `1px solid ${done ? course.color + '40' : 'rgba(255,255,255,.1)'}` }}>
+                {done ? <CheckCircle size={14} color={course.color} /> : <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,.4)' }}>{idx + 1}</span>}
+              </div>
+              {/* Info */}
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <span style={{ color: tc }}>{moduleTypeIcon(mod.type)}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: tc, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                    {mod.type === 'quiz' ? 'Quiz' : mod.type === 'exercise' ? 'Exercise' : 'Lesson'}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Clock size={8} />{mod.duration}m
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: done ? 600 : 500, color: done ? '#fff' : 'rgba(255,255,255,.8)' }}>{mod.title}</p>
+              </div>
+              <Play size={14} color={course.color} opacity={0.6} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
-function saveRead(ids: Set<string>) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify([...ids]));
-  } catch { /* ignore */ }
+// ── Course Card (home grid) ───────────────────────────────────────────────────
+
+function CourseCard({ course, progress, onClick }: {
+  course: Course; progress: Record<string, boolean>; onClick: () => void;
+}) {
+  const completed = course.modules.filter(m => progress[m.id]).length;
+  const pct = Math.round((completed / course.modules.length) * 100);
+  const [hov, setHov] = useState(false);
+
+  return (
+    <div onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background: hov ? `${course.color}0a` : 'rgba(255,255,255,.025)',
+        border: `1px solid ${hov ? course.color + '40' : 'rgba(255,255,255,.07)'}`,
+        borderRadius: 20, padding: '22px 20px', cursor: 'pointer',
+        transition: 'all .2s', transform: hov ? 'translateY(-3px)' : 'none',
+        boxShadow: hov ? `0 12px 40px ${course.color}12` : 'none',
+        display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', overflow: 'hidden',
+      }}>
+      {/* Top glow */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${course.color}60, transparent)`, opacity: hov ? 1 : 0, transition: 'opacity .2s' }} />
+      {/* Tags */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <span style={{ ...pill, ...levelStyle(course.level) }}>{course.level}</span>
+        {course.tag && <span style={{ ...pill, background: `${course.color}18`, color: course.color, border: `1px solid ${course.color}35` }}>{course.tag}</span>}
+      </div>
+      {/* Title */}
+      <div>
+        <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{course.title}</h3>
+        <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,.4)' }}>{course.subtitle}</p>
+      </div>
+      {/* Description */}
+      <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.55)', lineHeight: 1.65, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{course.description}</p>
+      {/* Stats */}
+      <div style={{ display: 'flex', gap: 14, fontSize: 11, color: 'rgba(255,255,255,.35)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><BookOpen size={10} /> {course.modules.length} modules</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={10} /> {course.estimatedHours}h</span>
+      </div>
+      {/* Progress */}
+      {pct > 0 && (
+        <div>
+          <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,.07)', overflow: 'hidden', marginBottom: 4 }}>
+            <div style={{ height: '100%', width: `${pct}%`, background: course.color, borderRadius: 99 }} />
+          </div>
+          <span style={{ fontSize: 10, color: course.color, fontWeight: 700 }}>{pct}% complete</span>
+        </div>
+      )}
+      {/* CTA */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: course.color, marginTop: 'auto' }}>
+        <span style={{ fontSize: 12, fontWeight: 700 }}>{pct === 0 ? 'Start course' : pct === 100 ? 'Review course' : 'Continue'}</span>
+        <ChevronRight size={13} />
+      </div>
+    </div>
+  );
 }
 
-function filterLessonsByPath(pathId: string): Lesson[] {
-  if (pathId === 'all') return LESSONS;
-  if (pathId === 'technical') return LESSONS.filter(l => l.category === 'Technical Analysis');
-  if (pathId === 'advanced') return LESSONS.filter(l => l.difficulty === 'Advanced' || l.difficulty === 'Intermediate');
-  return LESSONS;
-}
+// ── Main Component ────────────────────────────────────────────────────────────
 
 export default function Learn() {
-  const [readIds, setReadIds] = useState<Set<string>>(loadRead);
-  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
-  const [selectedPath, setSelectedPath] = useState<string>('all');
+  const [progress, setProgress] = useState<Record<string, boolean>>(loadProgress);
+  const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
+  const [activeModuleIdx, setActiveModuleIdx] = useState<number | null>(null);
 
-  const markRead = (id: string) => {
-    setReadIds(prev => {
-      const next = new Set(prev);
-      next.add(id);
-      saveRead(next);
+  const activeCourse = COURSES.find(c => c.id === activeCourseId) ?? null;
+  const activeModule = activeCourse && activeModuleIdx !== null ? activeCourse.modules[activeModuleIdx] : null;
+
+  const markComplete = (moduleId: string) => {
+    setProgress(prev => {
+      const next = { ...prev, [moduleId]: true };
+      saveProgress(next);
       return next;
     });
   };
 
-  const filteredLessons = filterLessonsByPath(selectedPath);
-  const completedCount = LESSONS.filter(l => readIds.has(l.id)).length;
-  const progressPct = Math.round((completedCount / LESSONS.length) * 100);
+  const totalModules = COURSES.reduce((a, c) => a + c.modules.length, 0);
+  const totalCompleted = COURSES.reduce((a, c) => a + c.modules.filter(m => progress[m.id]).length, 0);
+  const overallPct = Math.round((totalCompleted / totalModules) * 100);
 
+  // Module viewer
+  if (activeCourse && activeModule && activeModuleIdx !== null) {
+    return (
+      <div style={{ maxWidth: 760, margin: '0 auto', fontFamily: "'Inter', sans-serif" }}>
+        <ModuleViewer
+          module={activeModule}
+          moduleIndex={activeModuleIdx}
+          totalModules={activeCourse.modules.length}
+          isComplete={!!progress[activeModule.id]}
+          onComplete={() => { markComplete(activeModule.id); }}
+          onPrev={activeModuleIdx > 0 ? () => setActiveModuleIdx(activeModuleIdx - 1) : null}
+          onNext={activeModuleIdx < activeCourse.modules.length - 1 ? () => setActiveModuleIdx(activeModuleIdx + 1) : null}
+          onBack={() => setActiveModuleIdx(null)}
+        />
+      </div>
+    );
+  }
+
+  // Course roadmap
+  if (activeCourse) {
+    return (
+      <div style={{ maxWidth: 760, margin: '0 auto', fontFamily: "'Inter', sans-serif" }}>
+        <CourseRoadmap
+          course={activeCourse}
+          progress={progress}
+          onSelectModule={idx => setActiveModuleIdx(idx)}
+          onBack={() => setActiveCourseId(null)}
+        />
+      </div>
+    );
+  }
+
+  // Courses home
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, fontFamily: 'var(--font-sans)' }}>
-
-      {/* ── Page Header ─────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Award size={22} color="var(--color-green)" />
-              Learning Hub
-            </h1>
-            <p style={{ margin: '5px 0 0', fontSize: 13, color: 'var(--color-text2)' }}>
-              Master Caribbean &amp; US investing — from first principles to advanced strategy.
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 12 }}>
-            <span style={{ fontSize: 11, color: 'var(--color-text2)', fontWeight: 600 }}>{completedCount}/{LESSONS.length} lessons</span>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, fontFamily: "'Inter', sans-serif" }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Award size={22} color="#00e676" />
+            Learning Hub
+          </h1>
+          <p style={{ margin: '5px 0 0', fontSize: 13, color: 'rgba(255,255,255,.45)' }}>
+            Full courses on Caribbean &amp; US investing — lessons, exercises, quizzes, and real-world analysis.
+          </p>
         </div>
-
-        {/* Progress bar */}
-        <div style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 14, padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text)' }}>Your Progress</span>
-            <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--color-green)' }}>{progressPct}% complete</span>
-          </div>
-          <div style={{ height: 7, borderRadius: 999, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${progressPct}%`, background: 'var(--color-green)', borderRadius: 999, transition: 'width .5s cubic-bezier(.4,0,.2,1)' }} />
-          </div>
-          {completedCount === LESSONS.length && (
-            <p style={{ margin: 0, fontSize: 11, color: 'var(--color-green)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Star size={11} /> All lessons complete — excellent work!
-            </p>
-          )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12 }}>
+          <Zap size={13} color="#00e676" />
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>{totalCompleted}/{totalModules} modules done</span>
         </div>
       </div>
 
-      {/* ── Learning Paths ───────────────────────────────────────────────────── */}
-      <section>
-        <h2 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 800, color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <TrendingUp size={15} color="var(--color-green)" />
-          Learning Paths
-        </h2>
+      {/* Overall progress */}
+      <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: '14px 18px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.7)' }}>Overall Progress</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: '#00e676' }}>{overallPct}%</span>
+        </div>
+        <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${overallPct}%`, background: 'linear-gradient(90deg, #00e676, #40c4ff)', borderRadius: 99, transition: 'width .6s cubic-bezier(.4,0,.2,1)' }} />
+        </div>
+      </div>
 
-        {/* Horizontal scroll on mobile, flex wrap on desktop */}
-        <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'none' }}>
-          {PATHS.map(p => (
-            <PathCard
-              key={p.id}
-              path={{ ...p, lessonCount: filterLessonsByPath(p.id).length }}
-              isActive={selectedPath === p.id}
-              onClick={() => setSelectedPath(p.id)}
-            />
+      {/* Course grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+        {COURSES.map(course => (
+          <CourseCard
+            key={course.id}
+            course={course}
+            progress={progress}
+            onClick={() => setActiveCourseId(course.id)}
+          />
+        ))}
+      </div>
+
+      {/* Quick reference glossary */}
+      <section>
+        <h2 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <TrendingUp size={15} color="#00e676" /> Quick Reference — Key Terms
+        </h2>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {[
+            ['Market Cap', 'Share Price × Total Shares. The total market value of a company. NCB Financial Group has a market cap over J$300 billion.'],
+            ['P/E Ratio', 'Price ÷ Earnings Per Share. How much you pay for each dollar of annual profit. Compare within sectors only.'],
+            ['Dividend Yield', 'Annual Dividend ÷ Price × 100. The cash return you receive just from dividends, independent of price changes.'],
+            ['Beta', 'A stock\'s volatility relative to the market. Beta 1.5 = 50% more volatile than the index. Higher beta = higher risk and reward.'],
+            ['EPS', 'Earnings Per Share = Net Profit ÷ Shares Outstanding. The core driver of stock valuation.'],
+            ['Support Level', 'A price where the stock has historically found buyers and bounced. Breaking below support is a bearish signal.'],
+            ['Resistance Level', 'A price where selling has historically overwhelmed buying. Breaking above resistance is a bullish signal.'],
+            ['Volume', 'Shares traded in a session. High volume confirms price moves; low volume makes price moves suspect.'],
+          ].map(([term, def]) => (
+            <GlossaryRow key={term} term={term} definition={def} />
           ))}
         </div>
       </section>
+    </div>
+  );
+}
 
-      {/* ── Featured Lessons ─────────────────────────────────────────────────── */}
-      <section>
-        <h2 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 800, color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <BookOpen size={15} color="var(--color-green)" />
-          {selectedPath === 'all' ? 'All Lessons' : PATHS.find(p => p.id === selectedPath)?.title ?? 'Lessons'}
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text2)', marginLeft: 2 }}>({filteredLessons.length})</span>
-        </h2>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-          {filteredLessons.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--color-text2)', gridColumn: '1 / -1', padding: '24px 0' }}>
-              No lessons in this path yet — check back soon.
-            </p>
-          ) : filteredLessons.map(l => (
-            <LessonCard
-              key={l.id}
-              lesson={l}
-              isRead={readIds.has(l.id)}
-              onClick={() => setActiveLesson(l)}
-            />
-          ))}
+function GlossaryRow({ term, definition }: { term: string; definition: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 12, overflow: 'hidden', transition: 'border-color .15s' }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'transparent', border: 'none', cursor: 'pointer', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Zap size={11} color="#00e676" />
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', textAlign: 'left' }}>{term}</span>
         </div>
-      </section>
-
-      {/* ── Quick Reference / Glossary ───────────────────────────────────────── */}
-      <section>
-        <h2 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 800, color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Zap size={15} color="var(--color-green)" />
-          Quick Reference
-        </h2>
-        <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--color-text2)' }}>Key investing terms explained simply.</p>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {GLOSSARY.map(g => <GlossaryRow key={g.term} item={g} />)}
+        {open ? <ChevronRight size={13} color="rgba(255,255,255,.35)" style={{ transform: 'rotate(90deg)' }} /> : <ChevronRight size={13} color="rgba(255,255,255,.35)" />}
+      </button>
+      {open && (
+        <div style={{ padding: '0 16px 14px', borderTop: '1px solid rgba(255,255,255,.06)' }}>
+          <p style={{ margin: '10px 0 0', fontSize: 12, color: 'rgba(255,255,255,.6)', lineHeight: 1.65 }}>{definition}</p>
         </div>
-      </section>
-
-      {/* ── Lesson Modal ─────────────────────────────────────────────────────── */}
-      {activeLesson && (
-        <LessonModal
-          lesson={activeLesson}
-          isRead={readIds.has(activeLesson.id)}
-          onMarkRead={() => markRead(activeLesson.id)}
-          onClose={() => setActiveLesson(null)}
-        />
       )}
     </div>
   );
