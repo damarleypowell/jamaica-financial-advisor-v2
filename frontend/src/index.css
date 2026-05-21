@@ -141,8 +141,8 @@ body {
   cursor: pointer;
 }
 .card-interactive:hover {
-  border-color: rgba(0,230,118,.2);
-  box-shadow: 0 6px 32px rgba(0,0,0,.4), 0 0 0 1px rgba(0,230,118,.08);
+  border-color: rgba(255,255,255,.1);
+  box-shadow: 0 6px 32px rgba(0,0,0,.4);
   transform: translateY(-1px);
 }
 .card-interactive:active {
@@ -198,7 +198,7 @@ body {
 
 /* ── Dot indicators ────────────────────────────────────────────────── */
 .dot { display:inline-block; width:7px; height:7px; border-radius:50%; }
-.dot-green  { background:var(--color-green); box-shadow: 0 0 6px rgba(0,230,118,.5); }
+.dot-green  { background:var(--color-green); }
 .dot-red    { background:var(--color-red);   box-shadow: 0 0 6px rgba(255,82,82,.5); }
 .dot-gold   { background:var(--color-gold);  }
 .dot-muted  { background:var(--color-muted); }

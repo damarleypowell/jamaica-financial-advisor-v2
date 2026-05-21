@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useMarketStore } from '../../stores/market';
 import { useUIStore } from '../../stores/ui';
 import { Link } from 'react-router-dom';
+import StockLogo from '../../components/ui/StockLogo';
 
 type Field = 'symbol' | 'name' | 'price' | 'dollarChange' | 'pctChange' | 'volume';
 type Dir = 'asc' | 'desc';
@@ -92,7 +93,7 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
             <input
               value={q} onChange={e => setQ(e.target.value)} placeholder={isUS ? 'Search US symbol…' : 'Search JSE symbol…'}
               style={{ height: 32, width: 200, paddingLeft: 30, paddingRight: q ? 28 : 10, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 11, color: 'var(--color-text)', outline: 'none', transition: 'all 150ms', boxSizing: 'border-box' }}
-              onFocus={e => { e.target.style.borderColor = 'rgba(0,230,118,.4)'; e.target.style.background = 'rgba(0,230,118,.04)'; }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,.18)'; e.target.style.background = 'rgba(255,255,255,.07)'; }}
               onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.background = 'rgba(255,255,255,.05)'; }}
             />
             {q && (
@@ -103,7 +104,7 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
           </div>
           {isUS && (
             <Link to="/technicals"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.2)', color: '#00e676', fontSize: 11, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'var(--color-text2)', fontSize: 11, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
               <i className="fa-solid fa-chart-candlestick" style={{ fontSize: 10 }} />
               Advanced Chart
             </Link>
@@ -144,11 +145,9 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
                 >
                   <td style={{ padding: '11px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.08)' : 'rgba(255,255,255,.04)', border: `1px solid ${pos ? 'rgba(0,230,118,.2)' : neg ? 'rgba(255,82,82,.15)' : 'rgba(255,255,255,.06)'}` }}>
-                        <span style={{ fontSize: 7, fontWeight: 900, color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)', letterSpacing: '-.01em' }}>{s.symbol.slice(0, 4)}</span>
-                      </div>
+                      <StockLogo symbol={s.symbol} isUS={isUS} size={34} radius={9} />
                       <div>
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{s.symbol}</p>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{s.symbol}</p>
                         {s.name && <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</p>}
                       </div>
                     </div>
@@ -178,7 +177,7 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
       {/* Show more / less footer */}
       {hidden > 0 && !q && (
         <button onClick={() => setShowAll(v => !v)}
-          style={{ width: '100%', padding: '12px 20px', background: 'rgba(255,255,255,.02)', border: 'none', borderTop: '1px solid rgba(255,255,255,.04)', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#00e676', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          style={{ width: '100%', padding: '12px 20px', background: 'rgba(255,255,255,.02)', border: 'none', borderTop: '1px solid rgba(255,255,255,.04)', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--color-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           <i className={`fa-solid fa-chevron-${showAll ? 'up' : 'down'}`} style={{ fontSize: 9 }} />
           {showAll ? 'Show less' : `Show ${hidden} more ${isUS ? 'US stocks' : 'JSE stocks'}`}
         </button>

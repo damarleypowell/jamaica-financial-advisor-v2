@@ -135,7 +135,7 @@ export default function FloatingAIAdvisor() {
         onClick={() => setOpen(v => !v)}
         title="Gotham AI Advisor"
         style={{
-          position: 'fixed', bottom: 28, right: 28, zIndex: 9999,
+          position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)', right: 20, zIndex: 9999,
           width: 56, height: 56, borderRadius: '50%', border: 'none', cursor: 'pointer',
           background: 'linear-gradient(135deg, #00c853, #00e676)',
           boxShadow: '0 4px 24px rgba(0,200,83,.45), 0 0 0 3px rgba(0,230,118,.15)',
@@ -151,7 +151,7 @@ export default function FloatingAIAdvisor() {
       {/* ── advisor panel ── */}
       {open && (
         <div style={{
-          position: 'fixed', bottom: 96, right: 28, zIndex: 9998,
+          position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 144px)', right: 20, zIndex: 9998,
           width: 380, maxWidth: 'calc(100vw - 40px)',
           background: 'var(--color-bg2)', border: '1px solid var(--color-border)',
           borderRadius: 20, boxShadow: '0 16px 64px rgba(0,0,0,.65)',
