@@ -238,7 +238,7 @@ export default function Header({ onToggleSidebar, focusMode: _focusMode, sidebar
       <div style={{ flex: 1 }} className="hidden md:block" />
 
       {/* Desktop search */}
-      <div ref={sRef} style={{ position: 'relative', flexShrink: 0 }} className="hidden sm:block">
+      <div data-tour="search" ref={sRef} style={{ position: 'relative', flexShrink: 0 }} className="hidden sm:block">
         <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--color-muted)', pointerEvents: 'none', zIndex: 1 }} />
         <input
           value={sq}

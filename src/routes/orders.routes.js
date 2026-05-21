@@ -332,9 +332,8 @@ async function getUserTransactions(userId) {
 
 // ── Fee calculation ──────────────────────────────────────────────────────────
 
-function calculateFee(totalAmount, market = "JSE") {
-  const rate = market === "JSE" ? 0.01 : 0.005; // 1% JSE, 0.5% US service charge
-  return +(totalAmount * rate).toFixed(2);
+function calculateFee(_totalAmount, _market = "JSE") {
+  return 0; // No fees on paper trading — real fees apply when live brokerage is integrated
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

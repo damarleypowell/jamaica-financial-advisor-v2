@@ -7,6 +7,7 @@ import StockDetailModal from './components/modals/StockDetailModal.tsx';
 import ComplianceModal from './components/modals/ComplianceModal.tsx';
 import AuthModal from './components/modals/AuthModal.tsx';
 import FeatureGuide from './components/ui/FeatureGuide.tsx';
+import AppTour from './components/ui/AppTour.tsx';
 import { useMarketStore } from './stores/market.ts';
 import { useAuthStore } from './stores/auth.ts';
 import FloatingAIAdvisor from './components/FloatingAIAdvisor.tsx';
@@ -75,6 +76,7 @@ export default function App() {
         <AuthModal />
         <FloatingAIAdvisor />
         <FeatureGuide />
+        <AppTour />
         <Routes>
           {/* Full-screen routes — no sidebar */}
           <Route path="onboarding" element={<Suspense fallback={<PageLoader />}><Onboarding /></Suspense>} />

@@ -131,6 +131,7 @@ export default function FloatingAIAdvisor() {
     <>
       {/* ── floating button ── */}
       <button
+        data-tour="floating-ai"
         onClick={() => setOpen(v => !v)}
         title="Gotham AI Advisor"
         style={{

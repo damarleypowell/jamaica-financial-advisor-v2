@@ -243,6 +243,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
     <>
       {/* ── Desktop: always-visible pinned sidebar ─────────────────── */}
       <aside
+        data-tour="sidebar"
         className="hidden lg:flex"
         style={{
           position: 'fixed',
@@ -307,7 +308,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       </div>
 
       {/* ── Mobile bottom nav ────────────────────────────────────────── */}
-      <nav className="lg:hidden" style={{
+      <nav data-tour="bottom-nav" className="lg:hidden" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         height: 60, paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         background: 'rgba(6,10,18,.97)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',

@@ -79,25 +79,37 @@ const GUIDES: Record<string, GuideConfig> = {
 };
 
 function speak(text: string, onEnd?: () => void) {
-  if (!window.speechSynthesis) return;
+  if (!window.speechSynthesis) { onEnd?.(); return; }
   window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.rate = 0.95;
-  utt.pitch = 1.05;
-  utt.volume = 0.9;
-  // prefer a female voice
-  const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(v =>
-    v.name.toLowerCase().includes('female') ||
-    v.name.toLowerCase().includes('samantha') ||
-    v.name.toLowerCase().includes('karen') ||
-    v.name.toLowerCase().includes('victoria') ||
-    v.name.toLowerCase().includes('zira') ||
-    (v.lang.startsWith('en') && v.name.toLowerCase().includes('google'))
-  ) || voices.find(v => v.lang.startsWith('en'));
-  if (preferred) utt.voice = preferred;
-  if (onEnd) utt.onend = onEnd;
-  window.speechSynthesis.speak(utt);
+
+  const doSpeak = () => {
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.rate = 0.92;
+    utt.pitch = 1.05;
+    utt.volume = 1.0;
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v =>
+      v.name.toLowerCase().includes('samantha') ||
+      v.name.toLowerCase().includes('karen') ||
+      v.name.toLowerCase().includes('victoria') ||
+      v.name.toLowerCase().includes('zira') ||
+      (v.lang.startsWith('en') && v.name.toLowerCase().includes('google'))
+    ) || voices.find(v => v.lang.startsWith('en'));
+    if (preferred) utt.voice = preferred;
+    utt.onerror = () => onEnd?.();
+    if (onEnd) utt.onend = onEnd;
+    window.speechSynthesis.speak(utt);
+  };
+
+  // Voices may not be loaded yet — wait for them
+  if (window.speechSynthesis.getVoices().length > 0) {
+    doSpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      doSpeak();
+    };
+  }
 }
 
 export default function FeatureGuide() {
