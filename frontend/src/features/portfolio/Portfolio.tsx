@@ -59,21 +59,21 @@ export default function Portfolio() {
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
-  const { data: walletData } = useQuery<any>({
+  const { data: walletData, isError: walletError, refetch: walletRefetch } = useQuery<any>({
     queryKey: ['wallet'],
     queryFn: () => apiGet('/api/wallet/balance'),
     enabled: isAuthenticated,
     refetchInterval: 15_000,
   });
 
-  const { data: posData, isLoading: posLoading } = useQuery<any>({
+  const { data: posData, isLoading: posLoading, isError: posError, refetch: posRefetch } = useQuery<any>({
     queryKey: ['positions'],
     queryFn: () => apiGet('/api/portfolio/positions'),
     enabled: isAuthenticated,
     refetchInterval: 30_000,
   });
 
-  const { data: histData, isLoading: histLoading } = useQuery<any>({
+  const { data: histData, isLoading: histLoading, isError: histError, refetch: histRefetch } = useQuery<any>({
     queryKey: ['transactions'],
     queryFn: () => apiGet('/api/portfolio/history'),
     enabled: isAuthenticated && tab === 'history',
@@ -413,6 +413,17 @@ export default function Portfolio() {
                 <div key={i} style={{ height: 56, borderRadius: 12, background: 'rgba(255,255,255,.04)', animation: 'pulse 1.5s ease-in-out infinite' }} />
               ))}
             </div>
+          ) : posError ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', gap: 14, fontFamily: INTER }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 18, color: '#ff5252' }} />
+              </div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Unable to load portfolio data. Please try again.</p>
+              <button onClick={() => posRefetch()}
+                style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
+                Retry
+              </button>
+            </div>
           ) : positions.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', gap: 14 }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -482,6 +493,17 @@ export default function Portfolio() {
                 <div key={i} style={{ height: 48, borderRadius: 12, background: 'rgba(255,255,255,.04)', animation: 'pulse 1.5s ease-in-out infinite' }} />
               ))}
             </div>
+          ) : histError ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', gap: 14, fontFamily: INTER }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 18, color: '#ff5252' }} />
+              </div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Unable to load portfolio data. Please try again.</p>
+              <button onClick={() => histRefetch()}
+                style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
+                Retry
+              </button>
+            </div>
           ) : transactions.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', gap: 12 }}>
               <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 28, color: 'rgba(255,255,255,.15)' }} />
@@ -526,7 +548,18 @@ export default function Portfolio() {
         )}
 
         {/* ── WALLET ──────────────────────────────────────────────────────── */}
-        {tab === 'wallet' && (
+        {tab === 'wallet' && walletError ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', gap: 14, fontFamily: INTER }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 18, color: '#ff5252' }} />
+            </div>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Unable to load portfolio data. Please try again.</p>
+            <button onClick={() => walletRefetch()}
+              style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
+              Retry
+            </button>
+          </div>
+        ) : tab === 'wallet' && (
           <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {[

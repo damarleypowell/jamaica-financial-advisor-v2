@@ -19,7 +19,7 @@ export default function Orders() {
   const { isAuthenticated } = useAuthStore();
   const [tab, setTab] = useState<Tab>('orders');
 
-  const { data: orders = [], isLoading: oLoad } = useQuery<Order[]>({
+  const { data: orders = [], isLoading: oLoad, isError: oError, refetch: oRefetch } = useQuery<Order[]>({
     queryKey: ['orders'],
     queryFn: async () => {
       const res: any = await apiGet('/api/orders');
@@ -36,7 +36,7 @@ export default function Orders() {
     retry: 1,
   });
 
-  const { data: transactions = [], isLoading: tLoad } = useQuery<Transaction[]>({
+  const { data: transactions = [], isLoading: tLoad, isError: tError, refetch: tRefetch } = useQuery<Transaction[]>({
     queryKey: ['transactions'],
     queryFn: async () => {
       const res: any = await apiGet('/api/portfolio/history');
@@ -91,6 +91,17 @@ export default function Orders() {
             <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 52, borderRadius: 10 }} />)}
             </div>
+          ) : oError ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', gap: 12 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 18, color: 'var(--color-red)' }} />
+              </div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>Unable to load orders. Please try again.</p>
+              <button onClick={() => oRefetch()}
+                style={{ padding: '8px 20px', borderRadius: 10, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                Retry
+              </button>
+            </div>
           ) : orders.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', gap: 10 }}>
               <i className="fa-solid fa-list-check" style={{ fontSize: 28, color: 'var(--color-muted)', opacity: .25 }} />
@@ -142,6 +153,17 @@ export default function Orders() {
           tLoad ? (
             <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 48, borderRadius: 10 }} />)}
+            </div>
+          ) : tError ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', gap: 12 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 18, color: 'var(--color-red)' }} />
+              </div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>Unable to load orders. Please try again.</p>
+              <button onClick={() => tRefetch()}
+                style={{ padding: '8px 20px', borderRadius: 10, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                Retry
+              </button>
             </div>
           ) : transactions.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', gap: 10 }}>

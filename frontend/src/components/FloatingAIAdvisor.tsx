@@ -61,22 +61,55 @@ export default function FloatingAIAdvisor() {
   /* ── auto-compute indicators from live price history ── */
   useEffect(() => {
     if (!live?.price) return;
-    // Use price from live stocks array (all stocks for EMA calculation on current symbol)
-    const prices = stocks.filter(s => s.symbol === symbol).map(s => s.price ?? 0);
-    if (prices.length < 2) return;
-    // Simple placeholder: use market change to infer RSI proxy
-    const rsiProxy = 50 + (pctChange * 3);
-    setRsi(Math.min(100, Math.max(0, rsiProxy)));
-    setEma20(live.price * (1 - pctChange / 200));
-    setEma50(live.price * (1 - pctChange / 100));
+
+    // Collect price history for the selected symbol.
+    // The market store only holds the latest snapshot per symbol, so we have
+    // at most one price point here. We fall back to a single-point array so
+    // the helpers below degrade gracefully instead of producing fake signals.
+    const prices = stocks.filter(s => s.symbol === symbol).map(s => s.price ?? 0).filter(p => p > 0);
+    if (prices.length === 0) return;
+
+    // Proper EMA calculation
+    function calcEMA(ps: number[], period: number): number {
+      if (ps.length < period) return ps[ps.length - 1] ?? 0;
+      const k = 2 / (period + 1);
+      let ema = ps.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      for (let i = period; i < ps.length; i++) {
+        ema = ps[i] * k + ema * (1 - k);
+      }
+      return ema;
+    }
+
+    // Proper RSI calculation
+    function calcRSI(ps: number[], period = 14): number {
+      if (ps.length < period + 1) return 50; // not enough data — return neutral
+      const changes = ps.slice(1).map((p, i) => p - ps[i]);
+      const gains   = changes.map(c => Math.max(c, 0));
+      const losses  = changes.map(c => Math.max(-c, 0));
+      const avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      const avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      if (avgLoss === 0) return 100;
+      const rs = avgGain / avgLoss;
+      return 100 - 100 / (1 + rs);
+    }
+
+    // NOTE: with a single-snapshot store, prices.length is typically 1.
+    // calcEMA and calcRSI handle this gracefully (return last price / 50 respectively).
+    setEma20(calcEMA(prices, 20));
+    setEma50(calcEMA(prices, 50));
+    setRsi(calcRSI(prices, 14));
   }, [symbol, live, pctChange, stocks]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs]);
 
   /* ── voice input ── */
   const startListening = useCallback(() => {
+    if (typeof window === 'undefined' || (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window))) {
+      alert('Voice input not supported in this browser. Try Chrome.');
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) { alert('Voice input not supported in this browser. Try Chrome.'); return; }
     const rec = new SpeechRecognition();
     rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
     rec.onresult = (e: any) => { setInput(e.results[0][0].transcript); setLis(false); };
@@ -111,7 +144,25 @@ export default function FloatingAIAdvisor() {
       const reply = res?.response ?? res?.message ?? 'I could not generate a response. Please try again.';
       setMsgs(prev => [...prev, { role: 'ai', text: reply }]);
     } catch (err: any) {
-      setMsgs(prev => [...prev, { role: 'ai', text: `Error: ${err?.message ?? 'Unable to connect to AI service.'}` }]);
+      // Distinguish error types for a more helpful user message
+      let errorText: string;
+      const status: number | undefined = err?.status ?? err?.statusCode ?? err?.response?.status;
+      if (status === 429) {
+        errorText = 'Too many requests. Please wait a moment.';
+      } else if (status !== undefined && status >= 500 && status < 600) {
+        errorText = 'AI service unavailable. Try again shortly.';
+      } else if (
+        err instanceof TypeError ||
+        err?.name === 'TypeError' ||
+        err?.message?.toLowerCase().includes('network') ||
+        err?.message?.toLowerCase().includes('fetch') ||
+        err?.message?.toLowerCase().includes('failed to fetch')
+      ) {
+        errorText = 'Connection failed. Check your internet and try again.';
+      } else {
+        errorText = 'Something went wrong. Please try again.';
+      }
+      setMsgs(prev => [...prev, { role: 'ai', text: errorText }]);
     } finally {
       setLoad(false);
     }

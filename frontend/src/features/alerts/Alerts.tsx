@@ -193,7 +193,7 @@ export default function Alerts() {
   }, [symbolSearch, stocks]);
 
   /* ---- Fetch alerts ---- */
-  const { data: alertsData, isLoading: alertsLoading } = useQuery<AlertsResponse>({
+  const { data: alertsData, isLoading: alertsLoading, isError: alertsError, refetch: alertsRefetch } = useQuery<AlertsResponse>({
     queryKey: ['alerts'],
     queryFn: () => apiGet<AlertsResponse>('/api/alerts'),
     enabled: isAuthenticated,
@@ -457,6 +457,17 @@ export default function Alerts() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : alertsError ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 18, color: 'var(--color-red)' }} />
+            </div>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>Unable to load alerts. Please try again.</p>
+            <button onClick={() => alertsRefetch()}
+              style={{ padding: '8px 20px', borderRadius: 10, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+              Retry
+            </button>
           </div>
         ) : alerts.length === 0 ? (
           <EmptyState />

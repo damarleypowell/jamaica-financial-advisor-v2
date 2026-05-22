@@ -276,8 +276,21 @@ function PortfolioOptCalc() {
       </button>
 
       {mutation.isError && (
-        <div style={{ padding: '12px 14px', background: 'rgba(255,82,82,.08)', border: '1px solid rgba(255,82,82,.2)', borderRadius: 10, fontSize: 12, color: 'var(--color-red)' }}>
-          {mutation.error.message}
+        <div style={{ padding: '12px 14px', background: 'rgba(255,82,82,.08)', border: '1px solid rgba(255,82,82,.2)', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 12, color: 'var(--color-red)', flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-red)' }}>
+              {mutation.error.message === 'Enter at least 2 symbols'
+                ? mutation.error.message
+                : 'Optimization service unavailable. Please try again later.'}
+            </span>
+          </div>
+          {mutation.error.message !== 'Enter at least 2 symbols' && (
+            <button onClick={() => mutation.mutate()}
+              style={{ alignSelf: 'flex-start', padding: '6px 16px', borderRadius: 8, background: 'var(--color-green)', color: '#04060d', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+              Retry
+            </button>
+          )}
         </div>
       )}
 

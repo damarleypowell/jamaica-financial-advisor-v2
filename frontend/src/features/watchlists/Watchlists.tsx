@@ -342,10 +342,12 @@ export default function Watchlists() {
                 {/* Dropdown results */}
                 {searchResults.length > 0 && (
                   <div style={{
-                    position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 260,
+                    position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                    width: window.innerWidth < 768 ? Math.min(260, window.innerWidth - 16) : 260,
+                    maxWidth: '100vw',
                     background: BG3, border: `1px solid rgba(255,255,255,0.1)`,
                     borderRadius: 14, boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-                    zIndex: 50, overflow: 'hidden',
+                    zIndex: 50, overflowY: 'auto', maxHeight: '40vh',
                   }}>
                     {searchResults.map(s => (
                       <button

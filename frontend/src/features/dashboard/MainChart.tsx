@@ -258,26 +258,40 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
           </div>
         )}
 
-        <div ref={containerRef} style={{ width: '100%', height: 220 }}>
-          {!symbol && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10 }}>
-              <i className="fa-solid fa-chart-area" style={{ fontSize: 32, color: 'var(--color-muted)', opacity: .2 }} />
-              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text2)', margin: 0 }}>Select a stock above</p>
-              <p style={{ fontSize: 11, color: 'var(--color-muted)', margin: 0 }}>Click any mover card to load its chart</p>
-            </div>
-          )}
-          {symbol && !isLoading && !hasData && (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, pointerEvents: 'none' }}>
-              <i className="fa-solid fa-satellite-dish" style={{ fontSize: 24, color: 'var(--color-muted)', opacity: .3 }} />
-              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text2)', margin: 0 }}>
-                {isUS ? 'Chart data loading…' : 'No price history yet'}
+        {/* No stocks empty state — shown as overlay above the (empty) canvas */}
+        {!symbol && !isLoading && (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '32px 24px', pointerEvents: 'none' }}>
+            {/* Inline SVG: trending-up / chart icon */}
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.18 }}>
+              <rect width="48" height="48" rx="12" fill="rgba(0,230,118,0.12)" />
+              <polyline points="8,34 18,22 26,28 40,14" stroke="#00e676" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <polyline points="34,14 40,14 40,20" stroke="#00e676" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <line x1="8" y1="38" x2="40" y2="38" stroke="rgba(0,230,118,0.4)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '-0.01em' }}>
+                No stocks to display
               </p>
-              <p style={{ fontSize: 10, color: 'var(--color-muted)', margin: 0 }}>
-                {isUS ? 'Fetching from Alpaca / Yahoo Finance' : 'Chart data streams in as prices update'}
+              <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.22)', lineHeight: 1.5, maxWidth: 220 }}>
+                Search for a stock above or add one to your watchlist to get started
               </p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {symbol && !isLoading && !hasData && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, pointerEvents: 'none' }}>
+            <i className="fa-solid fa-satellite-dish" style={{ fontSize: 24, color: 'var(--color-muted)', opacity: .3 }} />
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text2)', margin: 0 }}>
+              {isUS ? 'Chart data loading…' : 'No price history yet'}
+            </p>
+            <p style={{ fontSize: 10, color: 'var(--color-muted)', margin: 0 }}>
+              {isUS ? 'Fetching from Alpaca / Yahoo Finance' : 'Chart data streams in as prices update'}
+            </p>
+          </div>
+        )}
+
+        <div ref={containerRef} style={{ width: '100%', height: 220 }} />
       </div>
 
       {/* Footer with Full Chart CTA */}

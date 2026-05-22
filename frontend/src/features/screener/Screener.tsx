@@ -9,6 +9,15 @@ const fmt2  = (n?: number) => (n ?? 0).toLocaleString('en-US', { minimumFraction
 const fmtVol = (n?: number) => { const v = n ?? 0; return v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v.toLocaleString(); };
 const chg   = (v?: number) => (v ?? 0) > 0 ? 'var(--color-green)' : (v ?? 0) < 0 ? 'var(--color-red)' : 'var(--color-muted)';
 
+const screenerStyles = `
+  .screener-table-wrap { display: block; }
+  .screener-cards-wrap { display: none; }
+  @media (max-width: 767px) {
+    .screener-table-wrap { display: none; }
+    .screener-cards-wrap { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+  }
+`;
+
 export default function Screener() {
   const stocks = useMarketStore(s => s.stocks);
   const selectSymbol = useMarketStore(s => s.selectSymbol);
@@ -128,9 +137,14 @@ export default function Screener() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Responsive styles */}
+      <style>{screenerStyles}</style>
+
+      {/* Results container */}
       <div style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 16, overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
+
+        {/* ── Desktop table (hidden on mobile via CSS) ── */}
+        <div className="screener-table-wrap" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
@@ -183,6 +197,67 @@ export default function Screener() {
             </tbody>
           </table>
         </div>
+
+        {/* ── Mobile card list (hidden on desktop via CSS) ── */}
+        <div className="screener-cards-wrap">
+          {results.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '52px 20px', gap: 10 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-filter-circle-xmark" style={{ fontSize: 20, color: 'var(--color-muted)', opacity: .35 }} />
+              </div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text2)' }}>No stocks match your filters</p>
+              <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>Try adjusting or clearing your filters to see results</p>
+            </div>
+          ) : results.map((s) => {
+            const pos = (s.pctChange ?? 0) > 0, neg = (s.pctChange ?? 0) < 0;
+            const accentColor = pos ? 'var(--color-green)' : neg ? 'var(--color-red)' : 'var(--color-muted)';
+            const accentBg    = pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.08)' : 'rgba(255,255,255,.04)';
+            return (
+              <div key={s.symbol}
+                onClick={() => { selectSymbol(s.symbol); openStockDetail(s.symbol); }}
+                style={{ background: 'rgba(255,255,255,.03)', border: '1px solid var(--color-border)', borderRadius: 12, padding: '12px 14px', cursor: 'pointer', transition: 'background .15s' }}
+                onTouchStart={e => (e.currentTarget.style.background = 'rgba(255,255,255,.06)')}
+                onTouchEnd={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.06)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}>
+                {/* Row 1: symbol badge + name + price */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: accentBg, flexShrink: 0 }}>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: accentColor }}>{s.symbol.slice(0,3)}</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--color-text)', fontFamily: 'var(--font-mono)', letterSpacing: '.02em' }}>{s.symbol}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name || '—'}</div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>${fmt2(s.price)}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: accentColor, fontFamily: 'var(--font-mono)' }}>
+                      {pos ? '+' : ''}{(s.pctChange ?? 0).toFixed(2)}%
+                    </div>
+                  </div>
+                </div>
+                {/* Row 2: $ change, volume, market cap */}
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ flex: 1, background: 'rgba(255,255,255,.03)', borderRadius: 7, padding: '6px 8px' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 2 }}>$ Chg</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: chg(s.dollarChange), fontFamily: 'var(--font-mono)' }}>
+                      {(s.dollarChange ?? 0) !== 0 ? `${(s.dollarChange ?? 0) > 0 ? '+' : ''}$${fmt2(Math.abs(s.dollarChange ?? 0))}` : '$0.00'}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, background: 'rgba(255,255,255,.03)', borderRadius: 7, padding: '6px 8px' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 2 }}>Volume</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>{fmtVol(s.volume)}</div>
+                  </div>
+                  <div style={{ flex: 1, background: 'rgba(255,255,255,.03)', borderRadius: 7, padding: '6px 8px' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 2 }}>Mkt Cap</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>{s.marketCap ? fmtVol(s.marketCap) : '—'}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
       </div>
     </div>
   );

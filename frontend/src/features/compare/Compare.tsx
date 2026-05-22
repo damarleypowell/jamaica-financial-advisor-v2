@@ -14,26 +14,28 @@ interface CompareResult {
 }
 
 const fmt2 = (n?: number) => n != null ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+const fmt = (val: any, decimals = 2) => val == null ? '—' : typeof val === 'number' ? val.toFixed(decimals) : val;
 const fmtLarge = (n?: number) => {
-  if (!n) return '—';
+  if (n == null) return '—';
   if (n >= 1e9) return (n/1e9).toFixed(2)+'B';
   if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
   if (n >= 1e3) return (n/1e3).toFixed(0)+'K';
   return n.toLocaleString();
 };
+const fmtMarketCap = (v?: number) => v == null ? '—' : v >= 1e9 ? `$${(v/1e9).toFixed(1)}B` : `$${(v/1e6).toFixed(1)}M`;
 
 const METRICS = [
-  { label: 'Price', key: 'price', fmt: (v?: number) => v != null ? `$${fmt2(v)}` : '—' },
-  { label: '% Change', key: 'pctChange', fmt: (v?: number) => v != null ? `${v > 0 ? '+' : ''}${v.toFixed(2)}%` : '—', color: (v?: number) => v == null ? undefined : v > 0 ? '#00e676' : v < 0 ? '#ff5252' : undefined },
+  { label: 'Price', key: 'price', fmt: (v?: number) => v == null ? '—' : `$${fmt2(v)}` },
+  { label: '% Change', key: 'pctChange', fmt: (v?: number) => v == null ? '—' : `${v > 0 ? '+' : ''}${fmt(v, 2)}%`, color: (v?: number) => v == null ? undefined : v > 0 ? '#00e676' : v < 0 ? '#ff5252' : undefined },
   { label: 'Volume', key: 'volume', fmt: (v?: number) => fmtLarge(v) },
-  { label: 'Market Cap', key: 'marketCap', fmt: (v?: number) => v ? '$'+fmtLarge(v) : '—' },
-  { label: 'P/E Ratio', key: 'peRatio', fmt: (v?: number) => v != null ? fmt2(v) : '—' },
-  { label: 'Dividend Yield', key: 'dividendYield', fmt: (v?: number) => v != null ? v.toFixed(2)+'%' : '—', color: (v?: number) => v && v > 3 ? '#00e676' : undefined },
-  { label: '52W High', key: 'fiftyTwoWeekHigh', fmt: (v?: number) => v != null ? `$${fmt2(v)}` : '—' },
-  { label: '52W Low', key: 'fiftyTwoWeekLow', fmt: (v?: number) => v != null ? `$${fmt2(v)}` : '—' },
-  { label: 'Beta', key: 'beta', fmt: (v?: number) => v != null ? v.toFixed(2) : '—' },
-  { label: 'EPS', key: 'eps', fmt: (v?: number) => v != null ? `$${fmt2(v)}` : '—' },
-  { label: 'Sector', key: 'sector', fmt: (v?: string) => v || '—' },
+  { label: 'Market Cap', key: 'marketCap', fmt: (v?: number) => fmtMarketCap(v) },
+  { label: 'P/E Ratio', key: 'peRatio', fmt: (v?: number) => fmt(v, 2) },
+  { label: 'Dividend Yield', key: 'dividendYield', fmt: (v?: number) => v == null ? '—' : `${fmt(v, 2)}%`, color: (v?: number) => v != null && v > 3 ? '#00e676' : undefined },
+  { label: '52W High', key: 'fiftyTwoWeekHigh', fmt: (v?: number) => v == null ? '—' : `$${fmt2(v)}` },
+  { label: '52W Low', key: 'fiftyTwoWeekLow', fmt: (v?: number) => v == null ? '—' : `$${fmt2(v)}` },
+  { label: 'Beta', key: 'beta', fmt: (v?: number) => fmt(v, 2) },
+  { label: 'EPS', key: 'eps', fmt: (v?: number) => v == null ? '—' : `$${fmt2(v)}` },
+  { label: 'Sector', key: 'sector', fmt: (v?: string) => v ?? '—' },
 ];
 
 export default function Compare() {
