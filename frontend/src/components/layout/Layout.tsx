@@ -33,7 +33,7 @@ export default function Layout() {
       <main
         style={{
           paddingTop: 88,
-          paddingBottom: 80,
+          paddingBottom: 100,
           paddingLeft: focusMode ? 20 : 20,
           paddingRight: 20,
           maxWidth: focusMode ? '100%' : 1280,

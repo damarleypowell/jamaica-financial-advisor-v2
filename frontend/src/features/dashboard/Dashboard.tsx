@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useMarketStore } from '../../stores/market';
 import { useAuthStore } from '../../stores/auth';
 import { apiGet, apiPost } from '../../lib/api';
@@ -307,37 +308,191 @@ function PaywallBlock({ feature, tier }: { feature: string; tier: string }) {
   );
 }
 
+/* ── Wealth hero (logged-in users) ───────────────────────────── */
+function WealthHero({ portfolioValue, totalGain, totalGainPct, walletBalance, firstName, navigate }: {
+  portfolioValue: number; totalGain: number; totalGainPct: number;
+  walletBalance: number; firstName: string;
+  navigate: (path: string) => void;
+}) {
+  const pos = totalGain >= 0;
+  const totalNet = portfolioValue + walletBalance;
+
+  return (
+    <div style={{
+      position: 'relative', overflow: 'hidden', borderRadius: 24,
+      background: 'linear-gradient(135deg, #040e08 0%, #071209 50%, #030b06 100%)',
+      border: '1px solid rgba(0,230,118,.15)',
+      boxShadow: '0 0 60px rgba(0,230,118,.07), 0 8px 40px rgba(0,0,0,.6)',
+      padding: '28px 28px 24px',
+    }}>
+      {/* Subtle grid */}
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(0,230,118,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,230,118,.015) 1px,transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
+      {/* Top gradient line */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent 0%, rgba(0,230,118,.6) 40%, rgba(0,230,118,.2) 70%, transparent 100%)' }} />
+      {/* Glow */}
+      <div style={{ position: 'absolute', top: -120, right: -60, width: 360, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,230,118,.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <Grain opacity={0.025} />
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* Label */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.16em', color: 'rgba(0,230,118,.6)', textTransform: 'uppercase', fontFamily: SANS }}>
+            {greet()}, {firstName}
+          </span>
+          <a href="/portfolio" onClick={e => { e.preventDefault(); navigate('/portfolio'); }} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.35)',
+            textDecoration: 'none', letterSpacing: '.04em',
+            padding: '4px 10px', borderRadius: 8,
+            border: '1px solid rgba(255,255,255,.07)',
+            background: 'rgba(255,255,255,.03)',
+            transition: 'all .15s',
+          }}>
+            View Portfolio <i className="fa-solid fa-arrow-right" style={{ fontSize: 8 }} />
+          </a>
+        </div>
+
+        {/* Net worth headline */}
+        <div style={{ marginBottom: 6 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.28)', letterSpacing: '.1em', textTransform: 'uppercase', fontFamily: SANS }}>Total Wealth</p>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 40, fontWeight: 900, fontFamily: SANS, letterSpacing: '-0.04em', lineHeight: 1, color: '#fff' }}>
+              J$<Counter value={totalNet} decimals={2} />
+            </div>
+            {totalGain !== 0 && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '5px 12px', borderRadius: 99,
+                background: pos ? 'rgba(0,230,118,.12)' : 'rgba(255,82,82,.12)',
+                border: `1px solid ${pos ? 'rgba(0,230,118,.25)' : 'rgba(255,82,82,.25)'}`,
+              }}>
+                <i className={`fa-solid ${pos ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'}`} style={{ fontSize: 10, color: pos ? '#00e676' : '#ff5252' }} />
+                <span style={{ fontSize: 12, fontWeight: 800, fontFamily: MONO, color: pos ? '#00e676' : '#ff5252' }}>
+                  {pos ? '+' : ''}{totalGainPct.toFixed(2)}%
+                </span>
+                <span style={{ fontSize: 10, color: pos ? 'rgba(0,230,118,.6)' : 'rgba(255,82,82,.6)' }}>all-time</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sub-metrics row */}
+        <div style={{ display: 'flex', gap: 24, marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,.05)', flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.25)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Invested</p>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, fontFamily: MONO, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.01em' }}>J${fmt(portfolioValue)}</p>
+          </div>
+          <div>
+            <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.25)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Cash</p>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, fontFamily: MONO, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.01em' }}>J${fmt(walletBalance)}</p>
+          </div>
+          {totalGain !== 0 && (
+            <div>
+              <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.25)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Total Return</p>
+              <p style={{ margin: 0, fontSize: 15, fontWeight: 800, fontFamily: MONO, color: pos ? '#00e676' : '#ff5252', letterSpacing: '-0.01em' }}>
+                {pos ? '+' : ''}J${fmt(Math.abs(totalGain))}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Quick actions */}
+        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+          <button onClick={() => navigate('/portfolio')} style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            padding: '11px 16px', borderRadius: 12, border: 'none', cursor: 'pointer',
+            background: '#00e676', color: '#000',
+            fontSize: 12, fontWeight: 800, fontFamily: SANS, letterSpacing: '.02em',
+            boxShadow: '0 4px 20px rgba(0,230,118,.3)',
+            transition: 'opacity .15s',
+          }}>
+            <i className="fa-solid fa-plus" style={{ fontSize: 11 }} />
+            Invest
+          </button>
+          <button onClick={() => navigate('/planner')} style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            padding: '11px 16px', borderRadius: 12, cursor: 'pointer',
+            background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)',
+            color: 'rgba(255,255,255,.7)', fontSize: 12, fontWeight: 700, fontFamily: SANS,
+            transition: 'all .15s',
+          }}>
+            <i className="fa-solid fa-bullseye" style={{ fontSize: 11 }} />
+            Set a Goal
+          </button>
+          <button onClick={() => navigate('/chat')} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            padding: '11px 14px', borderRadius: 12, cursor: 'pointer',
+            background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)',
+            color: 'rgba(255,255,255,.7)', fontSize: 12, fontWeight: 700, fontFamily: SANS,
+            transition: 'all .15s',
+          }}>
+            <i className="fa-solid fa-robot" style={{ fontSize: 12, color: '#00e676' }} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════ */
 
 export default function Dashboard() {
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const stocks = useMarketStore(s => s.stocks);
   const isConn = useMarketStore(s => s.isConnected);
   const selectedSymbol = useMarketStore(s => s.selectedSymbol);
   const selectSymbol = useMarketStore(s => s.selectSymbol);
+  const navigate = useNavigate();
 
   const [moverTab, setMoverTab] = useState<MoverTab>('gainers');
   const [clock, setClock] = useState(new Date());
   const [market, setMarket] = useState<'us' | 'caribbean'>('us');
   const [usSearch, setUsSearch] = useState('');
 
+  // Wealth data for logged-in users
+  const { data: walletData } = useQuery<Record<string, number>>({
+    queryKey: ['wallet'],
+    queryFn: () => apiGet<Record<string, number>>('/api/wallet/balance'),
+    enabled: isAuthenticated,
+    refetchInterval: 30_000,
+  });
+  const { data: posData } = useQuery<Record<string, unknown>>({
+    queryKey: ['positions'],
+    queryFn: () => apiGet<Record<string, unknown>>('/api/portfolio/positions'),
+    enabled: isAuthenticated,
+    refetchInterval: 30_000,
+  });
+
+  const walletBalance = (walletData?.balance as number) ?? 0;
+  const rawPositions = Array.isArray(posData)
+    ? posData
+    : Array.isArray((posData as Record<string, unknown>)?.positions)
+      ? (posData as Record<string, unknown[]>).positions
+      : [];
+  const portfolioValue = rawPositions.reduce((sum: number, p: Record<string, number>) =>
+    sum + (p.currentValue ?? p.marketValue ?? 0), 0);
+  const totalCost = rawPositions.reduce((sum: number, p: Record<string, number>) =>
+    sum + (p.costBasis ?? 0), 0);
+  const totalGain = portfolioValue - totalCost;
+  const totalGainPct = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
+
   const US_POPULAR = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'JPM', 'BRK/B', 'V', 'UNH', 'XOM', 'NFLX', 'AMD', 'DIS', 'BABA', 'PYPL', 'INTC'];
 
-  const { data: usData, isError: usError } = useQuery<any[]>({
+  const { data: usData, isError: usError } = useQuery<Record<string, number>[]>({
     queryKey: ['us-dashboard', usSearch || 'popular'],
     queryFn: async () => {
       const symbols = usSearch.trim()
         ? [usSearch.trim().toUpperCase()]
         : US_POPULAR.filter(s => !s.includes('/'));
-      const res: any = await apiPost<any>('/api/us/quotes', { symbols });
-      if (Array.isArray(res)) return res;
+      const res = await apiPost<unknown>('/api/us/quotes', { symbols });
+      if (Array.isArray(res)) return res as Record<string, number>[];
       if (res && typeof res === 'object') {
-        return Object.entries(res).map(([sym, q]: [string, any]) => ({
+        return Object.entries(res as Record<string, Record<string, unknown>>).map(([sym, q]) => ({
           symbol: sym,
-          name: q.name ?? sym,
-          price: q.price ?? q.ask ?? 0,
-          pctChange: typeof q.change === 'string' ? parseFloat(q.change) : (q.change ?? 0),
-          volume: q.volume ?? 0,
+          name: (q.name as string) ?? sym,
+          price: (q.price as number) ?? (q.ask as number) ?? 0,
+          pctChange: typeof q.change === 'string' ? parseFloat(q.change) : ((q.change as number) ?? 0),
+          volume: (q.volume as number) ?? 0,
         }));
       }
       return [];
@@ -348,7 +503,7 @@ export default function Dashboard() {
     retry: 0,
   });
 
-  const usStocks = Array.isArray(usData) ? usData.filter(s => s.price > 0) : [];
+  const usStocks = useMemo(() => Array.isArray(usData) ? usData.filter(s => s.price > 0) : [], [usData]);
   const activeStocks = market === 'us' ? usStocks : stocks;
   const usUnavailable = usError && market === 'us';
 
@@ -394,12 +549,23 @@ export default function Dashboard() {
   }), [activeStocks]);
 
   const currentMovers = movers[moverTab];
-  const activeTabDef = MOVER_TABS.find(t => t.key === moverTab)!;
   const firstName = user?.name?.split(' ')[0] ?? 'Investor';
   const isFree = !user || (user.subscriptionTier === 'FREE');
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* ── Wealth hero (logged-in users) ─────────────────── */}
+      {isAuthenticated && (
+        <WealthHero
+          portfolioValue={portfolioValue}
+          totalGain={totalGain}
+          totalGainPct={totalGainPct}
+          walletBalance={walletBalance}
+          firstName={firstName}
+          navigate={navigate}
+        />
+      )}
 
       {/* ── FREE tier upgrade banner ──────────────────────── */}
       {isFree && (
@@ -417,6 +583,7 @@ export default function Dashboard() {
 
       {/* ── 0. Market toggle ─────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+
         <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
           {([['us', '🇺🇸 US Markets'], ['caribbean', '🌴 Caribbean']] as const).map(([key, label]) => (
             <button key={key} onClick={() => { if (isFree && key === 'us') { window.location.href = '/subscription'; return; } setMarket(key); }}
@@ -512,7 +679,7 @@ export default function Dashboard() {
             </div>
           }
         >
-          {activeTabDef.label}
+          Market Movers
         </SectionLabel>
 
         <div className="scroll-x" style={{ display: 'flex', gap: 10, paddingBottom: 4 }}>
@@ -563,7 +730,7 @@ export default function Dashboard() {
       {/* ── 5. Securities table (market-aware) ─────────────────── */}
       <div style={{ position: 'relative' }}>
         <SectionLabel count={market === 'us' ? usStocks.length : stocks.filter(s => (s.price ?? 0) > 0).length}>
-          {market === 'us' ? 'US Equities' : 'JSE Securities'}
+          {market === 'us' ? 'US Stocks — Browse & Invest' : 'JSE Securities — Browse & Invest'}
         </SectionLabel>
         {isFree ? (
           <>

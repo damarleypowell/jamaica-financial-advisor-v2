@@ -13,34 +13,35 @@ interface Section { heading: string; items: NavItem[]; }
 
 const NAV: Section[] = [
   {
+    heading: 'My Wealth',
+    items: [
+      { label: 'Overview',      icon: 'fa-solid fa-house',             to: '/'            },
+      { label: 'My Portfolio',  icon: 'fa-solid fa-wallet',            to: '/portfolio'   },
+      { label: 'Orders',        icon: 'fa-solid fa-receipt',           to: '/orders'      },
+      { label: 'Wealth Planner',icon: 'fa-solid fa-bullseye',          to: '/planner',    tier: 'PRO' },
+      { label: 'Alerts',        icon: 'fa-solid fa-bell',              to: '/alerts'      },
+    ],
+  },
+  {
     heading: 'Markets',
     items: [
-      { label: 'Dashboard',     icon: 'fa-solid fa-chart-line',        to: '/'            },
-      { label: 'Charts',        icon: 'fa-solid fa-chart-candlestick', to: '/technicals', tier: 'BASIC' },
-      { label: 'Screener',      icon: 'fa-solid fa-sliders',           to: '/screener',   tier: 'BASIC' },
+      { label: 'JSE Live',      icon: 'fa-solid fa-chart-line',        to: '/screener',   tier: 'BASIC' },
       { label: 'US Stocks',     icon: 'fa-solid fa-flag-usa',          to: '/us-stocks',  tier: 'BASIC' },
-      { label: 'News',          icon: 'fa-solid fa-newspaper',         to: '/news'        },
       { label: 'Watchlists',    icon: 'fa-solid fa-star',              to: '/watchlists'  },
+      { label: 'Charts',        icon: 'fa-solid fa-chart-candlestick', to: '/technicals', tier: 'BASIC' },
+      { label: 'News',          icon: 'fa-solid fa-newspaper',         to: '/news'        },
     ],
   },
   {
-    heading: 'Analysis',
+    heading: 'AI Advisor',
     items: [
-      { label: 'AI Analysis',   icon: 'fa-solid fa-brain',             to: '/analysis'    },
-      { label: 'AI Chat',       icon: 'fa-solid fa-robot',             to: '/chat'        },
-    ],
-  },
-  {
-    heading: 'Practice',
-    items: [
-      { label: 'Paper Trading', icon: 'fa-solid fa-flask-vial',        to: '/portfolio'   },
-      { label: 'Orders',        icon: 'fa-solid fa-receipt',           to: '/orders'      },
+      { label: 'Chat Advisor',  icon: 'fa-solid fa-robot',             to: '/chat',       tier: 'PRO'  },
+      { label: 'Stock Analysis',icon: 'fa-solid fa-brain',             to: '/analysis',   tier: 'PRO'  },
     ],
   },
   {
     heading: 'Account',
     items: [
-      { label: 'Alerts',        icon: 'fa-solid fa-bell',              to: '/alerts'      },
       { label: 'Learn',         icon: 'fa-solid fa-graduation-cap',    to: '/learn'       },
       { label: 'Settings',      icon: 'fa-solid fa-gear',              to: '/settings'    },
       { label: 'Admin',         icon: 'fa-solid fa-shield-halved',     to: '/admin',      adminOnly: true },
@@ -49,10 +50,11 @@ const NAV: Section[] = [
 ];
 
 const MOBILE_NAV: NavItem[] = [
-  { label: 'Markets', icon: 'fa-solid fa-chart-line',        to: '/'           },
-  { label: 'Charts',  icon: 'fa-solid fa-chart-candlestick', to: '/technicals' },
-  { label: 'AI Chat', icon: 'fa-solid fa-robot',             to: '/chat'       },
-  { label: 'Learn',   icon: 'fa-solid fa-graduation-cap',    to: '/learn'      },
+  { label: 'Home',      icon: 'fa-solid fa-house',         to: '/'          },
+  { label: 'Markets',   icon: 'fa-solid fa-chart-line',    to: '/us-stocks' },
+  { label: 'Portfolio', icon: 'fa-solid fa-wallet',        to: '/portfolio' },
+  { label: 'AI',        icon: 'fa-solid fa-robot',         to: '/chat'      },
+  { label: 'Learn',     icon: 'fa-solid fa-graduation-cap',to: '/learn'     },
 ];
 
 const TIER_COLORS: Record<string, string> = {
@@ -146,7 +148,7 @@ function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; u
           </div>
           <div>
             <p style={{ margin: 0, fontSize: 13, fontWeight: 900, letterSpacing: '.12em', color: '#00e676', lineHeight: 1 }}>GOTHAM</p>
-            <p style={{ margin: 0, fontSize: 8, fontWeight: 600, letterSpacing: '.3em', color: 'var(--color-muted)', lineHeight: 1, marginTop: 3 }}>FINANCIAL</p>
+            <p style={{ margin: 0, fontSize: 8, fontWeight: 600, letterSpacing: '.3em', color: 'var(--color-muted)', lineHeight: 1, marginTop: 3 }}>WEALTH</p>
           </div>
         </div>
 
@@ -310,10 +312,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       {/* ── Mobile bottom nav ────────────────────────────────────────── */}
       <nav data-tour="bottom-nav" className="lg:hidden" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
-        height: 60, paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        background: 'rgba(6,10,18,.97)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
-        borderTop: '1px solid rgba(255,255,255,.055)', zIndex: 40,
-        display: 'flex', alignItems: 'center',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        background: 'rgba(6,10,18,.98)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
+        borderTop: '1px solid rgba(255,255,255,.06)', zIndex: 40,
+        display: 'flex', alignItems: 'stretch',
       }}>
         {MOBILE_NAV.map(item => (
           <NavLink
@@ -322,20 +324,33 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
             end={item.to === '/'}
             style={{ textDecoration: 'none', flex: 1, display: 'flex', justifyContent: 'center' }}>
             {({ isActive }) => (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '6px 8px', position: 'relative', minWidth: 48 }}>
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                gap: 4, padding: '10px 4px 12px', position: 'relative', width: '100%',
+              }}>
                 {isActive && (
                   <span style={{
-                    position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)',
-                    width: 18, height: 2, borderRadius: 99, background: 'var(--color-green)',
-                    boxShadow: '0 0 8px rgba(0,230,118,.6)',
+                    position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                    width: 24, height: 2, borderRadius: 99, background: 'var(--color-green)',
+                    boxShadow: '0 0 10px rgba(0,230,118,.7)',
                   }} />
                 )}
-                <i className={item.icon} style={{
-                  fontSize: 18, transition: 'all 160ms',
-                  color: isActive ? 'var(--color-green)' : 'var(--color-muted)',
-                  filter: isActive ? 'drop-shadow(0 0 4px rgba(0,230,118,.5))' : 'none',
-                }} />
-                <span style={{ fontSize: 9.5, fontWeight: 600, color: isActive ? 'var(--color-green)' : 'var(--color-muted)', transition: 'color 160ms' }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: isActive ? 'rgba(0,230,118,.12)' : 'transparent',
+                  transition: 'background 160ms',
+                }}>
+                  <i className={item.icon} style={{
+                    fontSize: 16, transition: 'all 160ms',
+                    color: isActive ? 'var(--color-green)' : 'rgba(255,255,255,.35)',
+                    filter: isActive ? 'drop-shadow(0 0 6px rgba(0,230,118,.6))' : 'none',
+                  }} />
+                </div>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: '.03em',
+                  color: isActive ? 'var(--color-green)' : 'rgba(255,255,255,.28)',
+                  transition: 'color 160ms',
+                }}>
                   {item.label}
                 </span>
               </div>
