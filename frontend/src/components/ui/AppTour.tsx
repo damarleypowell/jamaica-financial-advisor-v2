@@ -8,7 +8,7 @@ const CARD_W = 316;
 // Amber — deliberately different from the app's green brand; signals premium/special
 const A = '#C8A45A';           // amber base
 const A_DIM = 'rgba(200,164,90,.42)';
-const A_FAINT = 'rgba(200,164,90,.07)';
+
 
 interface Step {
   target: string | null;

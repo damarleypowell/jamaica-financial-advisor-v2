@@ -807,14 +807,14 @@ export default function Dashboard() {
 
   const US_POPULAR = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'JPM', 'BRK/B', 'V', 'UNH', 'XOM', 'NFLX', 'AMD', 'DIS', 'BABA', 'PYPL', 'INTC'];
 
-  const { data: usData, isError: usError } = useQuery<Record<string, number>[]>({
+  const { data: usData, isError: usError } = useQuery<{ symbol: string; name: string; price: number; pctChange: number; volume: number }[]>({
     queryKey: ['us-dashboard', usSearch || 'popular'],
     queryFn: async () => {
       const symbols = usSearch.trim()
         ? [usSearch.trim().toUpperCase()]
         : US_POPULAR.filter(s => !s.includes('/'));
       const res = await apiPost<unknown>('/api/us/quotes', { symbols });
-      if (Array.isArray(res)) return res as Record<string, number>[];
+      if (Array.isArray(res)) return res as { symbol: string; name: string; price: number; pctChange: number; volume: number }[];
       if (res && typeof res === 'object') {
         return Object.entries(res as Record<string, Record<string, unknown>>).map(([sym, q]) => ({
           symbol: sym,
