@@ -292,6 +292,79 @@ function MoverCard({ s, isSelected, onSelect, moverTab }: {
   );
 }
 
+/* ── New user welcome (empty state) ─────────────────────────── */
+function NewUserWelcome({ firstName, navigate }: { firstName: string; navigate: (p: string) => void }) {
+  const steps = [
+    { n: 1, icon: 'fa-wallet',   label: 'Fund your account',    sub: 'Add cash to your portfolio wallet' },
+    { n: 2, icon: 'fa-seedling', label: 'Make your first buy',  sub: 'Pick a JSE or US stock you believe in' },
+    { n: 3, icon: 'fa-bullseye', label: 'Set a wealth goal',    sub: 'Give your money a destination' },
+  ];
+  return (
+    <div style={{
+      position: 'relative', overflow: 'hidden', borderRadius: 24,
+      background: 'linear-gradient(135deg, #04100a, #061208)',
+      border: '1px solid rgba(0,230,118,.18)',
+      boxShadow: '0 0 60px rgba(0,230,118,.07)',
+      padding: '32px 28px',
+    }}>
+      <style>{GAME_STYLES}</style>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(0,230,118,.5), transparent)' }} />
+      <div style={{ position: 'absolute', top: -80, right: -40, width: 300, height: 240, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,230,118,.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <Grain opacity={0.025} />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ fontSize: 36, marginBottom: 12, animation: 'popIn .5s ease-out' }}>🌱</div>
+        <p style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>
+          Welcome to Gotham, {firstName}.
+        </p>
+        <p style={{ margin: '0 0 28px', fontSize: 13, color: 'rgba(255,255,255,.45)', lineHeight: 1.6, maxWidth: 400 }}>
+          You're starting as a <strong style={{ color: '#78909c' }}>🌱 Seed</strong>. Complete your first 3 missions to reach <strong style={{ color: '#66bb6a' }}>🌿 Sapling</strong> and start building real wealth.
+        </p>
+
+        {/* Steps */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+          {steps.map((s, i) => (
+            <div key={s.n} style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '12px 14px', borderRadius: 14,
+              background: i === 0 ? 'rgba(0,230,118,.07)' : 'rgba(255,255,255,.03)',
+              border: `1px solid ${i === 0 ? 'rgba(0,230,118,.2)' : 'rgba(255,255,255,.06)'}`,
+              animation: `popIn .4s ${i * 80}ms ease-out both`,
+            }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 11, flexShrink: 0,
+                background: i === 0 ? 'rgba(0,230,118,.15)' : 'rgba(255,255,255,.05)',
+                border: `1.5px solid ${i === 0 ? 'rgba(0,230,118,.35)' : 'rgba(255,255,255,.08)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <i className={`fa-solid ${s.icon}`} style={{ fontSize: 13, color: i === 0 ? '#00e676' : 'rgba(255,255,255,.3)' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: i === 0 ? '#fff' : 'rgba(255,255,255,.4)' }}>{s.label}</p>
+                <p style={{ margin: '1px 0 0', fontSize: 10, color: 'rgba(255,255,255,.25)' }}>{s.sub}</p>
+              </div>
+              {i === 0 && <span style={{ fontSize: 9, fontWeight: 800, color: '#00e676', background: 'rgba(0,230,118,.12)', padding: '3px 8px', borderRadius: 99, border: '1px solid rgba(0,230,118,.2)' }}>START</span>}
+              {i > 0 && <span style={{ fontSize: 16, opacity: .25 }}>🔒</span>}
+            </div>
+          ))}
+        </div>
+
+        <button onClick={() => navigate('/portfolio')} style={{
+          width: '100%', padding: '14px', borderRadius: 14, border: 'none', cursor: 'pointer',
+          background: '#00e676', color: '#000',
+          fontSize: 14, fontWeight: 900, letterSpacing: '.02em', fontFamily: SANS,
+          boxShadow: '0 6px 24px rgba(0,230,118,.35)',
+          transition: 'opacity .15s, transform .15s',
+        }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '.88'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}
+        >
+          🚀 Start Your Wealth Journey
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Paywall block ────────────────────────────────────────────── */
 function PaywallBlock({ feature, tier }: { feature: string; tier: string }) {
   return (
@@ -308,126 +381,235 @@ function PaywallBlock({ feature, tier }: { feature: string; tier: string }) {
   );
 }
 
-/* ── Wealth score ring ────────────────────────────────────────── */
-function ScoreRing({ score }: { score: number }) {
-  const r = 44;
-  const circ = 2 * Math.PI * r;
-  const progress = (score / 100) * circ;
-  const color = score >= 70 ? '#00e676' : score >= 40 ? '#ffd740' : '#ff5252';
-  const label = score >= 70 ? 'Strong' : score >= 40 ? 'Building' : 'Starting';
+/* ── Global keyframes (injected once) ───────────────────────── */
+const GAME_STYLES = `
+  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+  @keyframes floatXP { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-52px) scale(1.3)} }
+  @keyframes popIn   { 0%{opacity:0;transform:scale(.7)} 60%{transform:scale(1.12)} 100%{opacity:1;transform:scale(1)} }
+  @keyframes barFill { from{width:0} to{width:var(--bar-w)} }
+  @keyframes pulseGlow { 0%,100%{box-shadow:0 0 12px var(--glow)} 50%{box-shadow:0 0 28px var(--glow)} }
+  .shimmer-box {
+    background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 12px;
+  }
+  @media (max-width:600px) { .wealth-score-grid { grid-template-columns: 1fr !important; } }
+`;
+
+/* ── Ranks ───────────────────────────────────────────────────── */
+const RANKS = [
+  { min: 0,  max: 19,  name: 'Seed',          emoji: '🌱', color: '#78909c', next: 'Make your first investment' },
+  { min: 20, max: 39,  name: 'Sapling',        emoji: '🌿', color: '#66bb6a', next: 'Diversify to 3+ stocks' },
+  { min: 40, max: 59,  name: 'Grower',         emoji: '🌳', color: '#26a69a', next: 'Build your J$50K milestone' },
+  { min: 60, max: 79,  name: 'Builder',        emoji: '🏗️',  color: '#42a5f5', next: 'Grow to 5+ positions' },
+  { min: 80, max: 100, name: 'Wealth Master',  emoji: '👑', color: '#ffd740', next: 'You\'ve mastered the basics!' },
+];
+function getRank(score: number) { return RANKS.find(r => score >= r.min && score <= r.max) ?? RANKS[0]; }
+
+/* ── Skeleton ────────────────────────────────────────────────── */
+function WealthSkeleton() {
   return (
-    <div style={{ position: 'relative', width: 108, height: 108, flexShrink: 0 }}>
-      <svg width="108" height="108" style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx="54" cy="54" r={r} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth="8" />
-        <circle cx="54" cy="54" r={r} fill="none" stroke={color} strokeWidth="8"
-          strokeDasharray={`${progress} ${circ}`}
-          strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 6px ${color}80)`, transition: 'stroke-dasharray 1s cubic-bezier(.4,0,.2,1)' }}
-        />
-      </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-        <span style={{ fontSize: 26, fontWeight: 900, color, fontFamily: SANS, letterSpacing: '-0.04em', lineHeight: 1 }}>{score}</span>
-        <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.35)', letterSpacing: '.08em', textTransform: 'uppercase' }}>{label}</span>
+    <>
+      <style>{GAME_STYLES}</style>
+      <div style={{ borderRadius: 24, background: '#07100d', border: '1px solid rgba(255,255,255,.06)', padding: '28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="shimmer-box" style={{ height: 12, width: '40%' }} />
+        <div className="shimmer-box" style={{ height: 44, width: '70%' }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div className="shimmer-box" style={{ height: 40, flex: 1 }} />
+          <div className="shimmer-box" style={{ height: 40, flex: 1 }} />
+          <div className="shimmer-box" style={{ height: 40, width: 40 }} />
+        </div>
       </div>
-    </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="wealth-score-grid">
+        <div style={{ borderRadius: 20, background: '#07100d', border: '1px solid rgba(255,255,255,.06)', padding: '22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="shimmer-box" style={{ height: 10, width: '50%' }} />
+          <div className="shimmer-box" style={{ height: 8, borderRadius: 99 }} />
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[80, 110, 90, 120].map(w => <div key={w} className="shimmer-box" style={{ height: 22, width: w }} />)}
+          </div>
+        </div>
+        <div style={{ borderRadius: 20, background: '#080d18', border: '1px solid rgba(255,255,255,.06)', padding: '22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[1,2,3].map(i => <div key={i} className="shimmer-box" style={{ height: 52 }} />)}
+        </div>
+      </div>
+    </>
   );
 }
 
-/* ── Wealth score card + missions ─────────────────────────────── */
-interface Mission { icon: string; label: string; sub: string; to: string; done: boolean; }
+/* ── Wealth Score + Missions (gamified) ──────────────────────── */
+interface Mission { icon: string; label: string; sub: string; to: string; done: boolean; pts: number; }
 
-function WealthScoreCard({ score, factors, missions, navigate }: {
-  score: number; factors: { label: string; pts: number; earned: boolean }[];
-  missions: Mission[]; navigate: (p: string) => void;
-}) {
-  const color = score >= 70 ? '#00e676' : score >= 40 ? '#ffd740' : '#ff5252';
-  const pending = missions.filter(m => !m.done).slice(0, 3);
+function MissionButton({ m, navigate }: { m: Mission; navigate: (p: string) => void }) {
+  const [pressed, setPressed] = useState(false);
+  const [xpPos, setXpPos] = useState<{ x: number; y: number } | null>(null);
+
+  function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setXpPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setPressed(true);
+    setTimeout(() => { setXpPos(null); setPressed(false); navigate(m.to); }, 420);
+  }
 
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12,
-    }} className="wealth-score-grid">
-      {/* Score panel */}
+    <button onClick={handleClick} style={{
+      position: 'relative', display: 'flex', alignItems: 'center', gap: 10,
+      padding: '11px 13px', borderRadius: 14,
+      border: `1px solid ${pressed ? 'rgba(0,230,118,.4)' : 'rgba(255,255,255,.07)'}`,
+      background: pressed ? 'rgba(0,230,118,.1)' : 'rgba(255,255,255,.03)',
+      cursor: 'pointer', textAlign: 'left', width: '100%',
+      transform: pressed ? 'scale(.97)' : 'scale(1)',
+      transition: 'all .12s cubic-bezier(.4,0,.2,1)',
+      overflow: 'hidden',
+    }}>
+      {xpPos && (
+        <span style={{
+          position: 'absolute', left: xpPos.x, top: xpPos.y,
+          fontSize: 12, fontWeight: 900, color: '#00e676',
+          pointerEvents: 'none', zIndex: 10, whiteSpace: 'nowrap',
+          animation: 'floatXP .42s ease-out forwards',
+        }}>+{m.pts} XP</span>
+      )}
       <div style={{
-        position: 'relative', overflow: 'hidden', borderRadius: 20,
-        background: '#07100d', border: `1px solid ${color}22`,
-        boxShadow: `0 0 40px ${color}08`, padding: '22px 20px',
-        display: 'flex', flexDirection: 'column', gap: 16,
+        width: 34, height: 34, borderRadius: 11,
+        background: pressed ? 'rgba(0,230,118,.2)' : 'rgba(0,230,118,.08)',
+        border: `1px solid rgba(0,230,118,${pressed ? '.4' : '.15'})`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        transition: 'all .12s',
       }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${color}50, transparent)` }} />
-        <Grain opacity={0.025} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div>
-              <p style={{ margin: '0 0 2px', fontSize: 9, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase' }}>Wealth Score</p>
-              <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,.45)', fontFamily: SANS }}>Powered by your real data</p>
-            </div>
-            <ScoreRing score={score} />
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {factors.map(f => (
-              <span key={f.label} style={{
-                fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 99,
-                background: f.earned ? `${color}14` : 'rgba(255,255,255,.04)',
-                border: `1px solid ${f.earned ? color + '30' : 'rgba(255,255,255,.07)'}`,
-                color: f.earned ? color : 'rgba(255,255,255,.25)',
-                display: 'flex', alignItems: 'center', gap: 4,
-              }}>
-                <i className={`fa-solid ${f.earned ? 'fa-check' : 'fa-xmark'}`} style={{ fontSize: 7 }} />
-                {f.label} +{f.pts}
-              </span>
-            ))}
-          </div>
-        </div>
+        <i className={`fa-solid ${m.icon}`} style={{ fontSize: 13, color: '#00e676' }} />
       </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{m.label}</p>
+        <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,.35)', lineHeight: 1.3 }}>{m.sub}</p>
+      </div>
+      <span style={{ fontSize: 10, fontWeight: 800, color: '#00e676', background: 'rgba(0,230,118,.1)', padding: '2px 7px', borderRadius: 99, flexShrink: 0, border: '1px solid rgba(0,230,118,.2)' }}>+{m.pts}</span>
+    </button>
+  );
+}
 
-      {/* Missions panel */}
-      <div style={{
-        position: 'relative', overflow: 'hidden', borderRadius: 20,
-        background: '#080d18', border: '1px solid rgba(255,255,255,.06)',
-        padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: 10,
-      }}>
-        <Grain opacity={0.025} />
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 10, height: '100%' }}>
-          <p style={{ margin: 0, fontSize: 9, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase' }}>
-            Next Missions <span style={{ color: '#ffd740' }}>({pending.length})</span>
-          </p>
-          {pending.length === 0 ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
-              <i className="fa-solid fa-trophy" style={{ fontSize: 22, color: '#ffd740' }} />
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', textAlign: 'center' }}>All missions complete!</span>
+function WealthScoreCard({ score, factors, missions, navigate }: {
+  score: number;
+  factors: { label: string; pts: number; earned: boolean }[];
+  missions: Mission[];
+  navigate: (p: string) => void;
+}) {
+  const rank = getRank(score);
+  const nextRank = RANKS[RANKS.indexOf(rank) + 1];
+  const levelProgress = nextRank
+    ? ((score - rank.min) / (rank.max - rank.min + 1)) * 100
+    : 100;
+  const pending = missions.filter(m => !m.done).slice(0, 3);
+  const completedCount = missions.filter(m => m.done).length;
+
+  return (
+    <>
+      <style>{GAME_STYLES}</style>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="wealth-score-grid">
+
+        {/* ── Score + rank panel ── */}
+        <div style={{
+          position: 'relative', overflow: 'hidden', borderRadius: 20,
+          background: 'linear-gradient(145deg, #070e0a, #050c08)',
+          border: `1px solid ${rank.color}25`,
+          padding: '20px',
+          '--glow': `${rank.color}40`,
+        } as React.CSSProperties}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${rank.color}60, transparent)` }} />
+          <Grain opacity={0.025} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+
+            {/* Rank badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{
+                width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+                background: `${rank.color}15`, border: `1.5px solid ${rank.color}40`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 22, animation: 'popIn .4s ease-out',
+              }}>{rank.emoji}</div>
+              <div>
+                <p style={{ margin: 0, fontSize: 9, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase' }}>Current Rank</p>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 900, color: rank.color, letterSpacing: '-0.01em' }}>{rank.name}</p>
+              </div>
+              <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                <p style={{ margin: 0, fontSize: 9, color: 'rgba(255,255,255,.25)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>Score</p>
+                <p style={{ margin: 0, fontSize: 24, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>{score}</p>
+              </div>
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {pending.map(m => (
-                <button key={m.label} onClick={() => navigate(m.to)} style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-                  borderRadius: 12, border: '1px solid rgba(255,255,255,.07)',
-                  background: 'rgba(255,255,255,.03)', cursor: 'pointer', textAlign: 'left',
-                  transition: 'all .15s',
-                }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.06)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,230,118,.2)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.03)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,.07)'; }}
-                >
-                  <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(0,230,118,.08)', border: '1px solid rgba(0,230,118,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <i className={`fa-solid ${m.icon}`} style={{ fontSize: 12, color: '#00e676' }} />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{m.label}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 9, color: 'rgba(255,255,255,.35)', lineHeight: 1.3 }}>{m.sub}</p>
-                  </div>
-                  <i className="fa-solid fa-arrow-right" style={{ fontSize: 9, color: 'rgba(255,255,255,.2)', marginLeft: 'auto', flexShrink: 0 }} />
-                </button>
+
+            {/* XP bar to next rank */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                  {nextRank ? `Progress to ${nextRank.name} ${nextRank.emoji}` : '🏆 Max Rank Reached'}
+                </span>
+                <span style={{ fontSize: 9, fontWeight: 800, color: rank.color }}>{Math.round(levelProgress)}%</span>
+              </div>
+              <div style={{ height: 7, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 99,
+                  background: `linear-gradient(90deg, ${rank.color}cc, ${rank.color})`,
+                  width: `${levelProgress}%`,
+                  boxShadow: `0 0 10px ${rank.color}60`,
+                  transition: 'width 1s cubic-bezier(.4,0,.2,1)',
+                }} />
+              </div>
+              {nextRank && (
+                <p style={{ margin: '6px 0 0', fontSize: 9, color: 'rgba(255,255,255,.25)', fontFamily: SANS }}>
+                  💡 {rank.next}
+                </p>
+              )}
+            </div>
+
+            {/* Earned factors */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+              {factors.map(f => (
+                <span key={f.label} style={{
+                  fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 99,
+                  background: f.earned ? `${rank.color}14` : 'rgba(255,255,255,.04)',
+                  border: `1px solid ${f.earned ? rank.color + '35' : 'rgba(255,255,255,.07)'}`,
+                  color: f.earned ? rank.color : 'rgba(255,255,255,.2)',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  transition: 'all .2s',
+                }}>
+                  <i className={`fa-solid ${f.earned ? 'fa-circle-check' : 'fa-circle'}`} style={{ fontSize: 7 }} />
+                  +{f.pts}
+                </span>
               ))}
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* ── Missions panel ── */}
+        <div style={{
+          position: 'relative', overflow: 'hidden', borderRadius: 20,
+          background: '#080d18', border: '1px solid rgba(255,255,255,.06)',
+          padding: '20px', display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <Grain opacity={0.025} />
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 10, height: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ margin: 0, fontSize: 9, fontWeight: 800, letterSpacing: '.13em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase' }}>Missions</p>
+              <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: 'rgba(255,215,64,.12)', border: '1px solid rgba(255,215,64,.2)', color: '#ffd740' }}>
+                {completedCount}/{missions.length} done
+              </span>
+            </div>
+
+            {pending.length === 0 ? (
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 36, animation: 'popIn .5s ease-out' }}>🏆</div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#ffd740' }}>All missions done!</p>
+                <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,.35)', textAlign: 'center' }}>You're a Wealth Master. More coming soon.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {pending.map(m => <MissionButton key={m.label} m={m} navigate={navigate} />)}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      <style>{`
-        @media (max-width: 600px) { .wealth-score-grid { grid-template-columns: 1fr !important; } }
-      `}</style>
-    </div>
+    </>
   );
 }
 
@@ -573,18 +755,19 @@ export default function Dashboard() {
   const [usSearch, setUsSearch] = useState('');
 
   // Wealth data for logged-in users
-  const { data: walletData } = useQuery<Record<string, number>>({
+  const { data: walletData, isLoading: walletLoading } = useQuery<Record<string, number>>({
     queryKey: ['wallet'],
     queryFn: () => apiGet<Record<string, number>>('/api/wallet/balance'),
     enabled: isAuthenticated,
     refetchInterval: 30_000,
   });
-  const { data: posData } = useQuery<Record<string, unknown>>({
+  const { data: posData, isLoading: posLoading } = useQuery<Record<string, unknown>>({
     queryKey: ['positions'],
     queryFn: () => apiGet<Record<string, unknown>>('/api/portfolio/positions'),
     enabled: isAuthenticated,
     refetchInterval: 30_000,
   });
+  const wealthLoading = isAuthenticated && (walletLoading || posLoading);
 
   const walletBalance = (walletData?.balance as number) ?? 0;
   const rawPositions = Array.isArray(posData)
@@ -613,13 +796,13 @@ export default function Dashboard() {
 
   // ── Missions — top 3 uncompleted ──
   const allMissions: Mission[] = useMemo(() => [
-    { icon: 'fa-seedling',   label: 'Make your first investment',  sub: 'Buy your first JSE or US stock',           to: '/portfolio', done: rawPositions.length > 0 },
-    { icon: 'fa-chart-pie',  label: 'Diversify to 3+ stocks',      sub: 'Spread risk across multiple securities',   to: '/screener',  done: rawPositions.length >= 3 },
-    { icon: 'fa-wallet',     label: 'Maintain a cash buffer',      sub: 'Keep funds ready for opportunities',       to: '/portfolio', done: walletBalance > 0 },
-    { icon: 'fa-bullseye',   label: 'Set a wealth goal',           sub: 'Define what you\'re building toward',      to: '/planner',   done: false },
-    { icon: 'fa-flag-usa',   label: 'Add US stock exposure',       sub: 'Hedge in USD with global leaders',         to: '/us-stocks', done: false },
-    { icon: 'fa-robot',      label: 'Ask your AI advisor',         sub: 'Get a personalised investment plan',       to: '/chat',      done: false },
-    { icon: 'fa-bell',       label: 'Set a price alert',           sub: 'Never miss a buy or sell opportunity',     to: '/alerts',    done: false },
+    { icon: 'fa-seedling',   pts: 25, label: 'Make your first investment',  sub: 'Buy your first JSE or US stock',         to: '/portfolio', done: rawPositions.length > 0 },
+    { icon: 'fa-chart-pie',  pts: 20, label: 'Diversify to 3+ stocks',      sub: 'Spread risk across multiple securities', to: '/screener',  done: rawPositions.length >= 3 },
+    { icon: 'fa-wallet',     pts: 10, label: 'Maintain a cash buffer',      sub: 'Keep funds ready for opportunities',     to: '/portfolio', done: walletBalance > 0 },
+    { icon: 'fa-bullseye',   pts: 15, label: 'Set a wealth goal',           sub: 'Define what you\'re building toward',    to: '/planner',   done: false },
+    { icon: 'fa-flag-usa',   pts: 10, label: 'Add US stock exposure',       sub: 'Hedge in USD with global leaders',       to: '/us-stocks', done: false },
+    { icon: 'fa-robot',      pts: 10, label: 'Ask your AI advisor',         sub: 'Get a personalised investment plan',     to: '/chat',      done: false },
+    { icon: 'fa-bell',       pts: 5,  label: 'Set a price alert',           sub: 'Never miss a buy or sell opportunity',   to: '/alerts',    done: false },
   ], [rawPositions.length, walletBalance]);
 
   const US_POPULAR = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'JPM', 'BRK/B', 'V', 'UNH', 'XOM', 'NFLX', 'AMD', 'DIS', 'BABA', 'PYPL', 'INTC'];
@@ -701,26 +884,30 @@ export default function Dashboard() {
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-      {/* ── Wealth hero (logged-in users) ─────────────────── */}
+      {/* ── Wealth section (logged-in users) ─────────────── */}
       {isAuthenticated && (
-        <WealthHero
-          portfolioValue={portfolioValue}
-          totalGain={totalGain}
-          totalGainPct={totalGainPct}
-          walletBalance={walletBalance}
-          firstName={firstName}
-          navigate={navigate}
-        />
-      )}
-
-      {/* ── Wealth Score + Missions (logged-in users) ─────── */}
-      {isAuthenticated && (
-        <WealthScoreCard
-          score={wealthScore}
-          factors={scoreFactors}
-          missions={allMissions}
-          navigate={navigate}
-        />
+        wealthLoading ? <WealthSkeleton /> : (
+          wealthScore === 0 && rawPositions.length === 0 ? (
+            <NewUserWelcome firstName={firstName} navigate={navigate} />
+          ) : (
+            <>
+              <WealthHero
+                portfolioValue={portfolioValue}
+                totalGain={totalGain}
+                totalGainPct={totalGainPct}
+                walletBalance={walletBalance}
+                firstName={firstName}
+                navigate={navigate}
+              />
+              <WealthScoreCard
+                score={wealthScore}
+                factors={scoreFactors}
+                missions={allMissions}
+                navigate={navigate}
+              />
+            </>
+          )
+        )
       )}
 
       {/* ── FREE tier upgrade banner ──────────────────────── */}
