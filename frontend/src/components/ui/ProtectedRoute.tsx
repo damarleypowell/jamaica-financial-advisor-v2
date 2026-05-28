@@ -139,20 +139,33 @@ function UpgradeWall({ requiredTier, featureName, userTier, signedIn }: {
               Upgrade to {requiredTier}
             </a>
           ) : (
-            <button
-              onClick={() => openAuthModal('signup')}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                width: '100%', padding: '13px 0', borderRadius: 13,
-                background: color, color: '#04060d',
-                fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer',
-                boxShadow: `0 4px 24px ${color}40`,
-                transition: 'box-shadow 180ms, transform 180ms',
-              }}
-            >
-              <i className="fa-solid fa-user" style={{ fontSize: 12 }} />
-              Create Free Account
-            </button>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={() => openAuthModal('signup')}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  width: '100%', padding: '13px 0', borderRadius: 13,
+                  background: color, color: '#04060d',
+                  fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer',
+                  boxShadow: `0 4px 24px ${color}40`,
+                  transition: 'box-shadow 180ms, transform 180ms',
+                }}
+              >
+                <i className="fa-solid fa-user" style={{ fontSize: 12 }} />
+                Create Free Account
+              </button>
+              <button
+                onClick={() => openAuthModal('login')}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  width: '100%', padding: '11px 0', borderRadius: 13,
+                  background: 'transparent', color: 'rgba(255,255,255,.45)',
+                  fontSize: 13, fontWeight: 600, border: '1px solid rgba(255,255,255,.1)', cursor: 'pointer',
+                }}
+              >
+                Already have an account? Sign In
+              </button>
+            </div>
           )}
 
           <p style={{ margin: '12px 0 0', fontSize: 11, color: 'var(--color-muted, #6b7280)' }}>

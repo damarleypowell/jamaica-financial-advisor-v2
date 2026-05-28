@@ -63,7 +63,7 @@ router.post("/api/payments/create-order", authMiddleware, async (req, res) => {
     const token = await getPayPalToken();
 
     const description = type === "SUBSCRIPTION"
-      ? `Gotham Financial — ${plan || "BASIC"} Plan (Monthly)`
+      ? `Gotham Financial — ${plan || "CORE"} Plan (Monthly)`
       : `Gotham Financial — Wallet Deposit`;
 
     const order = await paypalRequest("POST", "/v2/checkout/orders", {

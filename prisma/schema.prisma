@@ -82,7 +82,7 @@ enum PaymentStatus {
 
 enum SubscriptionPlan {
   FREE
-  BASIC
+  CORE
   PRO
   ENTERPRISE
 }

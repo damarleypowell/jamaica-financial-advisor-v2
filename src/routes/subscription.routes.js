@@ -30,12 +30,12 @@ const router = Router();
 
 const PLAN_CATALOG = [
   {
-    plan: "BASIC",
-    name: "Basic",
-    priceJMD: 3100,
-    priceUSD: 19.99,
+    plan: "CORE",
+    name: "Core",
+    priceJMD: 2400,
+    priceUSD: 14.99,
     billingPeriod: "monthly",
-    description: "Full JSE trading with AI-powered analysis",
+    description: "Start building structured wealth",
     features: {
       maxTrades: "50 per month",
       maxWatchlists: 5,
@@ -52,10 +52,10 @@ const PLAN_CATALOG = [
   {
     plan: "PRO",
     name: "Pro",
-    priceJMD: 15500,
-    priceUSD: 99.99,
+    priceJMD: 7800,
+    priceUSD: 49.99,
     billingPeriod: "monthly",
-    description: "Unlimited trading with ML predictions & voice agent",
+    description: "AI wealth advisor — optimize like an institution",
     features: {
       maxTrades: "Unlimited",
       maxWatchlists: "Unlimited",

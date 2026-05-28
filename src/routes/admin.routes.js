@@ -161,7 +161,7 @@ router.put("/api/admin/users/:id", authMiddleware, requireAdmin, async (req, res
   try {
     if (!USE_DB) return res.status(400).json({ error: "Requires database mode" });
 
-    const VALID_TIERS = ["FREE", "BASIC", "PRO", "ENTERPRISE"];
+    const VALID_TIERS = ["FREE", "CORE", "PRO", "ENTERPRISE"];
     const VALID_KYC   = ["NONE", "PENDING", "VERIFIED", "REJECTED"];
 
     const data = {};

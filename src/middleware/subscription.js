@@ -15,7 +15,7 @@ const USE_DB = !!(process.env.DATABASE_URL && prisma);
 // ── Tier Definitions ────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-const TIER_ORDER = ["FREE", "BASIC", "PRO", "ENTERPRISE"];
+const TIER_ORDER = ["FREE", "CORE", "PRO", "ENTERPRISE"];
 
 const TIER_LIMITS = {
   FREE: {
@@ -29,11 +29,11 @@ const TIER_LIMITS = {
     voiceAgent: false,
     tradeServiceCharge: null,
   },
-  BASIC: {
-    maxTrades: 50,          // per month
+  CORE: {
+    maxTrades: 50,
     maxWatchlists: 5,
     maxAlerts: 20,
-    aiChats: 50,            // per day
+    aiChats: 50,
     usStocks: true,
     advancedAnalytics: true,
     mlPredictions: false,
