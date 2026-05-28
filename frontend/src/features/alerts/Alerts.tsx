@@ -43,7 +43,7 @@ interface SubscriptionResponse {
 
 const MAX_ALERTS_BY_TIER: Record<string, number> = {
   FREE:       3,
-  BASIC:     10,
+  CORE:      10,
   PRO:       50,
   ENTERPRISE: 999,
 };
@@ -503,8 +503,8 @@ export default function Alerts() {
               </p>
               <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-muted)' }}>
                 {tier === 'FREE'
-                  ? 'FREE plan includes 3 alerts. Upgrade to BASIC for 10, PRO for 50.'
-                  : 'BASIC plan includes 10 alerts. Upgrade to PRO for up to 50.'}
+                  ? 'FREE plan includes 3 alerts. Upgrade to CORE for 10, PRO for 50.'
+                  : 'CORE plan includes 10 alerts. Upgrade to PRO for up to 50.'}
               </p>
             </div>
           </div>

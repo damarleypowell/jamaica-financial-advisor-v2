@@ -73,7 +73,7 @@ export function getChangeColor(
 
 const TIER_LEVELS: Record<string, number> = {
   FREE: 0,
-  BASIC: 1,
+  CORE: 1,
   PRO: 2,
   ENTERPRISE: 3,
 };

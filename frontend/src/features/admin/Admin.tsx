@@ -67,7 +67,7 @@ function fmtUptime(s?: number) {
 }
 
 const TIER_COLORS: Record<string, string> = {
-  FREE: '#78909c', BASIC: '#40c4ff', PRO: '#ffd740', ENTERPRISE: '#ce93d8',
+  FREE: '#78909c', CORE: '#40c4ff', PRO: '#ffd740', ENTERPRISE: '#ce93d8',
 };
 const SEV_COLORS: Record<string, string> = {
   low: '#00e676', medium: '#ffd740', high: '#ff8a65', critical: '#ff5252',
@@ -244,7 +244,7 @@ function UserPanel({ user, onClose, onUpdate }: {
           <div>
             <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)' }}>Change Tier</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {(['FREE', 'BASIC', 'PRO', 'ENTERPRISE'] as const).map(t => (
+              {(['FREE', 'CORE', 'PRO', 'ENTERPRISE'] as const).map(t => (
                 <button key={t} onClick={() => setTier(t)}
                   style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: `1px solid ${tier === t ? TIER_COLORS[t] : 'var(--color-border)'}`, background: tier === t ? TIER_COLORS[t] + '20' : 'transparent', color: tier === t ? TIER_COLORS[t] : 'var(--color-muted)', transition: 'all 120ms' }}>
                   {t}
@@ -576,7 +576,7 @@ export default function Admin() {
                 <select value={userTierFilter} onChange={e => { setUserTierFilter(e.target.value); setUserPage(1); }}
                   style={{ ...INPUT, width: 110, height: 32, appearance: 'none', cursor: 'pointer' }}>
                   <option value="">All Tiers</option>
-                  {['FREE', 'BASIC', 'PRO', 'ENTERPRISE'].map(t => <option key={t} value={t}>{t}</option>)}
+                  {['FREE', 'CORE', 'PRO', 'ENTERPRISE'].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
                 <select value={userKycFilter} onChange={e => { setUserKycFilter(e.target.value); setUserPage(1); }}
                   style={{ ...INPUT, width: 110, height: 32, appearance: 'none', cursor: 'pointer' }}>

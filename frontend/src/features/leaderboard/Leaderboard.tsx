@@ -17,19 +17,19 @@ const fmt2 = (n?: number) => (n ?? 0).toLocaleString('en-US', { minimumFractionD
 const tierColor = (t?: string) => {
   if (t === 'ENTERPRISE') return 'var(--color-purple)';
   if (t === 'PRO')        return 'var(--color-gold)';
-  if (t === 'BASIC')      return 'var(--color-blue)';
+  if (t === 'CORE')       return 'var(--color-blue)';
   return 'var(--color-green)';
 };
 
 const MOCK_LEADERS: LeaderEntry[] = [
   { rank: 1, userId: '1', name: 'Marcus W.',    returnPct: 47.3,  portfolioValue: 2340000, trades: 128, winRate: 71, tier: 'PRO' },
   { rank: 2, userId: '2', name: 'Kezia N.',     returnPct: 38.9,  portfolioValue: 1890000, trades: 94,  winRate: 68, tier: 'PRO' },
-  { rank: 3, userId: '3', name: 'Andre T.',     returnPct: 31.2,  portfolioValue: 1560000, trades: 72,  winRate: 62, tier: 'BASIC' },
-  { rank: 4, userId: '4', name: 'Simone B.',    returnPct: 28.7,  portfolioValue: 1340000, trades: 61,  winRate: 65, tier: 'BASIC' },
-  { rank: 5, userId: '5', name: 'Kyle F.',      returnPct: 24.1,  portfolioValue: 1120000, trades: 45,  winRate: 58, tier: 'BASIC' },
+  { rank: 3, userId: '3', name: 'Andre T.',     returnPct: 31.2,  portfolioValue: 1560000, trades: 72,  winRate: 62, tier: 'CORE' },
+  { rank: 4, userId: '4', name: 'Simone B.',    returnPct: 28.7,  portfolioValue: 1340000, trades: 61,  winRate: 65, tier: 'CORE' },
+  { rank: 5, userId: '5', name: 'Kyle F.',      returnPct: 24.1,  portfolioValue: 1120000, trades: 45,  winRate: 58, tier: 'CORE' },
   { rank: 6, userId: '6', name: 'Renee M.',     returnPct: 19.8,  portfolioValue: 980000,  trades: 88,  winRate: 55, tier: 'FREE'  },
   { rank: 7, userId: '7', name: 'Devon C.',     returnPct: 16.4,  portfolioValue: 870000,  trades: 33,  winRate: 60, tier: 'FREE'  },
-  { rank: 8, userId: '8', name: 'Natasha R.',   returnPct: 14.2,  portfolioValue: 760000,  trades: 41,  winRate: 54, tier: 'BASIC' },
+  { rank: 8, userId: '8', name: 'Natasha R.',   returnPct: 14.2,  portfolioValue: 760000,  trades: 41,  winRate: 54, tier: 'CORE' },
   { rank: 9, userId: '9', name: 'Omar P.',      returnPct: 11.9,  portfolioValue: 650000,  trades: 27,  winRate: 52, tier: 'FREE'  },
   { rank: 10,userId: '10',name: 'Crystal J.',   returnPct: 9.7,   portfolioValue: 540000,  trades: 19,  winRate: 57, tier: 'FREE'  },
 ];
