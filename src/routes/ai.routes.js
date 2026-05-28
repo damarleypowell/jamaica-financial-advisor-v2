@@ -8,6 +8,7 @@ const marketService = require("../services/market.service");
 const analytics = require("../services/analytics.service");
 const { fetchAllNews } = require("../../news-scraper");
 const { wrapAIResponse, logAIInteraction } = require("../middleware/compliance");
+const { aiGuard } = require("../middleware/aiGuard");
 
 const router = Router();
 
@@ -25,7 +26,7 @@ const VOICE_ID = "onwK4e9ZLuTAKqWW03F9"; // Daniel — deep, clear, professional
 // ── AI Chat ──────────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-router.post("/api/chat", rateLimit(60000, 20), async (req, res) => {
+router.post("/api/chat", aiGuard("chat"), rateLimit(60000, 20), async (req, res) => {
   const { messages, context } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: "Messages array required" });
@@ -79,7 +80,7 @@ ${context ? `\nUser Context: ${context}` : ""}`;
 // ── AI Financial Planner ─────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-router.post("/api/financial-plan", rateLimit(60000, 5), async (req, res) => {
+router.post("/api/financial-plan", aiGuard("financial-plan"), rateLimit(60000, 5), async (req, res) => {
   const {
     goals,
     riskTolerance,
@@ -171,7 +172,7 @@ You MUST respond with ONLY valid JSON:
 // ── Auto-Invest AI ───────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-router.post("/api/auto-invest", rateLimit(60000, 3), async (req, res) => {
+router.post("/api/auto-invest", aiGuard("auto-invest"), rateLimit(60000, 3), async (req, res) => {
   const { holdings, goals, riskTolerance, timeHorizon } = req.body;
   if (!holdings || !Array.isArray(holdings))
     return res.status(400).json({ error: "Holdings array required" });
@@ -371,7 +372,7 @@ Use exactly this structure:
 All numeric values derived from real data provided.`,
 };
 
-router.post("/analyze", rateLimit(60000, 10), async (req, res) => {
+router.post("/analyze", aiGuard("analysis"), rateLimit(60000, 10), async (req, res) => {
   const { user_input, experience_level } = req.body;
   if (!user_input || !experience_level)
     return res.status(400).json({ error: "Missing required fields" });
@@ -597,7 +598,7 @@ function speechFriendly(raw) {
     .replace(/\n{3,}/g, '\n\n');
 }
 
-router.post("/api/speak", rateLimit(60000, 10), async (req, res) => {
+router.post("/api/speak", aiGuard("speak"), rateLimit(60000, 10), async (req, res) => {
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: "Missing text" });
 
@@ -646,7 +647,7 @@ router.post("/api/speak", rateLimit(60000, 10), async (req, res) => {
 
 // ── Voice Chat: Speech → AI → ElevenLabs Voice Response ─────────────────────
 
-router.post("/api/voice-chat", authMiddleware, checkFeature("voiceAgent"), rateLimit(60000, 10), async (req, res) => {
+router.post("/api/voice-chat", authMiddleware, checkFeature("voiceAgent"), aiGuard("voice-chat"), rateLimit(60000, 10), async (req, res) => {
   const { text, context } = req.body;
   if (!text) return res.status(400).json({ error: "Missing text" });
 
@@ -797,6 +798,7 @@ IMPORTANT: Your response will be read aloud via text-to-speech. Keep it:
 
 router.post(
   "/api/portfolio/optimize",
+  aiGuard("portfolio-optimize"),
   rateLimit(60000, 5),
   async (req, res) => {
     const { holdings } = req.body;
