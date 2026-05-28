@@ -493,7 +493,7 @@ export default function Alerts() {
       </div>
 
       {/* ── Upgrade notice (only for FREE/BASIC) ── */}
-      {(tier === 'FREE' || tier === 'BASIC') && (
+      {(tier === 'FREE' || tier === 'CORE') && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderRadius: 14, background: 'rgba(0,230,118,.04)', border: '1px solid rgba(0,230,118,.12)', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="fa-solid fa-rocket" style={{ fontSize: 14, color: 'var(--color-green)' }} />
