@@ -5,7 +5,7 @@ import { useUIStore } from '../../stores/ui.ts';
 import type { SubscriptionTier } from '../../types/index.ts';
 import { useState, useEffect } from 'react';
 
-const TIER: Record<SubscriptionTier, number> = { FREE: 0, BASIC: 1, PRO: 2, ENTERPRISE: 3 };
+const TIER: Record<SubscriptionTier, number> = { FREE: 0, CORE: 1, PRO: 2, ENTERPRISE: 3 };
 const canAccess = (u: SubscriptionTier, req: SubscriptionTier) => TIER[u] >= TIER[req];
 
 interface NavItem { label: string; icon: string; to: string; tier?: SubscriptionTier; adminOnly?: boolean; }
@@ -25,10 +25,10 @@ const NAV: Section[] = [
   {
     heading: 'Markets',
     items: [
-      { label: 'JSE Live',      icon: 'fa-solid fa-chart-line',        to: '/screener',   tier: 'BASIC' },
-      { label: 'US Stocks',     icon: 'fa-solid fa-flag-usa',          to: '/us-stocks',  tier: 'BASIC' },
+      { label: 'JSE Live',      icon: 'fa-solid fa-chart-line',        to: '/screener',   tier: 'CORE' },
+      { label: 'US Stocks',     icon: 'fa-solid fa-flag-usa',          to: '/us-stocks',  tier: 'CORE' },
       { label: 'Watchlists',    icon: 'fa-solid fa-star',              to: '/watchlists'  },
-      { label: 'Charts',        icon: 'fa-solid fa-chart-candlestick', to: '/technicals', tier: 'BASIC' },
+      { label: 'Charts',        icon: 'fa-solid fa-chart-candlestick', to: '/technicals', tier: 'CORE' },
       { label: 'News',          icon: 'fa-solid fa-newspaper',         to: '/news'        },
     ],
   },
@@ -50,15 +50,14 @@ const NAV: Section[] = [
 ];
 
 const MOBILE_NAV_BASE: NavItem[] = [
-  { label: 'Home',      icon: 'fa-solid fa-house',          to: '/'          },
-  { label: 'Invest',    icon: 'fa-solid fa-chart-line',     to: '/screener'  },
-  { label: 'Portfolio', icon: 'fa-solid fa-wallet',         to: '/portfolio' },
-  { label: 'AI',        icon: 'fa-solid fa-robot',          to: '/chat'      },
-  { label: 'Learn',     icon: 'fa-solid fa-graduation-cap', to: '/learn'     },
+  { label: 'Home',      icon: 'fa-solid fa-house',       to: '/'          },
+  { label: 'Invest',    icon: 'fa-solid fa-seedling',    to: '/screener'  },
+  { label: 'Portfolio', icon: 'fa-solid fa-wallet',      to: '/portfolio' },
+  { label: 'You',       icon: 'fa-solid fa-circle-user', to: '/settings'  },
 ];
 
 const TIER_COLORS: Record<string, string> = {
-  FREE: '#00e676', BASIC: '#40c4ff', PRO: '#ffd740', ENTERPRISE: '#ce93d8',
+  FREE: '#00e676', CORE: '#40c4ff', PRO: '#ffd740', ENTERPRISE: '#ce93d8',
 };
 
 function NavItemRow({ item, userTier, onClose }: { item: NavItem; userTier: SubscriptionTier; onClose: () => void }) {
@@ -236,17 +235,10 @@ function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; u
 
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { user } = useAuthStore();
-  const { openAuthModal } = useUIStore();
   const userTier: SubscriptionTier = user?.subscriptionTier ?? 'FREE';
   const isAdmin = userTier === 'ENTERPRISE';
 
-  const MOBILE_NAV = user
-    ? MOBILE_NAV_BASE
-    : [
-        ...MOBILE_NAV_BASE.slice(0, 3),
-        { label: 'Sign In', icon: 'fa-solid fa-right-to-bracket', to: '#signin' },
-        MOBILE_NAV_BASE[4],
-      ];
+  const MOBILE_NAV = MOBILE_NAV_BASE;
 
   const SIDEBAR_W = 240;
 
@@ -326,69 +318,46 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         borderTop: '1px solid rgba(255,255,255,.06)', zIndex: 40,
         display: 'flex', alignItems: 'stretch',
       }}>
-        {MOBILE_NAV.map(item => {
-          if (item.to === '#signin') {
-            return (
-              <button
-                key="#signin"
-                onClick={() => openAuthModal('login')}
-                style={{ flex: 1, display: 'flex', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: 4, padding: '10px 4px 12px', position: 'relative', width: '100%',
-                }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(0,230,118,.12)', transition: 'background 160ms',
-                  }}>
-                    <i className="fa-solid fa-right-to-bracket" style={{ fontSize: 16, color: 'var(--color-green)', filter: 'drop-shadow(0 0 6px rgba(0,230,118,.6))' }} />
-                  </div>
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.03em', color: 'var(--color-green)' }}>Sign In</span>
-                </div>
-              </button>
-            );
-          }
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              style={{ textDecoration: 'none', flex: 1, display: 'flex', justifyContent: 'center' }}>
-              {({ isActive }) => (
-                <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: 4, padding: '10px 4px 12px', position: 'relative', width: '100%',
-                }}>
-                  {isActive && (
-                    <span style={{
-                      position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                      width: 24, height: 2, borderRadius: 99, background: 'var(--color-green)',
-                      boxShadow: '0 0 10px rgba(0,230,118,.7)',
-                    }} />
-                  )}
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: isActive ? 'rgba(0,230,118,.12)' : 'transparent',
-                    transition: 'background 160ms',
-                  }}>
-                    <i className={item.icon} style={{
-                      fontSize: 16, transition: 'all 160ms',
-                      color: isActive ? 'var(--color-green)' : 'rgba(255,255,255,.35)',
-                      filter: isActive ? 'drop-shadow(0 0 6px rgba(0,230,118,.6))' : 'none',
-                    }} />
-                  </div>
+        {MOBILE_NAV.map(item => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            style={{ textDecoration: 'none', flex: 1, display: 'flex', justifyContent: 'center' }}>
+            {({ isActive }) => (
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                gap: 4, padding: '10px 4px 12px', position: 'relative', width: '100%',
+              }}>
+                {isActive && (
                   <span style={{
-                    fontSize: 9, fontWeight: 700, letterSpacing: '.03em',
-                    color: isActive ? 'var(--color-green)' : 'rgba(255,255,255,.28)',
-                    transition: 'color 160ms',
-                  }}>
-                    {item.label}
-                  </span>
+                    position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                    width: 24, height: 2, borderRadius: 99, background: 'var(--color-green)',
+                    boxShadow: '0 0 10px rgba(0,230,118,.7)',
+                  }} />
+                )}
+                <div style={{
+                  width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: isActive ? 'rgba(0,230,118,.12)' : 'transparent',
+                  transition: 'background 160ms',
+                }}>
+                  <i className={item.icon} style={{
+                    fontSize: 16, transition: 'all 160ms',
+                    color: isActive ? 'var(--color-green)' : 'rgba(255,255,255,.35)',
+                    filter: isActive ? 'drop-shadow(0 0 6px rgba(0,230,118,.6))' : 'none',
+                  }} />
                 </div>
-              )}
-            </NavLink>
-          );
-        })}
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: '.03em',
+                  color: isActive ? 'var(--color-green)' : 'rgba(255,255,255,.28)',
+                  transition: 'color 160ms',
+                }}>
+                  {item.label}
+                </span>
+              </div>
+            )}
+          </NavLink>
+        ))}
       </nav>
     </>
   );

@@ -739,6 +739,80 @@ function WealthHero({ portfolioValue, totalGain, totalGainPct, walletBalance, fi
   );
 }
 
+/* ── Long-term Goals ─────────────────────────────────────────── */
+const WEALTH_MILESTONES = [
+  { label: 'First Investment',  emoji: '🌱', target: 1,          unit: 'positions',  desc: 'Buy your first stock'            },
+  { label: 'J$50K Invested',    emoji: '💰', target: 50_000,     unit: 'jmd',        desc: 'Your wealth foundation'          },
+  { label: 'J$250K Milestone',  emoji: '🎯', target: 250_000,    unit: 'jmd',        desc: 'Growing serious'                 },
+  { label: 'J$1M Milestone',    emoji: '🏆', target: 1_000_000,  unit: 'jmd',        desc: 'The million dollar club'        },
+  { label: 'Diversified (5+)',  emoji: '🌿', target: 5,          unit: 'positions',  desc: 'Spread your risk'                },
+  { label: 'J$5M Portfolio',    emoji: '👑', target: 5_000_000,  unit: 'jmd',        desc: 'Wealth Master territory'        },
+];
+
+function GoalsSection({ portfolioValue, positions }: { portfolioValue: number; positions: number }) {
+  const positionCount = positions;
+  return (
+    <div style={{
+      position: 'relative', overflow: 'hidden', borderRadius: 20,
+      background: 'linear-gradient(145deg, #060d0b, #040a08)',
+      border: '1px solid rgba(255,255,255,.07)',
+      padding: '20px',
+    }}>
+      <style>{GAME_STYLES}</style>
+      <Grain opacity={0.022} />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <p style={{ margin: 0, fontSize: 9, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase' }}>Long-Term Goals</p>
+          <a href="/planner" style={{ fontSize: 10, fontWeight: 700, color: '#00e676', textDecoration: 'none', letterSpacing: '.04em', opacity: .8 }}>
+            Set Custom Goal <i className="fa-solid fa-arrow-right" style={{ fontSize: 8 }} />
+          </a>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {WEALTH_MILESTONES.map(m => {
+            const current = m.unit === 'jmd' ? portfolioValue : positionCount;
+            const pct = Math.min((current / m.target) * 100, 100);
+            const done = pct >= 100;
+            return (
+              <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                  background: done ? 'rgba(0,230,118,.15)' : 'rgba(255,255,255,.04)',
+                  border: `1px solid ${done ? 'rgba(0,230,118,.3)' : 'rgba(255,255,255,.07)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14,
+                }}>
+                  {done ? '✓' : m.emoji}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: done ? '#00e676' : 'rgba(255,255,255,.7)' }}>{m.label}</span>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: done ? '#00e676' : 'rgba(255,255,255,.3)', fontFamily: MONO }}>
+                      {Math.round(pct)}%
+                    </span>
+                  </div>
+                  <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: 99,
+                      background: done
+                        ? 'linear-gradient(90deg, #00e676cc, #00e676)'
+                        : 'linear-gradient(90deg, rgba(0,230,118,.4), rgba(0,230,118,.7))',
+                      width: `${pct}%`,
+                      boxShadow: done ? '0 0 8px rgba(0,230,118,.5)' : 'none',
+                      transition: 'width 1.2s cubic-bezier(.4,0,.2,1)',
+                    }} />
+                  </div>
+                  <p style={{ margin: '3px 0 0', fontSize: 9, color: 'rgba(255,255,255,.2)' }}>{m.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════ */
 
 export default function Dashboard() {
@@ -905,6 +979,7 @@ export default function Dashboard() {
                 missions={allMissions}
                 navigate={navigate}
               />
+              <GoalsSection portfolioValue={portfolioValue} positions={rawPositions.length} />
             </>
           )
         )
@@ -917,10 +992,10 @@ export default function Dashboard() {
             <span style={{ fontSize: 22 }}>🚀</span>
             <div>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff' }}>You're on the Free plan — limited to JSE preview only</p>
-              <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,.5)' }}>Upgrade to Basic for full JSE + US Markets, charts, portfolio, alerts & more.</p>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,.5)' }}>Upgrade to CORE for full JSE + US Markets, charts, portfolio, alerts & more.</p>
             </div>
           </div>
-          <a href="/subscription" style={{ flexShrink: 0, padding: '8px 20px', borderRadius: 10, background: '#00c853', color: '#000', fontSize: 12, fontWeight: 800, textDecoration: 'none', letterSpacing: '.02em' }}>Upgrade — $19.99/mo</a>
+          <a href="/subscription" style={{ flexShrink: 0, padding: '8px 20px', borderRadius: 10, background: '#00c853', color: '#000', fontSize: 12, fontWeight: 800, textDecoration: 'none', letterSpacing: '.02em' }}>Upgrade — $14.99/mo</a>
         </div>
       )}
 
@@ -1057,7 +1132,7 @@ export default function Dashboard() {
           ) : undefined
         }>Chart &amp; Analysis</SectionLabel>
         {isFree ? (
-          <PaywallBlock feature="Advanced Charts & Real-Time Data" tier="BASIC" />
+          <PaywallBlock feature="Advanced Charts & Real-Time Data" tier="CORE" />
         ) : (
           <div className="dashboard-grid">
             <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)', background: '#080d18', boxShadow: '0 4px 32px rgba(0,0,0,.4)' }}>
@@ -1080,7 +1155,7 @@ export default function Dashboard() {
             <div style={{ pointerEvents: 'none', filter: 'blur(4px)', opacity: 0.35, userSelect: 'none' }}>
               <StockTable defaultLimit={5} />
             </div>
-            <PaywallBlock feature="Full JSE Securities Table" tier="BASIC" />
+            <PaywallBlock feature="Full JSE Securities Table" tier="CORE" />
           </>
         ) : market === 'us' ? (
           <StockTable stocks={usStocks} isUS title="US Equities" defaultLimit={20} />

@@ -81,7 +81,7 @@ const PAGE_META: Record<string, { title: string; sub?: string }> = {
 
 const TIER_BADGE: Record<string, { bg: string; color: string; border: string }> = {
   FREE:       { bg: 'rgba(0,230,118,.12)',   color: '#00e676', border: 'rgba(0,230,118,.25)'   },
-  BASIC:      { bg: 'rgba(64,196,255,.12)',  color: '#40c4ff', border: 'rgba(64,196,255,.25)'  },
+  CORE:       { bg: 'rgba(64,196,255,.12)',  color: '#40c4ff', border: 'rgba(64,196,255,.25)'  },
   PRO:        { bg: 'rgba(255,215,64,.12)',  color: '#ffd740', border: 'rgba(255,215,64,.25)'  },
   ENTERPRISE: { bg: 'rgba(206,147,216,.12)', color: '#ce93d8', border: 'rgba(206,147,216,.25)' },
 };
@@ -144,16 +144,20 @@ export default function Header({ onToggleSidebar, focusMode: _focusMode, sidebar
   const isConn    = useMarketStore(s => s.isConnected);
 
   const isAuthenticated = !!user;
-  const openAuthModal = useUIStore(s => s.openAuthModal);
+  const { openAuthModal, openOptionsDrawer } = useUIStore();
 
   const [sq, setSq] = useState('');
   const [sOpen, setSOpen] = useState(false);
   const [mSearchOpen, setMSearchOpen] = useState(false);
-  const sRef  = useRef<HTMLDivElement>(null);
-  const mRef  = useRef<HTMLDivElement>(null);
+  const sRef = useRef<HTMLDivElement>(null);
+  const mRef = useRef<HTMLDivElement>(null);
 
   const base = '/' + (location.pathname.split('/')[1] ?? '');
   const page = PAGE_META[base] ?? { title: 'Gotham Financial' };
+
+  const tier    = user?.subscriptionTier ?? 'FREE';
+  const tb      = TIER_BADGE[tier] ?? TIER_BADGE.FREE;
+  const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?';
 
   const results = sq.trim()
     ? stocks.filter(s =>
@@ -180,11 +184,6 @@ export default function Header({ onToggleSidebar, focusMode: _focusMode, sidebar
     return () => document.removeEventListener('keydown', fn);
   }, []);
 
-  const iconBtn: React.CSSProperties = {
-    width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms', flexShrink: 0,
-  };
-
   const handleSelectResult = (symbol: string) => {
     navigate(`/technicals/${symbol}`);
     setSOpen(false);
@@ -193,190 +192,124 @@ export default function Header({ onToggleSidebar, focusMode: _focusMode, sidebar
   };
 
   return (
-    <header style={{
-      position: 'fixed', top: 32, left: 0, right: 0, height: 56,
-      background: 'rgba(7,11,20,0.96)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
-      zIndex: 40, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12,
-      maxWidth: '100%',
-    }}>
-
-      {/* Mobile menu toggle — shows X when sidebar is open */}
-      <button onClick={onToggleSidebar} aria-label="menu"
-        style={{ ...iconBtn, background: sidebarOpen ? 'rgba(255,255,255,.08)' : 'transparent' }}
-        className="md:hidden"
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.07)')}
-        onMouseLeave={e => (e.currentTarget.style.background = sidebarOpen ? 'rgba(255,255,255,.08)' : 'transparent')}>
-        <i className={sidebarOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'} style={{ fontSize: 15, color: 'var(--color-text2)' }} />
-      </button>
-
-      {/* Brand â€" single, always visible */}
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', flexShrink: 0 }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-          background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.22)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <svg viewBox="0 0 24 24" fill="none" style={{ width: 18, height: 18 }}>
-            <path d="M3 17L7 12L11 14.5L16 9L21 5" stroke="#00e676" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="21" cy="5" r="2.2" fill="#00e676"/>
-          </svg>
-        </div>
-        <div>
-          <p style={{ fontSize: 12.5, fontWeight: 900, letterSpacing: '.1em', color: '#00e676', lineHeight: 1, margin: 0 }}>GOTHAM</p>
-          <p style={{ fontSize: 8, fontWeight: 600, letterSpacing: '.3em', color: 'var(--color-muted)', lineHeight: 1, margin: 0, marginTop: 2 }}>FINANCIAL</p>
-        </div>
-      </Link>
-
-      {/* Divider + page title */}
-      <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,.08)', flexShrink: 0 }} />
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1 }}>{page.title}</p>
-        {page.sub && <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)', lineHeight: 1, marginTop: 2 }} className="hidden sm:block">{page.sub}</p>}
-      </div>
-
-      <div style={{ flex: 1 }} className="hidden md:block" />
-
-      {/* Desktop search */}
-      <div data-tour="search" ref={sRef} style={{ position: 'relative', flexShrink: 0 }} className="hidden sm:block">
-        <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--color-muted)', pointerEvents: 'none', zIndex: 1 }} />
-        <input
-          value={sq}
-          onChange={e => { setSq(e.target.value); setSOpen(true); }}
-          onFocus={() => setSOpen(true)}
-          placeholder="Search stocks..."
-          style={{
-            height: 36, width: 230, paddingLeft: 34, paddingRight: 50,
-            background: sOpen ? 'rgba(0,230,118,.05)' : 'rgba(255,255,255,.05)',
-            border: `1px solid ${sOpen ? 'rgba(0,230,118,.35)' : 'rgba(255,255,255,.07)'}`,
-            borderRadius: 10, fontSize: 13, color: 'var(--color-text)',
-            outline: 'none', transition: 'all 180ms', fontFamily: 'var(--font-sans)',
-            boxShadow: sOpen ? '0 0 0 3px rgba(0,230,118,.08)' : 'none',
-          }}
-        />
-        <kbd style={{
-          position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)',
-          fontSize: 9, color: 'var(--color-muted)', background: 'rgba(255,255,255,.05)',
-          border: '1px solid rgba(255,255,255,.08)', borderRadius: 5, padding: '2px 5px', fontFamily: 'var(--font-mono)',
-        }}>âŒ˜K</kbd>
-        {sOpen && <SearchResults results={results} width={310} onSelect={handleSelectResult} />}
-      </div>
-
-      {/* Mobile search button */}
-      <div ref={mRef} style={{ position: 'relative' }} className="flex sm:hidden">
-        <button
-          onClick={() => setMSearchOpen(v => !v)}
-          style={{
-            ...iconBtn,
-            background: mSearchOpen ? 'rgba(0,230,118,.08)' : 'transparent',
-            border: mSearchOpen ? '1px solid rgba(0,230,118,.2)' : '1px solid transparent',
-          }}
-          aria-label="search">
-          <i className="fa-solid fa-magnifying-glass" style={{ fontSize: 15, color: mSearchOpen ? 'var(--color-green)' : 'var(--color-text2)' }} />
+    <>
+      {/* ── Mobile slim top bar (hidden on lg+) ──────────────────────── */}
+      <div className="mobile-top-bar lg:hidden">
+        {/* Left: options/hamburger */}
+        <button className="top-icon-btn" onClick={openOptionsDrawer} aria-label="Open menu">
+          <i className="fa-solid fa-bars" style={{ fontSize: 17, color: 'var(--color-text2)' }} />
         </button>
 
-        {mSearchOpen && (
-          <div style={{
-            position: 'fixed', top: 90, left: 12, right: 12, zIndex: 60,
-          }} className="animate-slide-up">
-            <div style={{
-              background: 'var(--color-bg3)', border: '1px solid rgba(255,255,255,.1)',
-              borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,.8)', overflow: 'hidden',
-            }}>
-              <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', display: 'flex', gap: 10, alignItems: 'center' }}>
-                <i className="fa-solid fa-magnifying-glass" style={{ fontSize: 14, color: 'var(--color-muted)' }} />
-                <input
-                  autoFocus
-                  value={sq}
-                  onChange={e => setSq(e.target.value)}
-                  placeholder="Search stocks, funds..."
-                  style={{
-                    flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                    fontSize: 15, color: 'var(--color-text)', fontFamily: 'var(--font-sans)',
-                  }}
-                />
-                {sq && (
-                  <button onClick={() => setSq('')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                    <i className="fa-solid fa-xmark" style={{ fontSize: 13, color: 'var(--color-muted)' }} />
-                  </button>
-                )}
-              </div>
-              {results.length > 0 ? (
-                results.map(s => {
-                  const pos = (s.pctChange ?? 0) >= 0;
-                  return (
-                    <button key={s.symbol}
-                      onClick={() => { navigate(`/technicals/${s.symbol}`); setMSearchOpen(false); setSq(''); }}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 120ms', borderBottom: '1px solid rgba(255,255,255,.03)' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.04)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                      <div style={{
-                        width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: pos ? 'rgba(0,230,118,.1)' : 'rgba(255,82,82,.1)', flexShrink: 0,
-                      }}>
-                        <span style={{ fontSize: 9, fontWeight: 900, color: pos ? '#00e676' : '#ff5252', fontFamily: 'var(--font-mono)' }}>{s.symbol.slice(0, 3)}</span>
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>{s.symbol}</p>
-                        <p style={{ margin: 0, fontSize: 11, color: 'var(--color-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</p>
-                      </div>
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <p style={{ margin: 0, fontSize: 14, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-text)' }}>${(s.price ?? 0).toFixed(2)}</p>
-                        <p style={{ margin: 0, fontSize: 11, fontFamily: 'var(--font-mono)', color: pos ? '#00e676' : '#ff5252' }}>{pos ? '+' : ''}{(s.pctChange ?? 0).toFixed(2)}%</p>
-                      </div>
-                    </button>
-                  );
-                })
-              ) : sq.trim() ? (
-                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-muted)', fontSize: 13 }}>
-                  No results for "{sq}"
-                </div>
-              ) : (
-                <div style={{ padding: '16px 14px' }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Popular</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {['NCB', 'GK', 'SVL', 'SJ', 'JMMBGL'].map(sym => (
-                      <button key={sym}
-                        onClick={() => { navigate(`/technicals/${sym}`); setMSearchOpen(false); }}
-                        style={{
-                          padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                          background: 'rgba(255,255,255,.06)', border: '1px solid var(--color-border)',
-                          color: 'var(--color-text2)', cursor: 'pointer', transition: 'all 140ms',
-                        }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,230,118,.1)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-green)'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.06)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text2)'; }}>
-                        {sym}
-                      </button>
-                    ))}
+        {/* Center: wordmark */}
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: '.1em', color: 'var(--color-green)', lineHeight: 1 }}>GOTHAM</span>
+          <span style={{ fontSize: 8, fontWeight: 600, letterSpacing: '.22em', color: 'var(--color-muted)', lineHeight: 1 }}>FINANCIAL</span>
+        </Link>
+
+        {/* Right: avatar (opens options) or search */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {/* Mobile search */}
+          <div ref={mRef} style={{ position: 'relative' }}>
+            <button className="top-icon-btn" onClick={() => setMSearchOpen(v => !v)} aria-label="Search">
+              <i className="fa-solid fa-magnifying-glass" style={{ fontSize: 16, color: mSearchOpen ? 'var(--color-green)' : 'var(--color-text2)' }} />
+            </button>
+            {mSearchOpen && (
+              <div style={{ position: 'fixed', top: 64, left: 12, right: 12, zIndex: 60 }}>
+                <div style={{ background: 'var(--color-bg3)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,.8)', overflow: 'hidden' }}>
+                  <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <i className="fa-solid fa-magnifying-glass" style={{ fontSize: 14, color: 'var(--color-muted)' }} />
+                    <input autoFocus value={sq} onChange={e => setSq(e.target.value)} placeholder="Search stocks..."
+                      style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 15, color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }} />
+                    {sq && <button onClick={() => setSq('')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><i className="fa-solid fa-xmark" style={{ fontSize: 13, color: 'var(--color-muted)' }} /></button>}
                   </div>
+                  {results.length > 0 ? results.map(s => {
+                    const pos = (s.pctChange ?? 0) >= 0;
+                    return (
+                      <button key={s.symbol} onClick={() => { navigate(`/technicals/${s.symbol}`); setMSearchOpen(false); setSq(''); }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: pos ? 'rgba(0,230,118,.1)' : 'rgba(255,82,82,.1)', flexShrink: 0 }}>
+                          <span style={{ fontSize: 9, fontWeight: 900, color: pos ? '#00e676' : '#ff5252', fontFamily: 'var(--font-mono)' }}>{s.symbol.slice(0, 3)}</span>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>{s.symbol}</p>
+                          <p style={{ margin: 0, fontSize: 11, color: 'var(--color-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</p>
+                        </div>
+                        <p style={{ margin: 0, fontSize: 13, fontFamily: 'var(--font-mono)', color: pos ? '#00e676' : '#ff5252' }}>{pos ? '+' : ''}{(s.pctChange ?? 0).toFixed(2)}%</p>
+                      </button>
+                    );
+                  }) : (
+                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-muted)', fontSize: 13 }}>
+                      {sq.trim() ? `No results for "${sq}"` : 'Type to search stocks'}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Avatar / sign-in */}
+          {isAuthenticated ? (
+            <button className="top-icon-btn" onClick={openOptionsDrawer}
+              style={{ width: 36, height: 36, borderRadius: 10, background: tb.bg, border: `1px solid ${tb.border}`, fontSize: 12, fontWeight: 800, color: tb.color, fontFamily: 'var(--font-mono)' }}>
+              {initials}
+            </button>
+          ) : (
+            <button className="top-icon-btn" onClick={() => openAuthModal('login')} style={{ color: 'var(--color-green)' }}>
+              <i className="fa-solid fa-right-to-bracket" style={{ fontSize: 17 }} />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Connection status â€" desktop */}
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: 6,
-        padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700,
-        background: isConn ? 'rgba(0,230,118,.08)' : 'rgba(255,255,255,.04)',
-        border: `1px solid ${isConn ? 'rgba(0,230,118,.22)' : 'rgba(255,255,255,.07)'}`,
-        color: isConn ? '#00e676' : 'var(--color-muted)',
-        flexShrink: 0,
-      }} className="hidden lg:inline-flex">
-        <span style={{
-          width: 6, height: 6, borderRadius: '50%',
-          background: isConn ? '#00e676' : 'var(--color-muted)',
-          display: 'inline-block',
-          boxShadow: isConn ? '0 0 6px rgba(0,230,118,.6)' : 'none',
-        }} className={isConn ? 'animate-pulse-dot' : ''} />
-        {isConn ? 'Live' : 'Offline'}
-      </div>
+      {/* ── Desktop header (hidden on mobile) ────────────────────────── */}
+      <header className="hidden lg:flex" style={{
+        position: 'fixed', top: 32, left: 0, right: 0, height: 56,
+        background: 'rgba(7,11,20,0.96)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        zIndex: 40, alignItems: 'center', padding: '0 20px', gap: 12,
+      }}>
+        <button onClick={onToggleSidebar} aria-label="menu"
+          style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: sidebarOpen ? 'rgba(255,255,255,.08)' : 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms', flexShrink: 0 }}>
+          <i className={sidebarOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'} style={{ fontSize: 15, color: 'var(--color-text2)' }} />
+        </button>
 
-      {/* Auth */}
-      <AuthSection user={user} isAuthenticated={isAuthenticated} openAuthModal={openAuthModal} logout={logout} />
-    </header>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', flexShrink: 0 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg viewBox="0 0 24 24" fill="none" style={{ width: 18, height: 18 }}>
+              <path d="M3 17L7 12L11 14.5L16 9L21 5" stroke="#00e676" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="21" cy="5" r="2.2" fill="#00e676"/>
+            </svg>
+          </div>
+          <div>
+            <p style={{ fontSize: 12.5, fontWeight: 900, letterSpacing: '.1em', color: '#00e676', lineHeight: 1, margin: 0 }}>GOTHAM</p>
+            <p style={{ fontSize: 8, fontWeight: 600, letterSpacing: '.3em', color: 'var(--color-muted)', lineHeight: 1, margin: 0, marginTop: 2 }}>FINANCIAL</p>
+          </div>
+        </Link>
+
+        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,.08)', flexShrink: 0 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1 }}>{page.title}</p>
+          {page.sub && <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)', lineHeight: 1, marginTop: 2 }}>{page.sub}</p>}
+        </div>
+
+        <div style={{ flex: 1 }} />
+
+        <div data-tour="search" ref={sRef} style={{ position: 'relative', flexShrink: 0 }}>
+          <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--color-muted)', pointerEvents: 'none', zIndex: 1 }} />
+          <input value={sq} onChange={e => { setSq(e.target.value); setSOpen(true); }} onFocus={() => setSOpen(true)} placeholder="Search stocks..."
+            style={{ height: 36, width: 230, paddingLeft: 34, paddingRight: 50, background: sOpen ? 'rgba(0,230,118,.05)' : 'rgba(255,255,255,.05)', border: `1px solid ${sOpen ? 'rgba(0,230,118,.35)' : 'rgba(255,255,255,.07)'}`, borderRadius: 10, fontSize: 13, color: 'var(--color-text)', outline: 'none', transition: 'all 180ms', fontFamily: 'var(--font-sans)' }} />
+          <kbd style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 9, color: 'var(--color-muted)', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 5, padding: '2px 5px', fontFamily: 'var(--font-mono)' }}>⌘K</kbd>
+          {sOpen && <SearchResults results={results} width={310} onSelect={handleSelectResult} />}
+        </div>
+
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: isConn ? 'rgba(0,230,118,.08)' : 'rgba(255,255,255,.04)', border: `1px solid ${isConn ? 'rgba(0,230,118,.22)' : 'rgba(255,255,255,.07)'}`, color: isConn ? '#00e676' : 'var(--color-muted)', flexShrink: 0 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: isConn ? '#00e676' : 'var(--color-muted)', display: 'inline-block', boxShadow: isConn ? '0 0 6px rgba(0,230,118,.6)' : 'none' }} />
+          {isConn ? 'Live' : 'Offline'}
+        </div>
+
+        <AuthSection user={user} isAuthenticated={isAuthenticated} openAuthModal={openAuthModal} logout={logout} />
+      </header>
+    </>
   );
 }
 

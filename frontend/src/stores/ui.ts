@@ -10,6 +10,7 @@ interface UIState {
   theme: Theme;
   focusMode: boolean;
   tosAccepted: boolean;
+  optionsDrawerOpen: boolean;
 }
 
 interface UIActions {
@@ -22,6 +23,8 @@ interface UIActions {
   setTheme: (t: Theme) => void;
   toggleFocusMode: () => void;
   acceptTos: () => void;
+  openOptionsDrawer: () => void;
+  closeOptionsDrawer: () => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -36,6 +39,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   theme: savedTheme,
   focusMode: false,
   tosAccepted,
+  optionsDrawerOpen: false,
 
   openAuthModal: (view = 'login') => set({ authModalOpen: true, authModalView: view }),
   closeAuthModal: () => set({ authModalOpen: false, authModalView: 'login' }),
@@ -57,4 +61,6 @@ export const useUIStore = create<UIStore>((set, get) => ({
     localStorage.setItem('gf_tos', '1');
     set({ tosAccepted: true });
   },
+  openOptionsDrawer: () => set({ optionsDrawerOpen: true }),
+  closeOptionsDrawer: () => set({ optionsDrawerOpen: false }),
 }));

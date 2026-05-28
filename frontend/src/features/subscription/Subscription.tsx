@@ -14,12 +14,12 @@ interface CreateOrderResponse { orderId: string; approveUrl: string; }
 interface CaptureOrderResponse { success: boolean; plan: string; message: string; }
 
 const PLANS = [
-  { id: 'BASIC', name: 'Basic', priceUSD: 19.99, priceJMD: 3100, badge: null, icon: 'fa-solid fa-bolt', color: '#40c4ff', description: 'Perfect for investors getting started on the JSE.', features: ['50 trades per month', '5 watchlists', '20 price alerts', '50 AI chats/day', 'US stock access', 'Advanced analytics', 'Email support'], missing: ['ML price predictions', 'Voice AI agent'] },
-  { id: 'PRO', name: 'Pro', priceUSD: 99.99, priceJMD: 15500, badge: 'Most Popular', icon: 'fa-solid fa-star', color: '#00e676', description: 'Unlimited trading with AI predictions and voice assistant.', features: ['Unlimited trades', 'Unlimited watchlists', 'Unlimited alerts', 'Unlimited AI chat', 'US stock access', 'ML price predictions', 'Voice AI agent', 'Priority support'], missing: [] },
+  { id: 'CORE', name: 'Core', priceUSD: 14.99, priceJMD: 2300, badge: null, icon: 'fa-solid fa-bolt', color: '#40c4ff', description: 'Perfect for investors getting started on the JSE.', features: ['50 trades per month', '5 watchlists', '20 price alerts', '50 AI chats/day', 'US stock access', 'Advanced analytics', 'Email support'], missing: ['ML price predictions', 'Voice AI agent'] },
+  { id: 'PRO', name: 'Pro', priceUSD: 49.99, priceJMD: 7700, badge: 'Most Popular', icon: 'fa-solid fa-star', color: '#00e676', description: 'Unlimited trading with AI predictions and voice assistant.', features: ['Unlimited trades', 'Unlimited watchlists', 'Unlimited alerts', 'Unlimited AI chat', 'US stock access', 'ML price predictions', 'Voice AI agent', 'Priority support'], missing: [] },
   { id: 'ENTERPRISE', name: 'Enterprise', priceUSD: null, priceJMD: null, badge: 'Custom', icon: 'fa-solid fa-building', color: '#ce93d8', description: 'Custom solutions for institutions and investment firms.', features: ['Everything in Pro', 'API access', 'Custom integrations', 'Dedicated account manager', 'SLA guarantee', 'Team seats', 'White-label options'], missing: [] },
 ];
 
-const TIER_RANK: Record<string, number> = { FREE: 0, BASIC: 1, PRO: 2, ENTERPRISE: 3 };
+const TIER_RANK: Record<string, number> = { FREE: 0, CORE: 1, PRO: 2, ENTERPRISE: 3 };
 
 function UsageBar({ label, icon, used, limit }: { label: string; icon: string; used: number; limit: number | string }) {
   const isUnlimited = limit === 'Unlimited' || limit === Infinity;

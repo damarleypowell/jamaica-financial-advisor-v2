@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPut, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../stores/auth';
+import { useUIStore } from '../../stores/ui';
 import type { User } from '../../types';
 
 /* ------------------------------------------------------------------ */
@@ -169,6 +170,7 @@ function Field({
 
 export default function Settings() {
   const { user: storeUser, isAuthenticated, setUser } = useAuthStore();
+  const { theme, toggleTheme } = useUIStore();
   const qc = useQueryClient();
   const { toast, show } = useToast();
   const [tab, setTab] = useState<Tab>('profile');
@@ -252,7 +254,7 @@ export default function Settings() {
 
   const user = profile ?? storeUser;
   const tierColors: Record<string, string> = {
-    FREE: 'var(--color-green)', BASIC: '#38bdf8', PRO: '#f59e0b', ENTERPRISE: '#a855f7',
+    FREE: 'var(--color-green)', CORE: '#38bdf8', PRO: '#f59e0b', ENTERPRISE: '#a855f7',
   };
   const tierColor = tierColors[user.subscriptionTier ?? 'FREE'] ?? 'var(--color-green)';
   const strength  = passwordStrength(newPw);
@@ -478,13 +480,51 @@ export default function Settings() {
                 {/* Appearance */}
                 <div>
                   <p style={{ margin: '0 0 12px', fontSize: 12, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Appearance</p>
-                  <ToggleRow
-                    label="Dark Theme"
-                    sub="Gotham dark interface"
-                    value={true}
-                    locked
-                    lockNote="Light mode coming soon"
-                  />
+                  <button
+                    onClick={toggleTheme}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 16,
+                      padding: '18px 20px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                      background: theme === 'dark'
+                        ? 'linear-gradient(135deg, rgba(0,230,118,.08), rgba(0,230,118,.03))'
+                        : 'linear-gradient(135deg, rgba(255,215,64,.1), rgba(255,180,0,.04))',
+                      borderTop: `1px solid ${theme === 'dark' ? 'rgba(0,230,118,.2)' : 'rgba(255,215,64,.3)'}`,
+                      borderRight: `1px solid ${theme === 'dark' ? 'rgba(0,230,118,.2)' : 'rgba(255,215,64,.3)'}`,
+                      borderBottom: `1px solid ${theme === 'dark' ? 'rgba(0,230,118,.2)' : 'rgba(255,215,64,.3)'}`,
+                      borderLeft: `1px solid ${theme === 'dark' ? 'rgba(0,230,118,.2)' : 'rgba(255,215,64,.3)'}`,
+                      textAlign: 'left', transition: 'all .2s', fontFamily: 'inherit',
+                    }}
+                  >
+                    <div style={{
+                      width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+                      background: theme === 'dark' ? 'rgba(0,230,118,.12)' : 'rgba(255,215,64,.15)',
+                      border: `1.5px solid ${theme === 'dark' ? 'rgba(0,230,118,.3)' : 'rgba(255,215,64,.4)'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 22,
+                    }}>
+                      {theme === 'dark' ? '🌙' : '☀️'}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--color-text)' }}>
+                        {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                      </p>
+                      <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--color-muted)' }}>
+                        {theme === 'dark' ? 'Currently using dark interface — tap to switch to light' : 'Currently using light interface — tap to switch to dark'}
+                      </p>
+                    </div>
+                    <div style={{
+                      flexShrink: 0, width: 52, height: 28, borderRadius: 14,
+                      background: theme === 'dark' ? 'var(--color-green)' : '#ffd740',
+                      position: 'relative', transition: 'background .25s',
+                    }}>
+                      <div style={{
+                        position: 'absolute', top: 4, left: theme === 'dark' ? 26 : 4,
+                        width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                        transition: 'left .25s cubic-bezier(.4,0,.2,1)',
+                        boxShadow: '0 1px 4px rgba(0,0,0,.3)',
+                      }} />
+                    </div>
+                  </button>
                 </div>
 
                 {/* Notifications */}

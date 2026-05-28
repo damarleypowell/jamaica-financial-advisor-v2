@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from './components/layout/Layout.tsx';
 import ProtectedRoute from './components/ui/ProtectedRoute.tsx';
@@ -58,6 +58,12 @@ function W(C: React.LazyExoticComponent<any>) {
   return <Suspense fallback={<PageLoader />}><C /></Suspense>;
 }
 
+function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const onboarded = localStorage.getItem('gf_onboarded');
+  if (!onboarded) return <Navigate to="/onboarding" replace />;
+  return <>{children}</>;
+}
+
 /* ---------- App ---------- */
 export default function App() {
   const connectSSE = useMarketStore((s) => s.connectSSE);
@@ -84,7 +90,7 @@ export default function App() {
 
           <Route element={<Layout />}>
             {/* ── Open to all (FREE) ─────────────────────────────── */}
-            <Route index element={W(Dashboard)} />
+            <Route index element={<OnboardingGate>{W(Dashboard)}</OnboardingGate>} />
             <Route path="subscription" element={W(Subscription)} />
             <Route path="settings" element={W(Settings)} />
             <Route path="news" element={W(News)} />
@@ -98,7 +104,7 @@ export default function App() {
             <Route path="us-stocks" element={W(USStocks)} />
 
             {/* ── BASIC+ required (sign in + paid plan) ─────────── */}
-            <Route element={<ProtectedRoute requiredTier="BASIC" featureName="Stock Screener" />}>
+            <Route element={<ProtectedRoute requiredTier="CORE" featureName="Stock Screener" />}>
               <Route path="screener" element={W(Screener)} />
             </Route>
 

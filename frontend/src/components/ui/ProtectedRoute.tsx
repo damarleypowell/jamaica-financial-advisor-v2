@@ -4,17 +4,17 @@ import { useUIStore } from '../../stores/ui.ts';
 import type { SubscriptionTier } from '../../types/index.ts';
 
 const TIER_LEVEL: Record<SubscriptionTier, number> = {
-  FREE: 0, BASIC: 1, PRO: 2, ENTERPRISE: 3,
+  FREE: 0, CORE: 1, PRO: 2, ENTERPRISE: 3,
 };
 
 const TIER_COLOR: Record<string, string> = {
-  BASIC: '#40c4ff',
+  CORE: '#40c4ff',
   PRO: '#00e676',
   ENTERPRISE: '#ce93d8',
 };
 
 const TIER_FEATURES: Record<string, string[]> = {
-  BASIC: ['50 trades/month', '5 watchlists', '20 price alerts', 'US stock access', 'Advanced analytics'],
+  CORE: ['50 trades/month', '5 watchlists', '20 price alerts', 'US stock access', 'Advanced analytics'],
   PRO: ['Unlimited trades', 'Unlimited alerts', 'ML price predictions', 'Voice AI agent', 'Priority support'],
   ENTERPRISE: ['Everything in Pro', 'API access', 'Dedicated support', 'Custom integrations'],
 };

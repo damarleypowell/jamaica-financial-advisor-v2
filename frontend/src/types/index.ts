@@ -20,7 +20,7 @@ export interface Stock {
   low52?: number;
 }
 
-export type SubscriptionTier = 'FREE' | 'BASIC' | 'PRO' | 'ENTERPRISE';
+export type SubscriptionTier = 'FREE' | 'CORE' | 'PRO' | 'ENTERPRISE';
 export type KycStatus = 'NONE' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 export type AccountType = 'paper' | 'live';
 
