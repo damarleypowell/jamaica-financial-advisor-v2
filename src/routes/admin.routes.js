@@ -415,3 +415,6 @@ router.get("/api/admin/stats/quick", authMiddleware, requireAdmin, async (req, r
 });
 
 module.exports = router;
+// Re-attach after the router assignment above (which would otherwise wipe the
+// earlier `exports.pushSecurityEvent`). firewall.js relies on this.
+module.exports.pushSecurityEvent = pushEvent;

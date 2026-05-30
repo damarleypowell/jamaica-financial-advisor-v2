@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useMarketStore } from '../../stores/market';
 import { useAuthStore } from '../../stores/auth';
+import { useUIStore } from '../../stores/ui';
 import { apiGet, apiPost } from '../../lib/api';
 import MainChart from './MainChart';
 import StockPanel from './StockPanel';
@@ -625,7 +626,45 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
 }
 
 /* ── Portfolio donut (instant "what do I own / how much did I make") ───── */
-const SLICE_COLORS = ['#00e676', '#40c4ff', '#ffd740', '#ce93d8', '#ff8a65', '#4dd0e1', '#f06292', '#aed581'];
+// Vibrant, high-contrast palette — each stock gets its own colour.
+const SLICE_COLORS = [
+  '#00e676', // green
+  '#40c4ff', // sky blue
+  '#ffd740', // gold
+  '#ce93d8', // orchid
+  '#ff8a65', // coral
+  '#4dd0e1', // cyan
+  '#f06292', // pink
+  '#aed581', // lime
+  '#ffb74d', // amber
+  '#7e57c2', // violet
+  '#26c6da', // teal
+  '#ff7043', // deep orange
+  '#5c6bc0', // indigo
+  '#9ccc65', // leaf
+  '#ec407a', // magenta
+  '#29b6f6', // light blue
+];
+
+// Stable hash so a given ticker keeps the same colour across renders/sessions.
+function symbolHash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+// Map each symbol to a distinct colour (no two slices share one).
+function assignSliceColors(symbols: string[]): Record<string, string> {
+  const used = new Set<number>();
+  const map: Record<string, string> = {};
+  for (const sym of symbols) {
+    let idx = symbolHash(sym) % SLICE_COLORS.length;
+    let guard = 0;
+    while (used.has(idx) && guard < SLICE_COLORS.length) { idx = (idx + 1) % SLICE_COLORS.length; guard++; }
+    used.add(idx);
+    map[sym] = SLICE_COLORS[idx];
+  }
+  return map;
+}
 
 interface PositionLite { symbol?: string; currentValue?: number; marketValue?: number; costBasis?: number; pnl?: number }
 
@@ -639,16 +678,18 @@ function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, na
   const up = totalGain >= 0;
   const accent = up ? '#00e676' : '#ff5252';
 
-  const slices = useMemo(() => positions
-    .map(p => {
-      const value = p.currentValue ?? p.marketValue ?? 0;
-      const cost = p.costBasis ?? 0;
-      return { symbol: p.symbol ?? '—', value, pnl: p.pnl ?? (value - cost) };
-    })
-    .filter(s => s.value > 0)
-    .sort((a, b) => b.value - a.value)
-    .map((s, i) => ({ ...s, pct: portfolioValue > 0 ? (s.value / portfolioValue) * 100 : 0, color: SLICE_COLORS[i % SLICE_COLORS.length] })),
-    [positions, portfolioValue]);
+  const slices = useMemo(() => {
+    const base = positions
+      .map(p => {
+        const value = p.currentValue ?? p.marketValue ?? 0;
+        const cost = p.costBasis ?? 0;
+        return { symbol: p.symbol ?? '—', value, pnl: p.pnl ?? (value - cost) };
+      })
+      .filter(s => s.value > 0)
+      .sort((a, b) => b.value - a.value);
+    const colors = assignSliceColors(base.map(s => s.symbol));
+    return base.map(s => ({ ...s, pct: portfolioValue > 0 ? (s.value / portfolioValue) * 100 : 0, color: colors[s.symbol] }));
+  }, [positions, portfolioValue]);
 
   const R = 56, SW = 16, C = 2 * Math.PI * R;
   // Precompute cumulative arc offsets without mutating captured state.
@@ -741,6 +782,88 @@ function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, na
           {slices.length > 5 && (
             <p style={{ margin: '2px 0 0', fontSize: 10.5, color: 'rgba(255,255,255,.3)', fontFamily: SANS }}>+ {slices.length - 5} more holdings</p>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Portfolio PREVIEW donut (guests + users with no holdings yet) ──────── */
+const PREVIEW_SLICES = [
+  { symbol: 'NCB', pct: 34 }, { symbol: 'GK', pct: 26 },
+  { symbol: 'WISYNCO', pct: 22 }, { symbol: 'AAPL', pct: 18 },
+];
+function PortfolioPreviewCard({ mode, navigate, openAuthModal }: {
+  mode: 'guest' | 'new';
+  navigate: (path: string) => void;
+  openAuthModal: (view?: 'login' | 'signup') => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setMounted(true), 90); return () => clearTimeout(t); }, []);
+  const R = 56, SW = 16, C = 2 * Math.PI * R;
+  const colors = useMemo(() => assignSliceColors(PREVIEW_SLICES.map(s => s.symbol)), []);
+  const arcs = useMemo(() => {
+    const fulls = PREVIEW_SLICES.map(s => (s.pct / 100) * C);
+    return PREVIEW_SLICES.map((s, i) => ({ ...s, full: fulls[i], start: fulls.slice(0, i).reduce((a, b) => a + b, 0), color: colors[s.symbol] }));
+  }, [C, colors]);
+
+  const headline = mode === 'guest' ? 'See your money grow here' : 'Your portfolio starts here';
+  const sub = mode === 'guest'
+    ? 'Track every JSE & US stock you own in one place — free, no card needed.'
+    : 'Make your first investment and watch this fill up with your real holdings.';
+  const ctaLabel = mode === 'guest' ? 'Sign up free' : 'Make your first investment';
+  const onCta = () => (mode === 'guest' ? openAuthModal('signup') : navigate('/portfolio'));
+
+  return (
+    <div style={{
+      position: 'relative', overflow: 'hidden', borderRadius: 20,
+      background: 'linear-gradient(135deg, #06100b 0%, #060d09 100%)',
+      border: '1px dashed rgba(0,230,118,.28)', padding: '20px 22px',
+    }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(0,230,118,.5) 45%, transparent)' }} />
+      <Grain opacity={0.022} />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', fontFamily: SANS }}>
+            <i className="fa-solid fa-chart-pie" style={{ color: '#00e676', marginRight: 7 }} />Your Portfolio
+          </span>
+          <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: '.12em', color: '#ffd740', background: 'rgba(255,215,64,.12)', border: '1px solid rgba(255,215,64,.3)', borderRadius: 99, padding: '2px 8px' }}>PREVIEW</span>
+        </div>
+        <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* sample donut (dimmed to signal it isn't real) */}
+          <svg viewBox="0 0 140 140" style={{ width: 132, height: 132, flexShrink: 0, opacity: 0.92 }}>
+            <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(255,255,255,.05)" strokeWidth={SW} />
+            {arcs.map(s => {
+              const len = mounted ? s.full : 0;
+              return (
+                <circle key={s.symbol} cx={70} cy={70} r={R} fill="none" stroke={s.color} strokeWidth={SW}
+                  strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-s.start}
+                  transform="rotate(-90 70 70)"
+                  style={{ transition: 'stroke-dasharray .8s cubic-bezier(.22,1,.36,1)' }} />
+              );
+            })}
+            <text x={70} y={66} textAnchor="middle" fill="rgba(255,255,255,.85)" fontSize={12} fontWeight={800} fontFamily={SANS}>Sample</text>
+            <text x={70} y={80} textAnchor="middle" fill="rgba(255,255,255,.35)" fontSize={8} fontFamily={SANS}>4 stocks</text>
+          </svg>
+          <div style={{ flex: 1, minWidth: 150 }}>
+            <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#fff', fontFamily: SANS, lineHeight: 1.25 }}>{headline}</p>
+            <p style={{ margin: '6px 0 14px', fontSize: 12, color: 'rgba(255,255,255,.5)', fontFamily: SANS, lineHeight: 1.55 }}>{sub}</p>
+            <button onClick={onCta} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 12,
+              background: 'linear-gradient(135deg, #00c853, #00e676)', color: '#04060d', fontWeight: 800, fontSize: 13.5,
+              border: 'none', cursor: 'pointer', fontFamily: SANS, boxShadow: '0 6px 22px rgba(0,230,118,.3)',
+            }}>{ctaLabel} →</button>
+          </div>
+        </div>
+        {/* sample legend */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: 16 }}>
+          {arcs.map(s => (
+            <div key={s.symbol} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 9, height: 9, borderRadius: 3, background: s.color }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.55)', fontFamily: MONO }}>{s.symbol}</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', fontFamily: MONO }}>{s.pct}%</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -951,6 +1074,7 @@ function GoalsSection({ portfolioValue, positions }: { portfolioValue: number; p
 
 export default function Dashboard() {
   const { user, isAuthenticated } = useAuthStore();
+  const openAuthModal = useUIStore(s => s.openAuthModal);
   const stocks = useMarketStore(s => s.stocks);
   const isConn = useMarketStore(s => s.isConnected);
   const selectedSymbol = useMarketStore(s => s.selectedSymbol);
@@ -1093,11 +1217,9 @@ export default function Dashboard() {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* ── Wealth section (logged-in users) ─────────────── */}
-      {isAuthenticated && (
+      {isAuthenticated ? (
         wealthLoading ? <WealthSkeleton /> : (
-          wealthScore === 0 && rawPositions.length === 0 ? (
-            <NewUserWelcome firstName={firstName} navigate={navigate} />
-          ) : (
+          rawPositions.length > 0 ? (
             <>
               <WealthHero
                 portfolioValue={portfolioValue}
@@ -1107,15 +1229,13 @@ export default function Dashboard() {
                 firstName={firstName}
                 navigate={navigate}
               />
-              {rawPositions.length > 0 && (
-                <PortfolioDonut
-                  positions={rawPositions as PositionLite[]}
-                  portfolioValue={portfolioValue}
-                  totalGain={totalGain}
-                  totalGainPct={totalGainPct}
-                  navigate={navigate}
-                />
-              )}
+              <PortfolioDonut
+                positions={rawPositions as PositionLite[]}
+                portfolioValue={portfolioValue}
+                totalGain={totalGain}
+                totalGainPct={totalGainPct}
+                navigate={navigate}
+              />
               <WealthScoreCard
                 score={wealthScore}
                 factors={scoreFactors}
@@ -1124,8 +1244,15 @@ export default function Dashboard() {
               />
               <GoalsSection portfolioValue={portfolioValue} positions={rawPositions.length} />
             </>
+          ) : (
+            <>
+              <PortfolioPreviewCard mode="new" navigate={navigate} openAuthModal={openAuthModal} />
+              <NewUserWelcome firstName={firstName} navigate={navigate} />
+            </>
           )
         )
+      ) : (
+        <PortfolioPreviewCard mode="guest" navigate={navigate} openAuthModal={openAuthModal} />
       )}
 
       {/* ── FREE tier upgrade banner ──────────────────────── */}

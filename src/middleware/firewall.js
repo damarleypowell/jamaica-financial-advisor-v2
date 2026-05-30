@@ -3,7 +3,16 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 const { rateLimit } = require('express-rate-limit');
-const { pushSecurityEvent } = require('../routes/admin.routes');
+
+// Best-effort security logging. Lazily resolved to dodge the circular dependency
+// (admin.routes ⇄ firewall) and the fact that `module.exports = router` in
+// admin.routes can momentarily hide this export. Never let logging crash a request.
+function pushSecurityEvent(evt) {
+  try {
+    const fn = require('../routes/admin.routes').pushSecurityEvent;
+    if (typeof fn === 'function') fn(evt?.type || 'event', evt, evt?.severity || 'medium');
+  } catch (_) { /* logging is non-critical */ }
+}
 
 // ── Blocked IP set (runtime, synced with admin panel) ────────────────────────
 const blockedIPs = new Set();
