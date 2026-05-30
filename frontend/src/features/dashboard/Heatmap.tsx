@@ -45,7 +45,7 @@ export default function Heatmap() {
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(KEY) === 'true'; } catch { return false; }
   });
-  const toggle = () => setCollapsed(v => { const n = !v; try { localStorage.setItem(KEY, String(n)); } catch {} return n; });
+  const toggle = () => setCollapsed(v => { const n = !v; try { localStorage.setItem(KEY, String(n)); } catch { /* storage unavailable */ } return n; });
   const sorted = useMemo(() => [...stocks].sort((a, b) => Math.abs(b.pctChange ?? 0) - Math.abs(a.pctChange ?? 0)), [stocks]);
   const gainers = stocks.filter(s => (s.pctChange ?? 0) > 0).length;
   const losers = stocks.filter(s => (s.pctChange ?? 0) < 0).length;

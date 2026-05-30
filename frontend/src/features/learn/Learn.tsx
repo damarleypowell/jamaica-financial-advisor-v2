@@ -5,10 +5,18 @@ import {
   TrendingUp, Award, Zap, Play,
   ExternalLink, HelpCircle, FileText, Activity, Wifi,
 } from 'lucide-react';
+import InteractiveSimulators from './LearnSimulators';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface ExternalLink { title: string; url: string; description: string; }
+
+// Live quote used by the interactive lesson exercises (from GET /api/stocks).
+interface LiveLearnStock {
+  symbol?: string; name?: string;
+  price: number; prevClose: number;
+  high52?: number; low52?: number; volume?: number;
+}
 
 interface QuizQ {
   q: string;
@@ -1020,7 +1028,7 @@ function DiagramRiskProfiles() {
         const eH = (p.equities / 100) * barH;
         const bH = (p.bonds / 100) * barH;
         const cH = (p.cash / 100) * barH;
-        let y = 20;
+        const y = 20;
         return (
           <g key={i}>
             <rect x={x} y={y} width={50} height={eH} fill={p.color} opacity={0.85} rx={3} />
@@ -1096,7 +1104,7 @@ function LiveExercisePanel({ mode }: { mode: 'quote' | 'technical' }) {
   const [grades, setGrades] = useState<Record<number, { score: number; label: string; color: string; feedback: string }>>({});
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
 
-  const { data: stocks, isLoading, error } = useQuery<any[]>({
+  const { data: stocks, isLoading, error } = useQuery<LiveLearnStock[]>({
     queryKey: ['jse-live-learn'],
     queryFn: async () => { const r = await fetch('/api/stocks'); return r.json(); },
     staleTime: 60000,
@@ -1104,8 +1112,10 @@ function LiveExercisePanel({ mode }: { mode: 'quote' | 'technical' }) {
 
   const stock = useMemo(() => {
     if (!stocks) return null;
-    const valid = stocks.filter((s: any) => s.price > 0 && s.prevClose > 0 && s.symbol);
+    const valid = stocks.filter((s) => (s.price ?? 0) > 0 && (s.prevClose ?? 0) > 0 && s.symbol);
     if (!valid.length) return null;
+    // Rotate the featured stock each minute — Date.now() is intentional here.
+    // eslint-disable-next-line react-hooks/purity
     const idx = Math.floor(Date.now() / 60000) % Math.min(valid.length, 15);
     return valid[idx];
   }, [stocks]);
@@ -1139,7 +1149,7 @@ function LiveExercisePanel({ mode }: { mode: 'quote' | 'technical' }) {
 
   const pctChange = ((stock.price - stock.prevClose) / stock.prevClose) * 100;
   const rangeWidth = stock.high52 && stock.low52 ? stock.high52 - stock.low52 : null;
-  const posInRange = rangeWidth ? ((stock.price - stock.low52) / rangeWidth) * 100 : null;
+  const posInRange = (rangeWidth && stock.low52 != null) ? ((stock.price - stock.low52) / rangeWidth) * 100 : null;
 
   const quoteSteps = [
     {
@@ -1800,6 +1810,9 @@ export default function Learn() {
           />
         ))}
       </div>
+
+      {/* Interactive, visual-first simulators */}
+      <InteractiveSimulators />
 
       {/* Quick reference glossary */}
       <section>

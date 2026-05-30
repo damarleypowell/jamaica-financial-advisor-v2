@@ -81,6 +81,8 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
 }) {
   const pos = jseΔ >= 0;
   const flat = total - advCount - decCount;
+  // Goal captured during onboarding — surfaced as a subtle personalization chip.
+  const [goal] = useState<string | null>(() => { try { return localStorage.getItem('gf_goal'); } catch { return null; } });
 
   return (
     <div style={{
@@ -110,6 +112,15 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
               <span style={{ width: 1, height: 12, background: 'rgba(255,255,255,.1)', display: 'inline-block' }} />
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,.28)', fontFamily: MONO }}>{jamTime} · JA</span>
             </div>
+
+            {goal && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6, padding: '4px 10px', borderRadius: 8, background: 'rgba(64,196,255,.08)', border: '1px solid rgba(64,196,255,.18)', maxWidth: 'fit-content' }}>
+                <i className="fa-solid fa-bullseye" style={{ fontSize: 10, color: '#40c4ff' }} />
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.55)', fontFamily: SANS }}>
+                  Your goal: <span style={{ color: '#40c4ff' }}>{goal}</span>
+                </span>
+              </div>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
               {jse > 0 ? (

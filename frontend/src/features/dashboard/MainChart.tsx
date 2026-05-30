@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   createChart, AreaSeries, CandlestickSeries, HistogramSeries,
-  type IChartApi, type ISeriesApi, type Time,
+  type IChartApi, type ISeriesApi, type Time, type HistogramData,
 } from 'lightweight-charts';
 import { Link } from 'react-router-dom';
 import { useMarketStore } from '../../stores/market';
@@ -55,7 +55,7 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
   const { data: jseData } = useQuery<HistoryPoint[]>({
     queryKey: ['jse-history', symbol, tf],
     queryFn: async () => {
-      const res = await apiGet<any>(`/api/history/${symbol}?period=${tf}`);
+      const res = await apiGet<HistoryPoint[] | { history?: unknown[]; data?: unknown[] }>(`/api/history/${symbol}?period=${tf}`);
       const raw: unknown[] = Array.isArray(res) ? res
         : Array.isArray(res?.history) ? res.history
         : Array.isArray(res?.data) ? res.data : [];
@@ -76,7 +76,7 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
   const resMap: Record<TF, string> = { '1H': '60', '4H': '60', '1D': 'D', 'ALL': 'D' };
   const { data: usData, isLoading: usLoading } = useQuery<{ candles?: OHLCPoint[]; history?: HistoryPoint[] } | OHLCPoint[]>({
     queryKey: ['us-history', symbol, tf],
-    queryFn: () => apiGet<any>(`/api/stocks/${symbol}/history?resolution=${resMap[tf]}`),
+    queryFn: () => apiGet<{ candles?: OHLCPoint[]; history?: HistoryPoint[] } | OHLCPoint[]>(`/api/stocks/${symbol}/history?resolution=${resMap[tf]}`),
     enabled: !!symbol && !!isUS,
     staleTime: 60_000,
     retry: 0,
@@ -87,7 +87,7 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
   /* ── Build display data ── */
   const candles: OHLCPoint[] = (() => {
     if (!isUS || !usData) return [];
-    const arr = Array.isArray(usData) ? usData : (usData as any).candles ?? [];
+    const arr = Array.isArray(usData) ? usData : ((usData as { candles?: OHLCPoint[] }).candles ?? []);
     return arr as OHLCPoint[];
   })();
 
@@ -153,7 +153,7 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
       areaRef.current?.setData([]);
       candleRef.current?.setData([]);
       volRef.current?.setData([]);
-    } catch (_) {}
+    } catch { /* chart series not ready */ }
   }, [symbol, isUS]);
 
   /* ── Push data whenever it arrives ── */
@@ -169,7 +169,7 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
           time: p.time, value: 0,
           color: i === 0 || p.value >= arr[i - 1].value ? 'rgba(0,230,118,.3)' : 'rgba(255,82,82,.3)',
         }));
-        volRef.current.setData(vd as any);
+        volRef.current.setData(vd as HistogramData<Time>[]);
       }
       chartRef.current?.timeScale().fitContent();
     } catch (e) { console.warn('[MainChart]', e); }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useMarketStore } from '../../stores/market';
 import { apiPost } from '../../lib/api';
@@ -23,12 +23,8 @@ const PROMPTS: Record<Level, (q: string) => string> = {
 export default function AIAnalysis() {
   const stocks = useMarketStore(s => s.stocks);
   const [level, setLevel] = useState<Level>('beginner');
-  const [query, setQuery] = useState('');
-
-  useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('q');
-    if (q) { setQuery(q); }
-  }, []);
+  // Seed from the ?q= deep-link param on first render (no effect needed).
+  const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '');
 
   const mutation = useMutation({
     mutationFn: (q: string) => apiPost<{ response: string }>('/api/chat', {
@@ -183,7 +179,7 @@ export default function AIAnalysis() {
           </div>
           {/* Result body */}
           <div style={{ padding: '20px 24px' }}>
-            <MarkdownRenderer content={(mutation.data as any)?.response ?? String(mutation.data)} />
+            <MarkdownRenderer content={(mutation.data as { response?: string })?.response ?? String(mutation.data)} />
           </div>
         </div>
       )}

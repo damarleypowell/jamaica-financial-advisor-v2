@@ -135,7 +135,7 @@ function AuthSection({ user, isAuthenticated, openAuthModal, logout }: {
   );
 }
 
-export default function Header({ onToggleSidebar, focusMode: _focusMode, sidebarOpen }: { onToggleSidebar: () => void; focusMode?: boolean; sidebarOpen?: boolean }) {
+export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSidebar: () => void; focusMode?: boolean; sidebarOpen?: boolean }) {
   const location  = useLocation();
   const navigate  = useNavigate();
   const user      = useAuthStore(s => s.user);

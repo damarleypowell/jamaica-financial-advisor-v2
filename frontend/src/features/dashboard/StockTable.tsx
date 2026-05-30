@@ -60,7 +60,7 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
 
   const rows = useMemo(() => {
     const ql = q.toLowerCase().trim();
-    let r = ql
+    const r = ql
       ? allStocks.filter(s => s.symbol.toLowerCase().includes(ql) || (s.name ?? '').toLowerCase().includes(ql))
       : allStocks.filter(s => (s.price ?? 0) > 0);
     const dir = sd === 'asc' ? 1 : -1;

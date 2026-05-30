@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useUIStore } from '../../stores/ui';
 
 const TOUR_KEY = 'gf_tour_v1';
 const PAD = 12;
@@ -96,6 +97,7 @@ const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 
 export default function AppTour() {
   const location = useLocation();
+  const authModalOpen = useUIStore(s => s.authModalOpen);
   const [active, setActive] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
@@ -143,7 +145,8 @@ export default function AppTour() {
     else done();
   }, [stepIdx, visibleSteps.length, done]);
 
-  if (!active || !step) return null;
+  // Pause the tour while the auth modal is open so it never covers sign-in.
+  if (!active || !step || authModalOpen) return null;
 
   const isLast = stepIdx === visibleSteps.length - 1;
   const OVL = 'rgba(3,3,6,.88)';

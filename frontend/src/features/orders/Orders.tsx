@@ -22,15 +22,15 @@ export default function Orders() {
   const { data: orders = [], isLoading: oLoad, isError: oError, refetch: oRefetch } = useQuery<Order[]>({
     queryKey: ['orders'],
     queryFn: async () => {
-      const res: any = await apiGet('/api/orders');
+      const res = await apiGet<{ orders?: unknown[] } | unknown[]>('/api/orders');
       // Backend returns { orders: [...] }
-      const rawOrders = Array.isArray(res) ? res : (res?.orders ?? []);
+      const rawOrders = (Array.isArray(res) ? res : (res?.orders ?? [])) as Record<string, unknown>[];
       // Normalise: backend uses orderType not type
-      return rawOrders.map((o: any) => ({
+      return rawOrders.map((o) => ({
         ...o,
         type: o.type ?? o.orderType ?? 'MARKET',
         price: o.price ?? o.limitPrice ?? o.avgFillPrice ?? null,
-      }));
+      })) as Order[];
     },
     enabled: isAuthenticated,
     retry: 1,
@@ -39,17 +39,17 @@ export default function Orders() {
   const { data: transactions = [], isLoading: tLoad, isError: tError, refetch: tRefetch } = useQuery<Transaction[]>({
     queryKey: ['transactions'],
     queryFn: async () => {
-      const res: any = await apiGet('/api/portfolio/history');
+      const res = await apiGet<{ transactions?: unknown[] } | unknown[]>('/api/portfolio/history');
       // Backend returns { transactions: [...] }
-      const txs = Array.isArray(res) ? res : (res?.transactions ?? []);
+      const txs = (Array.isArray(res) ? res : (res?.transactions ?? [])) as Record<string, unknown>[];
       // Normalise field names: backend uses totalAmount/feeAmount/shares
-      return txs.map((t: any) => ({
+      return txs.map((t) => ({
         ...t,
         side: t.type === 'BUY' || t.type === 'SELL' ? t.type : (t.side ?? t.type),
         quantity: t.quantity ?? t.shares ?? 0,
         total: t.total ?? t.totalAmount ?? 0,
         fee: t.fee ?? t.feeAmount ?? 0,
-      }));
+      })) as Transaction[];
     },
     enabled: isAuthenticated && tab === 'history',
     retry: 1,

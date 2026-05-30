@@ -352,7 +352,8 @@ function AppleOAuth({ onSuccess, onError }: { onSuccess: () => void; onError: (m
 
   useEffect(() => {
     if (!AID) return;
-    if (window.AppleID) { setReady(true); return; }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (window.AppleID) { setReady(true); return; } // SDK already present
     const s = document.createElement('script');
     s.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
     s.async = true;

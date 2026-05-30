@@ -6,13 +6,14 @@ import { useAuthStore } from '../../stores/auth';
 export default function VerifyEmail() {
   const navigate = useNavigate();
   const loadUser = useAuthStore((s) => s.loadUser);
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [msg, setMsg] = useState('');
+  // Derive the token and initial state during render so the effect never has
+  // to synchronously set state for the missing-token case.
+  const [token] = useState(() => new URLSearchParams(window.location.search).get('token'));
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>(token ? 'loading' : 'error');
+  const [msg, setMsg] = useState(token ? '' : 'No verification token found.');
 
   useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get('token');
-    if (!token) { setStatus('error'); setMsg('No verification token found.'); return; }
-
+    if (!token) return;
     apiPost('/api/auth/verify-email', { token })
       .then(() => {
         setStatus('success');
@@ -22,7 +23,7 @@ export default function VerifyEmail() {
         setStatus('error');
         setMsg(e instanceof Error ? e.message : 'Verification failed. The link may have expired.');
       });
-  }, [loadUser]);
+  }, [token, loadUser]);
 
   const GREEN = '#00C853';
   const INK = '#111827';

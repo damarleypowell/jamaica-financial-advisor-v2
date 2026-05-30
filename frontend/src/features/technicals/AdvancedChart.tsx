@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   createChart, AreaSeries, CandlestickSeries, HistogramSeries, LineSeries,
   type IChartApi, type ISeriesApi, type Time, LineStyle,
+  type AreaData, type CandlestickData, type HistogramData, type LineData,
 } from 'lightweight-charts';
 import { useMarketStore } from '../../stores/market';
 import { apiGet } from '../../lib/api';
@@ -211,7 +212,7 @@ export default function AdvancedChart() {
   const [inds, setInds]     = useState<Set<Indicator>>(new Set(['ema20', 'ema50', 'volume']));
   const [drawnLines, setDrawn] = useState<number[]>([]); // prices of drawn h-lines
 
-  const toggleInd = (ind: Indicator) => setInds(prev => { const n = new Set(prev); n.has(ind) ? n.delete(ind) : n.add(ind); return n; });
+  const toggleInd = (ind: Indicator) => setInds(prev => { const n = new Set(prev); if (n.has(ind)) n.delete(ind); else n.add(ind); return n; });
 
   /* ── refs ── */
   const wrapRef    = useRef<HTMLDivElement>(null); // main chart mount
@@ -255,8 +256,8 @@ export default function AdvancedChart() {
     enabled: !!symbol, staleTime: 30_000, retry: 0,
   });
 
-  const priceData = raw?.price ?? [];
-  const ohlcData  = raw?.ohlc  ?? [];
+  const priceData = useMemo(() => raw?.price ?? [], [raw]);
+  const ohlcData  = useMemo(() => raw?.ohlc  ?? [], [raw]);
 
   const derived = useMemo(() => {
     const vals = priceData.map(p => p.value);
@@ -324,10 +325,10 @@ export default function AdvancedChart() {
   useEffect(() => {
     if (!priceData.length || !mainChart.current) return;
     try {
-      areaS.current?.setData(priceData as any);
-      candleS.current?.setData(ohlcData as any);
+      areaS.current?.setData(priceData as AreaData<Time>[]);
+      candleS.current?.setData(ohlcData as CandlestickData<Time>[]);
       const volData = ohlcData.map(p => ({ time: p.time, value: Math.abs((p.close - p.open) / (p.open || 1) * 100) * 1000 + 100, color: p.close >= p.open ? 'rgba(0,230,118,.2)' : 'rgba(255,82,82,.2)' }));
-      volS.current?.setData(volData as any);
+      volS.current?.setData(volData as HistogramData<Time>[]);
       mainChart.current.timeScale().fitContent();
     } catch (e) { console.warn('[chart data]', e); }
   }, [priceData, ohlcData]);
@@ -335,12 +336,12 @@ export default function AdvancedChart() {
   /* ── push indicators ── */
   useEffect(() => {
     try {
-      ema20S.current?.setData(derived.ema20 as any);
-      ema50S.current?.setData(derived.ema50 as any);
-      bbUS.current?.setData(derived.bbU as any);
-      bbLS.current?.setData(derived.bbL as any);
-      bbMS.current?.setData(derived.bbM as any);
-      rsiS.current?.setData(derived.rsi as any);
+      ema20S.current?.setData(derived.ema20 as LineData<Time>[]);
+      ema50S.current?.setData(derived.ema50 as LineData<Time>[]);
+      bbUS.current?.setData(derived.bbU as LineData<Time>[]);
+      bbLS.current?.setData(derived.bbL as LineData<Time>[]);
+      bbMS.current?.setData(derived.bbM as LineData<Time>[]);
+      rsiS.current?.setData(derived.rsi as LineData<Time>[]);
     } catch (e) { console.warn('[chart indicators]', e); }
   }, [derived]);
 
@@ -371,7 +372,7 @@ export default function AdvancedChart() {
       const targetS = mode === 'area' ? areaS.current : candleS.current;
       if (!targetS) return;
       const line = targetS.createPriceLine({ price, color: '#ffd740', lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: `$${fmt2(price)}` });
-      hLinesRef.current.push(line as any);
+      hLinesRef.current.push(line);
       setDrawn(prev => [...prev, price]);
     } catch (err) { console.warn('[draw]', err); }
   }, [drawMode, mode, priceData]);
@@ -379,7 +380,7 @@ export default function AdvancedChart() {
   const clearDrawings = useCallback(() => {
     const targetS = mode === 'area' ? areaS.current : candleS.current;
     if (!targetS) return;
-    hLinesRef.current.forEach(l => { try { targetS.removePriceLine(l as any); } catch {} });
+    hLinesRef.current.forEach(l => { try { targetS.removePriceLine(l); } catch { /* line already removed */ } });
     hLinesRef.current = [];
     setDrawn([]);
   }, [mode]);
@@ -387,7 +388,7 @@ export default function AdvancedChart() {
   const srchResults = srchQ ? stocks.filter(s => s.symbol.toLowerCase().includes(srchQ.toLowerCase()) || s.name.toLowerCase().includes(srchQ.toLowerCase())).slice(0, 8) : stocks.slice(0, 12);
   const hasData = priceData.length > 1;
 
-  const statItems = live ? [
+  const statItems: { label: string; value: string; color?: string }[] = live ? [
     { label: 'Price', value: `$${fmt2(live.price)}` },
     { label: 'Change', value: `${pos ? '+' : ''}${(live.pctChange ?? 0).toFixed(2)}%`, color: pos ? '#00e676' : '#ff5252' },
     { label: 'Volume', value: (live.volume ?? 0).toLocaleString() },
@@ -476,7 +477,7 @@ export default function AdvancedChart() {
           {statItems.map((s, i) => (
             <div key={s.label} style={{ padding: '4px 14px', borderRight: i < statItems.length - 1 ? '1px solid var(--color-border)' : 'none', display: 'flex', gap: 7, alignItems: 'center', whiteSpace: 'nowrap' }}>
               <span style={{ fontSize: 10, color: 'var(--color-muted)', fontWeight: 600 }}>{s.label}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: (s as any).color ?? 'var(--color-text)' }}>{s.value}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: s.color ?? 'var(--color-text)' }}>{s.value}</span>
             </div>
           ))}
         </div>

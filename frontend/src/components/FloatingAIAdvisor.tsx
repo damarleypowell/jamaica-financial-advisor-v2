@@ -1,11 +1,28 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useMarketStore } from '../stores/market';
 import { useAuthStore } from '../stores/auth';
+import { useUIStore } from '../stores/ui';
 import { apiPost } from '../lib/api';
+
+// Full-screen routes own the whole viewport — the FAB must not float over them.
+const FULLSCREEN_ROUTES = ['/onboarding', '/verify-email'];
 
 type Level = 'beginner' | 'intermediate' | 'expert';
 
 interface Message { role: 'user' | 'ai'; text: string; }
+
+// Minimal shape of the live quote fields buildContext reads.
+interface LiveQuote { price?: number; high52?: number; low52?: number; volume?: number }
+
+// Minimal Web Speech API shape (not in the default TS DOM lib).
+interface SpeechRec {
+  lang: string; interimResults: boolean; maxAlternatives: number;
+  onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
+  onerror: () => void; onend: () => void;
+  start: () => void; stop: () => void;
+}
+type SpeechRecCtor = new () => SpeechRec;
 
 const LEVEL_PROMPTS: Record<Level, string> = {
   beginner: 'Use simple, plain language. Explain every term. Avoid jargon. Use analogies.',
@@ -13,7 +30,7 @@ const LEVEL_PROMPTS: Record<Level, string> = {
   expert: 'Use precise technical language. RSI, MACD, Fibonacci, Elliott Wave, volatility — no hand-holding.',
 };
 
-function buildContext(symbol: string, live: any, rsi: number | null, ema20: number | null, ema50: number | null, pctChange: number, level: Level): string {
+function buildContext(symbol: string, live: LiveQuote | undefined, rsi: number | null, ema20: number | null, ema50: number | null, pctChange: number, level: Level): string {
   const trend = ema20 && ema50 ? (ema20 > ema50 ? 'bullish (EMA20 above EMA50)' : 'bearish (EMA20 below EMA50)') : 'undetermined';
   const rsiSignal = rsi !== null ? (rsi > 70 ? 'overbought (RSI > 70)' : rsi < 30 ? 'oversold (RSI < 30)' : `neutral (RSI ${rsi.toFixed(0)})`) : 'unavailable';
 
@@ -49,8 +66,10 @@ export default function FloatingAIAdvisor() {
   const [ema20, setEma20]   = useState<number | null>(null);
   const [ema50, setEma50]   = useState<number | null>(null);
   const bottomRef           = useRef<HTMLDivElement>(null);
-  const recogRef            = useRef<any>(null);
+  const recogRef            = useRef<SpeechRec | null>(null);
 
+  const location = useLocation();
+  const authModalOpen = useUIStore(s => s.authModalOpen);
   const stocks   = useMarketStore(s => s.stocks);
   const selSym   = useMarketStore(s => s.selectedSymbol);
   const symbol   = selSym ?? (stocks[0]?.symbol ?? '');
@@ -108,11 +127,12 @@ export default function FloatingAIAdvisor() {
       alert('Voice input not supported in this browser. Try Chrome.');
       return;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+    const w = window as unknown as { SpeechRecognition?: SpeechRecCtor; webkitSpeechRecognition?: SpeechRecCtor };
+    const SpeechRecognition = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!SpeechRecognition) return; // unsupported — already handled above
     const rec = new SpeechRecognition();
     rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
-    rec.onresult = (e: any) => { setInput(e.results[0][0].transcript); setLis(false); };
+    rec.onresult = (e) => { setInput(e.results[0][0].transcript); setLis(false); };
     rec.onerror  = () => setLis(false);
     rec.onend    = () => setLis(false);
     rec.start();
@@ -143,20 +163,21 @@ export default function FloatingAIAdvisor() {
       });
       const reply = res?.response ?? res?.message ?? 'I could not generate a response. Please try again.';
       setMsgs(prev => [...prev, { role: 'ai', text: reply }]);
-    } catch (err: any) {
+    } catch (err) {
       // Distinguish error types for a more helpful user message
       let errorText: string;
-      const status: number | undefined = err?.status ?? err?.statusCode ?? err?.response?.status;
+      const e = err as { status?: number; statusCode?: number; response?: { status?: number }; name?: string; message?: string };
+      const status: number | undefined = e?.status ?? e?.statusCode ?? e?.response?.status;
       if (status === 429) {
         errorText = 'Too many requests. Please wait a moment.';
       } else if (status !== undefined && status >= 500 && status < 600) {
         errorText = 'AI service unavailable. Try again shortly.';
       } else if (
         err instanceof TypeError ||
-        err?.name === 'TypeError' ||
-        err?.message?.toLowerCase().includes('network') ||
-        err?.message?.toLowerCase().includes('fetch') ||
-        err?.message?.toLowerCase().includes('failed to fetch')
+        e?.name === 'TypeError' ||
+        e?.message?.toLowerCase().includes('network') ||
+        e?.message?.toLowerCase().includes('fetch') ||
+        e?.message?.toLowerCase().includes('failed to fetch')
       ) {
         errorText = 'Connection failed. Check your internet and try again.';
       } else {
@@ -177,6 +198,11 @@ export default function FloatingAIAdvisor() {
     'Are the EMAs showing a bullish or bearish signal?',
     'Should I wait for consolidation?',
   ];
+
+  // Hide on full-screen flows (onboarding, email verification) and while the
+  // auth modal is open, so the FAB never overlaps their primary CTAs.
+  const path = '/' + (location.pathname.split('/')[1] ?? '');
+  if (FULLSCREEN_ROUTES.includes(path) || authModalOpen) return null;
 
   return (
     <>
@@ -243,7 +269,7 @@ export default function FloatingAIAdvisor() {
               ].map(item => (
                 <div key={item.label} style={{ flexShrink: 0 }}>
                   <p style={{ margin: 0, fontSize: 9, fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.08em' }}>{item.label}</p>
-                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: (item as any).color ?? 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{item.value}</p>
+                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: (item as { color?: string }).color ?? 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{item.value}</p>
                 </div>
               ))}
             </div>
@@ -260,8 +286,8 @@ export default function FloatingAIAdvisor() {
                   {QUICK_ASKS.map(q => (
                     <button key={q} onClick={() => send(q)}
                       style={{ padding: '8px 12px', borderRadius: 10, border: '1px solid var(--color-border)', background: 'rgba(255,255,255,.03)', color: 'var(--color-text2)', fontSize: 12, cursor: 'pointer', textAlign: 'left', transition: 'all .15s' }}
-                      onMouseEnter={e => { (e.currentTarget as any).style.background = 'rgba(0,230,118,.06)'; (e.currentTarget as any).style.borderColor = 'rgba(0,230,118,.3)'; }}
-                      onMouseLeave={e => { (e.currentTarget as any).style.background = 'rgba(255,255,255,.03)'; (e.currentTarget as any).style.borderColor = 'var(--color-border)'; }}>
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,230,118,.06)'; e.currentTarget.style.borderColor = 'rgba(0,230,118,.3)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.03)'; e.currentTarget.style.borderColor = 'var(--color-border)'; }}>
                       {q}
                     </button>
                   ))}

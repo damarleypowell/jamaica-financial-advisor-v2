@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth';
+import { useUIStore } from '../../stores/ui';
 
 const GUIDE_KEY = (path: string) => `gf_guide_v1_${path.replace(/\//g, '_') || 'home'}`;
+const TOUR_KEY = 'gf_tour_v1';
 
 interface GuideConfig {
   title: string;
@@ -29,7 +31,7 @@ const GUIDES: Record<string, GuideConfig> = {
   '/portfolio': {
     title: 'Welcome to Paper Trading',
     intro: "Paper trading means you invest with virtual money — no real cash at risk. This is the safest way to learn how markets work before you put in real money. Place buy and sell orders, build a virtual portfolio, and track how well your picks perform over time.",
-    tips: ['Start with J$500,000 of virtual cash', 'Buy low, sell high — practice your strategy risk-free', 'Track your portfolio performance over time'],
+    tips: ['Start with J$1,000,000 of virtual cash', 'Buy low, sell high — practice your strategy risk-free', 'Track your portfolio performance over time'],
   },
   '/orders': {
     title: 'Welcome to Order History',
@@ -73,8 +75,8 @@ const GUIDES: Record<string, GuideConfig> = {
   },
   '/subscription': {
     title: 'Your Subscription Plan',
-    intro: "This is where you manage your Gotham Financial plan. Free users get the dashboard and learning content. Upgrade to Basic for full market access, charts, watchlists, and alerts. Upgrade to Pro for unlimited AI chat and machine learning predictions.",
-    tips: ['Basic is $19.99/month — cancel anytime', 'Pro is $99.99/month — full AI features', 'Payments are secure and processed via PayPal'],
+    intro: "This is where you manage your Gotham Financial plan. Free users get the dashboard and learning content. Upgrade to Core for full market access, the screener, watchlists, and alerts. Upgrade to Pro for unlimited AI chat, the voice agent, and machine learning predictions.",
+    tips: ['Core is $14.99/month — cancel anytime', 'Pro is $49.99/month — full AI features', 'Payments are secure and processed via PayPal'],
   },
 };
 
@@ -114,7 +116,9 @@ function speak(text: string, onEnd?: () => void) {
 
 export default function FeatureGuide() {
   const location = useLocation();
+  const navigate = useNavigate();
   const user = useAuthStore(s => s.user);
+  const authModalOpen = useUIStore(s => s.authModalOpen);
   const [guide, setGuide] = useState<GuideConfig | null>(null);
   const [visible, setVisible] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -124,15 +128,25 @@ export default function FeatureGuide() {
   const path = '/' + (location.pathname.split('/')[1] ?? '');
 
   useEffect(() => {
+    // Reset first-run guide state whenever the route changes — intentional sync resets.
+    /* eslint-disable react-hooks/set-state-in-effect */
     setDismissed(false);
     window.speechSynthesis?.cancel();
     setSpeaking(false);
+    setVisible(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const cfg = GUIDES[path];
     if (!cfg) return;
 
     const key = GUIDE_KEY(path);
     if (localStorage.getItem(key)) return; // already seen
+
+    // Don't stack on top of other first-run overlays:
+    // - while the auth modal is open
+    // - on the dashboard until the guided app tour has been completed
+    if (authModalOpen) return;
+    if (path === '/' && !localStorage.getItem(TOUR_KEY)) return;
 
     // Show after 1.8s so page finishes loading
     timerRef.current = setTimeout(() => {
@@ -144,7 +158,7 @@ export default function FeatureGuide() {
       if (timerRef.current) clearTimeout(timerRef.current);
       window.speechSynthesis?.cancel();
     };
-  }, [path]);
+  }, [path, authModalOpen]);
 
   const handlePlay = useCallback(() => {
     if (!guide) return;
@@ -160,17 +174,10 @@ export default function FeatureGuide() {
     if (guide) localStorage.setItem(GUIDE_KEY(path), '1');
   }, [guide, path]);
 
-  // Auto-play on first show
-  useEffect(() => {
-    if (visible && guide && !dismissed) {
-      // Small delay for voices to load
-      setTimeout(() => {
-        handlePlay();
-      }, 400);
-    }
-  }, [visible]); // eslint-disable-line
+  // Voice narration is opt-in — the user taps play. Auto-playing audio on
+  // every first page visit is jarring and can violate browser autoplay rules.
 
-  if (!visible || !guide || dismissed) return null;
+  if (!visible || !guide || dismissed || authModalOpen) return null;
 
   return (
     <div style={{
@@ -286,18 +293,18 @@ export default function FeatureGuide() {
           padding: '10px 16px 14px',
           display: 'flex', gap: 8,
         }}>
-          <a
-            href="/chat"
+          <button
+            onClick={() => { handleDismiss(); navigate('/chat'); }}
             style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-              padding: '10px 0', borderRadius: 12,
+              padding: '10px 0', borderRadius: 12, cursor: 'pointer',
               background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.2)',
-              color: '#00e676', fontSize: 12, fontWeight: 700, textDecoration: 'none',
+              color: '#00e676', fontSize: 12, fontWeight: 700,
               transition: 'all .15s',
             }}>
             <i className="fa-solid fa-robot" style={{ fontSize: 11 }} />
             Ask Gotham AI
-          </a>
+          </button>
           <button
             onClick={handleDismiss}
             style={{

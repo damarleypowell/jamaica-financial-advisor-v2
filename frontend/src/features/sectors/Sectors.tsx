@@ -14,6 +14,9 @@ interface SectorData {
   decliners: number;
 }
 
+// Raw shape from GET /api/sectors (the backend may omit fields we derive locally).
+interface RawSector { name?: string; stocks?: string[]; avgChange?: number }
+
 const SECTOR_ICONS: Record<string, string> = {
   'Financial': 'fa-building-columns',
   'Manufacturing': 'fa-industry',
@@ -53,14 +56,14 @@ export default function Sectors() {
   const selectSymbol = useMarketStore(s => s.selectSymbol);
   const openStockDetail = useUIStore(s => s.openStockDetail);
 
-  const { data: rawSectors, isLoading } = useQuery<any[]>({
+  const { data: rawSectors, isLoading } = useQuery<RawSector[]>({
     queryKey: ['sectors'],
-    queryFn: () => apiGet<any[]>('/api/sectors'),
+    queryFn: () => apiGet<RawSector[]>('/api/sectors'),
     staleTime: 60_000,
     retry: 1,
   });
 
-  const sectors: SectorData[] = (rawSectors ?? []).map((sec: any) => {
+  const sectors: SectorData[] = (rawSectors ?? []).map((sec) => {
     const secStocks = stocks.filter(s => sec.stocks?.includes(s.symbol) || s.sector === sec.name);
     const advancers = secStocks.filter(s => (s.pctChange ?? 0) > 0).length;
     const decliners = secStocks.filter(s => (s.pctChange ?? 0) < 0).length;
@@ -69,7 +72,7 @@ export default function Sectors() {
       ? secStocks.reduce((a, s) => a + (s.pctChange ?? 0), 0) / secStocks.length
       : (sec.avgChange ?? 0);
     return {
-      name: sec.name,
+      name: sec.name ?? '',
       stocks: sec.stocks ?? secStocks.map(s => s.symbol),
       avgChange,
       totalVolume,

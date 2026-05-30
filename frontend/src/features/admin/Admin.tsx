@@ -182,9 +182,12 @@ function UserPanel({ user, onClose, onUpdate }: {
   user: UserRow | null; onClose: () => void;
   onUpdate: (id: string, data: Partial<{ isActive: boolean; kycStatus: string; subscriptionTier: string }>) => void;
 }) {
+  // Hooks must run unconditionally — keep them above the early return.
+  // The `key={user.id}` at the call site remounts this panel per user, so
+  // these initializers always reflect the currently selected user.
+  const [tier, setTier] = useState(user?.subscriptionTier || 'FREE');
+  const [kyc, setKyc] = useState(user?.kycStatus || 'NONE');
   if (!user) return null;
-  const [tier, setTier] = useState(user.subscriptionTier || 'FREE');
-  const [kyc, setKyc] = useState(user.kycStatus || 'NONE');
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex' }}
@@ -452,7 +455,7 @@ export default function Admin() {
     <>
       {/* User detail slide-over */}
       {selectedUser && (
-        <UserPanel user={selectedUser} onClose={() => setSelectedUser(null)} onUpdate={handleUserUpdate} />
+        <UserPanel key={selectedUser?.id} user={selectedUser} onClose={() => setSelectedUser(null)} onUpdate={handleUserUpdate} />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

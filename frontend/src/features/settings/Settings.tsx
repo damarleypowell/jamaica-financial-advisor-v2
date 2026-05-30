@@ -198,8 +198,9 @@ export default function Settings() {
     staleTime: 60_000,
   });
 
-  // Sync name from fetched profile
+  // Seed the editable name field once the profile loads from the server.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (profile?.name) setName(profile.name);
   }, [profile]);
 
@@ -208,8 +209,9 @@ export default function Settings() {
     mutationFn: async (data: { name: string }) => {
       try {
         return await apiPut<User>('/api/auth/profile', data);
-      } catch (e: any) {
-        if (e?.status === 404 || e?.status === 405) return { ...storeUser, ...data } as User;
+      } catch (e) {
+        const status = (e as { status?: number })?.status;
+        if (status === 404 || status === 405) return { ...storeUser, ...data } as User;
         throw e;
       }
     },
@@ -217,7 +219,7 @@ export default function Settings() {
       if (updated) { setUser(updated as User); qc.invalidateQueries({ queryKey: ['profile'] }); }
       show('Profile saved successfully');
     },
-    onError: (e: any) => show(e.message || 'Failed to save profile', 'error'),
+    onError: (e) => show(e.message || 'Failed to save profile', 'error'),
   });
 
   /* ---- Change password mutation ---- */
@@ -225,8 +227,9 @@ export default function Settings() {
     mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
       try {
         return await apiPost('/api/auth/change-password', data);
-      } catch (e: any) {
-        if (e?.status === 404 || e?.status === 405) {
+      } catch (e) {
+        const status = (e as { status?: number })?.status;
+        if (status === 404 || status === 405) {
           show('Password change coming soon — use Forgot Password for now.', 'info');
           return null;
         }
@@ -239,7 +242,7 @@ export default function Settings() {
         setCurrentPw(''); setNewPw(''); setConfirmPw('');
       }
     },
-    onError: (e: any) => setPwError(e.message || 'Password change failed'),
+    onError: (e) => setPwError(e.message || 'Password change failed'),
   });
 
   /* ---- Unauthenticated guard ---- */

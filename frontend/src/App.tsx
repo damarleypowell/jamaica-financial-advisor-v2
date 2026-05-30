@@ -54,7 +54,7 @@ function PageLoader() {
   );
 }
 
-function W(C: React.LazyExoticComponent<any>) {
+function W(C: React.LazyExoticComponent<React.ComponentType>) {
   return <Suspense fallback={<PageLoader />}><C /></Suspense>;
 }
 

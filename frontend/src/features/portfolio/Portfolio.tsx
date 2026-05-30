@@ -14,6 +14,14 @@ const chgColor = (v: number) => v > 0 ? '#00e676' : v < 0 ? '#ff5252' : 'rgba(25
 const INTER = "'Inter', sans-serif";
 const MONO  = "'JetBrains Mono', 'Fira Mono', monospace";
 
+// ── API response shapes (defensive — backend may return varied keys) ──────────
+interface Wallet { currency: string; balance?: number; available?: number; held?: number }
+interface WalletData { wallets?: Wallet[] }
+interface Position { symbol?: string; quantity?: number; shares?: number; avgPrice?: number; avgCost?: number; currentPrice?: number; currentValue?: number; marketValue?: number; market?: string; pnl?: number; pnlPct?: number }
+interface Transaction { id?: string; type?: string; side?: string; quantity?: number; shares?: number; total?: number; totalAmount?: number; fee?: number; feeAmount?: number; symbol?: string; price?: number; createdAt?: string; date?: string }
+type PositionsResponse = { positions?: Position[] } | Position[];
+type HistoryResponse = { transactions?: Transaction[] } | Transaction[];
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, color = '#00e676', sub }: {
@@ -59,21 +67,21 @@ export default function Portfolio() {
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
-  const { data: walletData, isError: walletError, refetch: walletRefetch } = useQuery<any>({
+  const { data: walletData, isError: walletError, refetch: walletRefetch } = useQuery<WalletData>({
     queryKey: ['wallet'],
     queryFn: () => apiGet('/api/wallet/balance'),
     enabled: isAuthenticated,
     refetchInterval: 15_000,
   });
 
-  const { data: posData, isLoading: posLoading, isError: posError, refetch: posRefetch } = useQuery<any>({
+  const { data: posData, isLoading: posLoading, isError: posError, refetch: posRefetch } = useQuery<PositionsResponse>({
     queryKey: ['positions'],
     queryFn: () => apiGet('/api/portfolio/positions'),
     enabled: isAuthenticated,
     refetchInterval: 30_000,
   });
 
-  const { data: histData, isLoading: histLoading, isError: histError, refetch: histRefetch } = useQuery<any>({
+  const { data: histData, isLoading: histLoading, isError: histError, refetch: histRefetch } = useQuery<HistoryResponse>({
     queryKey: ['transactions'],
     queryFn: () => apiGet('/api/portfolio/history'),
     enabled: isAuthenticated && tab === 'history',
@@ -82,8 +90,8 @@ export default function Portfolio() {
   // ── Mutations ──────────────────────────────────────────────────────────────
 
   const tradeMut = useMutation({
-    mutationFn: (body: object) => apiPost('/api/orders', body),
-    onSuccess: (data: any) => {
+    mutationFn: (body: object) => apiPost<{ message?: string }>('/api/orders', body),
+    onSuccess: (data) => {
       setTradeMsg({ text: data?.message ?? 'Order placed successfully!', ok: true });
       setQty('');
       setLimitPrice('');
@@ -91,8 +99,8 @@ export default function Portfolio() {
       qc.invalidateQueries({ queryKey: ['wallet'] });
       qc.invalidateQueries({ queryKey: ['transactions'] });
     },
-    onError: (err: any) => {
-      setTradeMsg({ text: err?.message ?? 'Order failed. Check your balance and try again.', ok: false });
+    onError: (err) => {
+      setTradeMsg({ text: err.message ?? 'Order failed. Check your balance and try again.', ok: false });
     },
   });
 
@@ -108,15 +116,13 @@ export default function Portfolio() {
 
   // ── Derived data ───────────────────────────────────────────────────────────
 
-  const jmdWallet = walletData?.wallets?.find((w: any) => w.currency === 'JMD') ?? { balance: 0, available: 0, held: 0 };
+  const jmdWallet = walletData?.wallets?.find((w) => w.currency === 'JMD') ?? { balance: 0, available: 0, held: 0 };
 
-  const positions: any[] = Array.isArray(posData?.positions) ? posData.positions
-    : Array.isArray(posData) ? posData : [];
+  const positions: Position[] = Array.isArray(posData) ? posData : (posData?.positions ?? []);
 
-  const transactions: any[] = (() => {
-    const raw = Array.isArray(histData?.transactions) ? histData.transactions
-      : Array.isArray(histData) ? histData : [];
-    return raw.map((t: any) => ({
+  const transactions = (() => {
+    const raw: Transaction[] = Array.isArray(histData) ? histData : (histData?.transactions ?? []);
+    return raw.map((t) => ({
       ...t,
       side: t.type === 'BUY' || t.type === 'SELL' ? t.type : (t.side ?? t.type),
       quantity: t.quantity ?? t.shares ?? 0,
@@ -125,9 +131,9 @@ export default function Portfolio() {
     }));
   })();
 
-  const totalValue   = positions.reduce((s: number, p: any) => s + (p.currentValue ?? p.marketValue ?? 0), 0);
-  const totalPnL     = positions.reduce((s: number, p: any) => s + (p.pnl ?? 0), 0);
-  const totalPnLPct  = positions.length > 0 ? positions.reduce((s: number, p: any) => s + (p.pnlPct ?? 0), 0) / positions.length : 0;
+  const totalValue   = positions.reduce((s, p) => s + (p.currentValue ?? p.marketValue ?? 0), 0);
+  const totalPnL     = positions.reduce((s, p) => s + (p.pnl ?? 0), 0);
+  const totalPnLPct  = positions.length > 0 ? positions.reduce((s, p) => s + (p.pnlPct ?? 0), 0) / positions.length : 0;
 
   // Stock search dropdown
   const filteredStocks = useMemo(() => {
@@ -364,7 +370,7 @@ export default function Portfolio() {
                     </div>
                   ))}
                 </div>
-                {side === 'BUY' && (estValue + fee) > jmdWallet.available && (
+                {side === 'BUY' && (estValue + fee) > (jmdWallet.available ?? 0) && (
                   <p style={{ margin: '10px 0 0', fontSize: 11, color: '#ff5252', fontFamily: INTER }}>
                     ⚠ Insufficient funds. Available: {fJMD(jmdWallet.available)}
                   </p>
@@ -446,7 +452,7 @@ export default function Portfolio() {
                   </tr>
                 </thead>
                 <tbody>
-                  {positions.map((p: any) => {
+                  {positions.map((p) => {
                     const pnl = p.pnl ?? 0;
                     const pnlPct = p.pnlPct ?? 0;
                     const mv = p.currentValue ?? p.marketValue ?? 0;
@@ -521,13 +527,13 @@ export default function Portfolio() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.filter((t: any) => t.type === 'BUY' || t.type === 'SELL' || t.side === 'BUY' || t.side === 'SELL').map((tx: any) => {
+                  {transactions.filter((t) => t.type === 'BUY' || t.type === 'SELL' || t.side === 'BUY' || t.side === 'SELL').map((tx) => {
                     const txSide = tx.side === 'BUY' || tx.type === 'BUY' ? 'BUY' : 'SELL';
                     return (
                       <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,.03)', transition: 'background .12s' }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.025)')}
                         onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                        <td style={{ padding: '11px 16px', fontSize: 11, color: 'rgba(255,255,255,.35)' }}>{new Date(tx.createdAt).toLocaleDateString()}</td>
+                        <td style={{ padding: '11px 16px', fontSize: 11, color: 'rgba(255,255,255,.35)' }}>{(tx.createdAt ?? tx.date) ? new Date(tx.createdAt ?? tx.date as string).toLocaleDateString() : '—'}</td>
                         <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: MONO }}>{tx.symbol}</td>
                         <td style={{ padding: '11px 16px', textAlign: 'right' }}>
                           <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800, letterSpacing: '.06em', background: txSide === 'BUY' ? 'rgba(0,230,118,.12)' : 'rgba(255,82,82,.12)', color: txSide === 'BUY' ? '#00e676' : '#ff5252', border: `1px solid ${txSide === 'BUY' ? 'rgba(0,230,118,.25)' : 'rgba(255,82,82,.25)'}` }}>
@@ -594,7 +600,7 @@ export default function Portfolio() {
                     onFocus={e => (e.target.style.borderColor = 'rgba(0,230,118,.4)')}
                     onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,.1)')}
                   />
-                  <button onClick={() => { const a = parseFloat(walletAmt); if (!a || a <= 0) return; walletAction === 'deposit' ? depositMut.mutate(a) : withdrawMut.mutate(a); }}
+                  <button onClick={() => { const a = parseFloat(walletAmt); if (!a || a <= 0) return; if (walletAction === 'deposit') depositMut.mutate(a); else withdrawMut.mutate(a); }}
                     disabled={depositMut.isPending || withdrawMut.isPending}
                     style={{ padding: '10px 20px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
                     Confirm

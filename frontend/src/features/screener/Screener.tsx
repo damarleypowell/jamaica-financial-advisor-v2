@@ -54,13 +54,13 @@ export default function Screener() {
 
     const dir = sortDir === 'asc' ? 1 : -1;
     r.sort((a, b) => {
-      const av = (a as any)[sortKey] ?? '';
-      const bv = (b as any)[sortKey] ?? '';
-      if (typeof av === 'string') return av.localeCompare(bv) * dir;
+      const av = (a as unknown as Record<string, unknown>)[sortKey] ?? '';
+      const bv = (b as unknown as Record<string, unknown>)[sortKey] ?? '';
+      if (typeof av === 'string') return av.localeCompare(String(bv)) * dir;
       return ((av as number) - (bv as number)) * dir;
     });
     return r;
-  }, [stocks, search, minPrice, maxPrice, minChg, maxChg, minVol, sortKey, sortDir]);
+  }, [stocks, search, sector, minPrice, maxPrice, minChg, maxChg, minVol, sortKey, sortDir]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');

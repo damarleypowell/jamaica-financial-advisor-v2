@@ -9,13 +9,17 @@ interface AuthState {
   token: string | null;
 }
 
+interface LoginResult { token?: string; tempToken?: string; requires2FA?: boolean; user?: User }
+interface SignupResult { token?: string; user?: User }
+interface TokenResult { token: string; user?: User }
+
 interface AuthActions {
   loadUser: () => Promise<void>;
-  login: (email: string, password: string) => Promise<any>;
-  signup: (name: string, email: string, password: string, accountType: AccountType) => Promise<any>;
-  verify2FA: (code: string, tempToken: string) => Promise<any>;
-  loginWithGoogle: (credential: string) => Promise<any>;
-  loginWithApple: (idToken: string, appleUser?: { name?: { firstName?: string; lastName?: string } }) => Promise<any>;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  signup: (name: string, email: string, password: string, accountType: AccountType) => Promise<SignupResult>;
+  verify2FA: (code: string, tempToken: string) => Promise<TokenResult>;
+  loginWithGoogle: (credential: string) => Promise<TokenResult>;
+  loginWithApple: (idToken: string, appleUser?: { name?: { firstName?: string; lastName?: string } }) => Promise<TokenResult>;
   setUser: (user: User) => void;
   logout: () => void;
 }

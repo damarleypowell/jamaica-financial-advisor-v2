@@ -166,7 +166,7 @@ export default function Planner() {
             else prompt = `Monthly income: JMD ${income}. Expenses: JMD ${essentials} essential, JMD ${savings} savings, JMD ${leisure} leisure. Remaining: JMD ${remaining.toFixed(0)}. Analyze this budget and give 3 specific Caribbean-focused improvements.`;
             aiPlan.mutate(prompt);
           }}
-            style={{ marginTop: 4, width: '100%', height: 40, borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid rgba(0,230,118,.2)', background: 'rgba(0,230,118,.1)', color: '#00e676', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 200ms' } as any}
+            style={{ marginTop: 4, width: '100%', height: 40, borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid rgba(0,230,118,.2)', background: 'rgba(0,230,118,.1)', color: '#00e676', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 200ms' }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(0,230,118,.2)'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(0,230,118,.1)'}
           >
@@ -260,7 +260,7 @@ export default function Planner() {
               <i className="fa-solid fa-spinner fa-spin" /> Generating personalized advice...
             </div>
           ) : (
-            <MarkdownRenderer content={(aiPlan.data as any)?.response ?? (aiPlan.data as any)?.content ?? JSON.stringify(aiPlan.data)} />
+            <MarkdownRenderer content={(aiPlan.data as { response?: string; content?: string })?.response ?? (aiPlan.data as { response?: string; content?: string })?.content ?? JSON.stringify(aiPlan.data)} />
           )}
         </div>
       )}
