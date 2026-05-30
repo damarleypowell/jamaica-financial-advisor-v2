@@ -624,6 +624,129 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
   );
 }
 
+/* ── Portfolio donut (instant "what do I own / how much did I make") ───── */
+const SLICE_COLORS = ['#00e676', '#40c4ff', '#ffd740', '#ce93d8', '#ff8a65', '#4dd0e1', '#f06292', '#aed581'];
+
+interface PositionLite { symbol?: string; currentValue?: number; marketValue?: number; costBasis?: number; pnl?: number }
+
+function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, navigate }: {
+  positions: PositionLite[]; portfolioValue: number; totalGain: number; totalGainPct: number;
+  navigate: (path: string) => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setMounted(true), 90); return () => clearTimeout(t); }, []);
+
+  const up = totalGain >= 0;
+  const accent = up ? '#00e676' : '#ff5252';
+
+  const slices = useMemo(() => positions
+    .map(p => {
+      const value = p.currentValue ?? p.marketValue ?? 0;
+      const cost = p.costBasis ?? 0;
+      return { symbol: p.symbol ?? '—', value, pnl: p.pnl ?? (value - cost) };
+    })
+    .filter(s => s.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .map((s, i) => ({ ...s, pct: portfolioValue > 0 ? (s.value / portfolioValue) * 100 : 0, color: SLICE_COLORS[i % SLICE_COLORS.length] })),
+    [positions, portfolioValue]);
+
+  const R = 56, SW = 16, C = 2 * Math.PI * R;
+  // Precompute cumulative arc offsets without mutating captured state.
+  const arcs = useMemo(() => {
+    const fulls = slices.map(s => (s.pct / 100) * C);
+    return slices.map((s, i) => ({
+      ...s,
+      full: fulls[i],
+      start: fulls.slice(0, i).reduce((a, b) => a + b, 0),
+    }));
+  }, [slices, C]);
+
+  return (
+    <div style={{
+      position: 'relative', overflow: 'hidden', borderRadius: 20,
+      background: 'linear-gradient(135deg, #05100a 0%, #060d09 100%)',
+      border: `1px solid ${accent}22`,
+      boxShadow: `0 0 50px ${accent}0d, 0 8px 36px rgba(0,0,0,.5)`,
+      padding: '20px 22px',
+    }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${accent}70 45%, transparent)` }} />
+      <Grain opacity={0.022} />
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', fontFamily: SANS }}>
+            <i className="fa-solid fa-chart-pie" style={{ color: accent, marginRight: 7 }} />Your Portfolio
+          </span>
+          <button onClick={() => navigate('/portfolio')} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700,
+            color: 'rgba(255,255,255,.4)', cursor: 'pointer', padding: '4px 10px', borderRadius: 8,
+            border: '1px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.03)', fontFamily: SANS,
+          }}>View all →</button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* donut */}
+          <svg viewBox="0 0 140 140" style={{ width: 132, height: 132, flexShrink: 0 }}>
+            <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(255,255,255,.05)" strokeWidth={SW} />
+            {arcs.map(s => {
+              const len = mounted ? s.full : 0;
+              return (
+                <circle key={s.symbol} cx={70} cy={70} r={R} fill="none" stroke={s.color} strokeWidth={SW}
+                  strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-s.start}
+                  transform="rotate(-90 70 70)"
+                  style={{ transition: 'stroke-dasharray .8s cubic-bezier(.22,1,.36,1)' }} />
+              );
+            })}
+            <text x={70} y={64} textAnchor="middle" fill={accent} fontSize={20} fontWeight={900} fontFamily={MONO}>
+              {up ? '+' : ''}{totalGainPct.toFixed(1)}%
+            </text>
+            <text x={70} y={80} textAnchor="middle" fill="rgba(255,255,255,.4)" fontSize={8} fontFamily={SANS}>total return</text>
+          </svg>
+
+          {/* value + gain */}
+          <div style={{ flex: 1, minWidth: 140 }}>
+            <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Total value</p>
+            <p style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 800, color: '#fff', fontFamily: MONO, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+              J$<Counter value={portfolioValue} decimals={0} />
+            </p>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, padding: '5px 10px', borderRadius: 9, background: `${accent}14`, border: `1px solid ${accent}30` }}>
+              <i className={`fa-solid fa-arrow-${up ? 'up' : 'down'}`} style={{ fontSize: 10, color: accent }} />
+              <span style={{ fontSize: 13, fontWeight: 800, color: accent, fontFamily: MONO }}>
+                {up ? '+' : ''}J${Math.abs(totalGain).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              </span>
+            </div>
+            <p style={{ margin: '8px 0 0', fontSize: 10.5, color: 'rgba(255,255,255,.35)', fontFamily: SANS }}>
+              across {slices.length} holding{slices.length === 1 ? '' : 's'}
+            </p>
+          </div>
+        </div>
+
+        {/* legend */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 16 }}>
+          {slices.slice(0, 5).map(s => {
+            const sUp = s.pnl >= 0;
+            return (
+              <div key={s.symbol} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <span style={{ width: 9, height: 9, borderRadius: 3, background: s.color, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: MONO, width: 56 }}>{s.symbol}</span>
+                <div style={{ flex: 1, height: 5, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: mounted ? `${s.pct}%` : '0%', background: s.color, borderRadius: 99, transition: 'width .8s cubic-bezier(.22,1,.36,1)' }} />
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.5)', fontFamily: MONO, width: 38, textAlign: 'right' }}>{s.pct.toFixed(0)}%</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: sUp ? '#00e676' : '#ff5252', fontFamily: MONO, width: 30, textAlign: 'right' }}>{sUp ? '▲' : '▼'}</span>
+              </div>
+            );
+          })}
+          {slices.length > 5 && (
+            <p style={{ margin: '2px 0 0', fontSize: 10.5, color: 'rgba(255,255,255,.3)', fontFamily: SANS }}>+ {slices.length - 5} more holdings</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Wealth hero (logged-in users) ───────────────────────────── */
 function WealthHero({ portfolioValue, totalGain, totalGainPct, walletBalance, firstName, navigate }: {
   portfolioValue: number; totalGain: number; totalGainPct: number;
@@ -984,6 +1107,15 @@ export default function Dashboard() {
                 firstName={firstName}
                 navigate={navigate}
               />
+              {rawPositions.length > 0 && (
+                <PortfolioDonut
+                  positions={rawPositions as PositionLite[]}
+                  portfolioValue={portfolioValue}
+                  totalGain={totalGain}
+                  totalGainPct={totalGainPct}
+                  navigate={navigate}
+                />
+              )}
               <WealthScoreCard
                 score={wealthScore}
                 factors={scoreFactors}
