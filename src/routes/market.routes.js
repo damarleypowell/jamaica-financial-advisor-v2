@@ -9,7 +9,8 @@ const router = Router();
 // ── Stock Data Routes ───────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-router.get("/api/stocks", (_req, res) => {
+router.get("/api/stocks", async (_req, res) => {
+  await marketService.ensureLivePrices(); // serverless cold-start safety
   res.json(
     marketService.livePrices.map((s) => ({
       symbol: s.symbol,
@@ -25,7 +26,8 @@ router.get("/api/stocks", (_req, res) => {
   );
 });
 
-router.get("/api/stocks/:symbol", (req, res) => {
+router.get("/api/stocks/:symbol", async (req, res) => {
+  await marketService.ensureLivePrices(); // serverless cold-start safety
   const sym = req.params.symbol.toUpperCase();
   const stock = marketService.livePrices.find((s) => s.symbol === sym);
   if (!stock) return res.status(404).json({ error: "Stock not found" });

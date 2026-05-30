@@ -150,6 +150,22 @@ async function fetchRealPrices() {
   isFetching = false;
 }
 
+// ── Serverless-safe lazy populate ───────────────────────────────────────────
+// On a stateless/serverless host (e.g. Vercel) there is no long-running process
+// to run the background price-refresh interval, so the in-memory `livePrices`
+// array starts empty on every cold container. Call this before serving stock
+// data to guarantee the cache is populated (scrape-on-first-request). On a warm
+// container it returns instantly because `livePrices` is already filled.
+async function ensureLivePrices() {
+  if (livePrices.length > 0) return;
+  try { await fetchRealPrices(); } catch (_) { /* swallow — handled below */ }
+  // If a concurrent invocation is mid-fetch (isFetching guard returned early),
+  // poll briefly until prices land so we don't respond with an empty list.
+  for (let i = 0; i < 24 && livePrices.length === 0; i++) {
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
+
 // ── Enrich stocks with detail data ──────────────────────────────────────────
 async function enrichStockDetails() {
   console.log("Enriching stocks with detail data...");
@@ -245,6 +261,7 @@ module.exports = {
 
   // Functions
   fetchRealPrices,
+  ensureLivePrices,
   enrichStockDetails,
   normalizeSector,
   startSSEBroadcast,
