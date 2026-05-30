@@ -5,7 +5,10 @@ import {
   TrendingUp, Award, Zap, Play,
   ExternalLink, HelpCircle, FileText, Activity, Wifi,
 } from 'lucide-react';
-import InteractiveSimulators from './LearnSimulators';
+import InteractiveSimulators, {
+  CandlestickSim, MovingAverageSim, RSISim, PEComparisonSim,
+  RiskProfileSim, CompoundGrowthSim, DiversificationSim,
+} from './LearnSimulators';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -663,6 +666,8 @@ const COURSES: Course[] = [
             'On the JSE, sector concentration is a real risk. Financial services companies (NCB, Sagicor, JMMB, Scotia) make up a large share of the index. If interest rates spike or a credit crisis hits the sector, a portfolio heavy in financials suffers disproportionately. Deliberately choosing stocks across manufacturing (Wisynco, Caribbean Cement), distribution (GraceKennedy, Lasco), and tourism (Pulse, Palace Amusement) creates natural balance.',
             'Geographic diversification matters especially for Jamaican investors because the Jamaican dollar has historically depreciated against the US dollar at roughly 5–8% per year. A portfolio entirely in JMD assets loses purchasing power against USD-denominated goods every year. Holding even 20–30% of your portfolio in USD assets — US stocks, US-denominated bonds, or USD money market funds — is a structural hedge against this currency risk.',
           ],
+          diagramKey: 'diversification',
+          diagramCaption: 'Drag the slider — watch portfolio risk fall as you add holdings, until it hits the market-risk floor that diversification can\'t remove.',
           keyTerms: [
             { term: 'Correlation', def: 'How two assets move relative to each other. Correlation of +1 = they move identically. Correlation of -1 = they move opposite. Portfolio risk falls when you combine assets with low or negative correlations.' },
             { term: 'Sector Concentration', def: 'Owning too many stocks in the same industry. If that industry has a bad year, your whole portfolio suffers.' },
@@ -793,129 +798,6 @@ function saveProgress(p: Record<string, boolean>) {
 
 // ── Inline Diagrams ───────────────────────────────────────────────────────────
 
-function DiagramCandlestick() {
-  const candles = [
-    { o: 60, h: 80, l: 45, c: 75, bull: true, label: 'Bullish' },
-    { o: 75, h: 85, l: 68, c: 70, bull: false, label: 'Bearish' },
-    { o: 70, h: 71, l: 55, c: 70.5, bull: true, label: 'Doji' },
-    { o: 68, h: 72, l: 42, c: 71, bull: true, label: 'Hammer' },
-    { o: 75, h: 98, l: 73, c: 74, bull: false, label: 'Shooting Star' },
-  ];
-  const scaleY = (v: number) => 10 + (100 - v) * 1.4;
-  return (
-    <svg viewBox="0 0 320 180" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
-      <rect width="320" height="180" fill="rgba(255,255,255,.02)" rx="8" />
-      {candles.map((c, i) => {
-        const x = 30 + i * 58;
-        const top = scaleY(Math.max(c.o, c.c));
-        const bot = scaleY(Math.min(c.o, c.c));
-        const bodyH = Math.max(bot - top, 2);
-        const color = c.bull ? '#00e676' : '#ff5252';
-        return (
-          <g key={i}>
-            {/* Wick */}
-            <line x1={x} y1={scaleY(c.h)} x2={x} y2={scaleY(c.l)} stroke={color} strokeWidth="1.5" />
-            {/* Body */}
-            <rect x={x - 8} y={top} width="16" height={bodyH} fill={color} opacity={0.85} rx="1" />
-            {/* Label */}
-            <text x={x} y={165} textAnchor="middle" fill="rgba(255,255,255,.5)" fontSize="9" fontFamily="Inter, sans-serif">{c.label}</text>
-          </g>
-        );
-      })}
-      <text x="160" y="12" textAnchor="middle" fill="rgba(255,255,255,.35)" fontSize="9" fontFamily="Inter, sans-serif">OPEN — CLOSE = BODY · HIGH/LOW = WICKS</text>
-    </svg>
-  );
-}
-
-function DiagramMovingAverage() {
-  const prices = [42, 44, 41, 45, 48, 46, 50, 49, 53, 55, 52, 57, 60, 58, 62];
-  const ma20 = prices.map((_, i) => i < 3 ? null : prices.slice(Math.max(0, i - 4), i + 1).reduce((a, b) => a + b, 0) / Math.min(i + 1, 5));
-  const ma50 = prices.map((_, i) => i < 6 ? null : prices.slice(Math.max(0, i - 8), i + 1).reduce((a, b) => a + b, 0) / Math.min(i + 1, 9));
-  const minP = 35, maxP = 70;
-  const scaleY = (v: number) => 10 + ((maxP - v) / (maxP - minP)) * 140;
-  const scaleX = (i: number) => 20 + i * (280 / (prices.length - 1));
-  const pricePath = prices.map((p, i) => `${i === 0 ? 'M' : 'L'}${scaleX(i)},${scaleY(p)}`).join(' ');
-  const ma20Path = ma20.reduce((acc, v, i) => v === null ? acc : acc + `${acc === '' ? 'M' : 'L'}${scaleX(i)},${scaleY(v)} `, '');
-  const ma50Path = ma50.reduce((acc, v, i) => v === null ? acc : acc + `${acc === '' ? 'M' : 'L'}${scaleX(i)},${scaleY(v)} `, '');
-  return (
-    <svg viewBox="0 0 320 170" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
-      <rect width="320" height="170" fill="rgba(255,255,255,.02)" rx="8" />
-      <path d={pricePath} fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="1.5" />
-      <path d={ma20Path} fill="none" stroke="#40c4ff" strokeWidth="1.5" strokeDasharray="none" />
-      <path d={ma50Path} fill="none" stroke="#ffd740" strokeWidth="1.5" />
-      {/* Golden cross annotation */}
-      <circle cx={scaleX(9)} cy={scaleY(55)} r="5" fill="none" stroke="#00e676" strokeWidth="1.5" />
-      <text x={scaleX(9) + 8} y={scaleY(55) - 4} fill="#00e676" fontSize="8" fontFamily="Inter, sans-serif">Golden Cross</text>
-      {/* Legend */}
-      <line x1="10" y1="158" x2="25" y2="158" stroke="rgba(255,255,255,.35)" strokeWidth="1.5" />
-      <text x="28" y="161" fill="rgba(255,255,255,.5)" fontSize="8" fontFamily="Inter">Price</text>
-      <line x1="60" y1="158" x2="75" y2="158" stroke="#40c4ff" strokeWidth="1.5" />
-      <text x="78" y="161" fill="#40c4ff" fontSize="8" fontFamily="Inter">20-day EMA</text>
-      <line x1="140" y1="158" x2="155" y2="158" stroke="#ffd740" strokeWidth="1.5" />
-      <text x="158" y="161" fill="#ffd740" fontSize="8" fontFamily="Inter">50-day SMA</text>
-    </svg>
-  );
-}
-
-function DiagramRSI() {
-  const rsiVals = [65, 70, 74, 78, 72, 65, 58, 45, 38, 32, 28, 35, 42, 50, 55];
-  const priceVals = [50, 54, 58, 62, 60, 57, 54, 50, 47, 44, 40, 43, 46, 50, 53];
-  const scaleY = (v: number, min: number, max: number, top: number, height: number) =>
-    top + ((max - v) / (max - min)) * height;
-  const scaleX = (i: number) => 20 + i * (280 / (rsiVals.length - 1));
-  const pricePath = priceVals.map((p, i) => `${i === 0 ? 'M' : 'L'}${scaleX(i)},${scaleY(p, 35, 70, 10, 55)}`).join(' ');
-  const rsiPath = rsiVals.map((p, i) => `${i === 0 ? 'M' : 'L'}${scaleX(i)},${scaleY(p, 0, 100, 80, 75)}`).join(' ');
-  return (
-    <svg viewBox="0 0 320 175" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
-      <rect width="320" height="175" fill="rgba(255,255,255,.02)" rx="8" />
-      {/* Price panel */}
-      <text x="8" y="12" fill="rgba(255,255,255,.4)" fontSize="8" fontFamily="Inter">PRICE</text>
-      <path d={pricePath} fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="1.5" />
-      {/* Divider */}
-      <line x1="0" y1="72" x2="320" y2="72" stroke="rgba(255,255,255,.1)" strokeWidth="1" />
-      {/* RSI panel */}
-      <text x="8" y="84" fill="rgba(255,255,255,.4)" fontSize="8" fontFamily="Inter">RSI (14)</text>
-      <rect x="0" y={scaleY(70, 0, 100, 80, 75)} width="320" height={scaleY(30, 0, 100, 80, 75) - scaleY(70, 0, 100, 80, 75)} fill="rgba(255,82,82,.06)" />
-      <rect x="0" y={scaleY(30, 0, 100, 80, 75)} width="320" height={75 - (scaleY(30, 0, 100, 80, 75) - 80)} fill="rgba(0,230,118,.06)" />
-      <line x1="0" y1={scaleY(70, 0, 100, 80, 75)} x2="320" y2={scaleY(70, 0, 100, 80, 75)} stroke="rgba(255,82,82,.4)" strokeWidth="1" strokeDasharray="3,3" />
-      <line x1="0" y1={scaleY(30, 0, 100, 80, 75)} x2="320" y2={scaleY(30, 0, 100, 80, 75)} stroke="rgba(0,230,118,.4)" strokeWidth="1" strokeDasharray="3,3" />
-      <text x="298" y={scaleY(70, 0, 100, 80, 75) - 2} fill="rgba(255,82,82,.7)" fontSize="7" fontFamily="Inter">70</text>
-      <text x="298" y={scaleY(30, 0, 100, 80, 75) - 2} fill="rgba(0,230,118,.7)" fontSize="7" fontFamily="Inter">30</text>
-      <path d={rsiPath} fill="none" stroke="#ce93d8" strokeWidth="1.5" />
-      {/* Oversold label */}
-      <text x="85" y="168" fill="rgba(0,230,118,.7)" fontSize="8" fontFamily="Inter">← Oversold zone (RSI &lt; 30)</text>
-    </svg>
-  );
-}
-
-function DiagramPEComparison() {
-  const stocks = [
-    { name: 'NCBFG', pe: 14, color: '#40c4ff' },
-    { name: 'GraceKennedy', pe: 18, color: '#00e676' },
-    { name: 'Sagicor', pe: 9, color: '#ffd740' },
-    { name: 'Wisynco', pe: 22, color: '#ce93d8' },
-    { name: 'Sector Avg', pe: 13, color: 'rgba(255,255,255,.3)' },
-  ];
-  const maxPE = 25;
-  return (
-    <svg viewBox="0 0 320 160" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
-      <rect width="320" height="160" fill="rgba(255,255,255,.02)" rx="8" />
-      {stocks.map((s, i) => {
-        const barW = (s.pe / maxPE) * 220;
-        const y = 15 + i * 28;
-        return (
-          <g key={s.name}>
-            <text x="5" y={y + 13} fill="rgba(255,255,255,.6)" fontSize="9" fontFamily="Inter">{s.name}</text>
-            <rect x="90" y={y} width={barW} height="18" fill={s.color} opacity={0.7} rx="3" />
-            <text x={90 + barW + 5} y={y + 13} fill="rgba(255,255,255,.7)" fontSize="9" fontFamily="Inter" fontWeight="700">{s.pe}x</text>
-          </g>
-        );
-      })}
-      <text x="160" y="152" textAnchor="middle" fill="rgba(255,255,255,.3)" fontSize="8" fontFamily="Inter">P/E Ratio — Lower may indicate undervaluation vs peers</text>
-    </svg>
-  );
-}
-
 function DiagramBalanceSheet() {
   return (
     <svg viewBox="0 0 320 160" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
@@ -1013,55 +895,20 @@ function DiagramQuote() {
   );
 }
 
-function DiagramRiskProfiles() {
-  const profiles = [
-    { label: 'Conservative', equities: 35, bonds: 45, cash: 20, color: '#40c4ff', eg: 'Retiree / <3yr horizon' },
-    { label: 'Moderate', equities: 65, bonds: 25, cash: 10, color: '#ffd740', eg: 'Working adult / 5–15yr' },
-    { label: 'Aggressive', equities: 85, bonds: 10, cash: 5, color: '#00e676', eg: 'Young investor / 15yr+' },
-  ];
-  return (
-    <svg viewBox="0 0 320 160" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
-      <rect width="320" height="160" fill="rgba(255,255,255,.02)" rx="8" />
-      {profiles.map((p, i) => {
-        const x = 30 + i * 95;
-        const barH = 80;
-        const eH = (p.equities / 100) * barH;
-        const bH = (p.bonds / 100) * barH;
-        const cH = (p.cash / 100) * barH;
-        const y = 20;
-        return (
-          <g key={i}>
-            <rect x={x} y={y} width={50} height={eH} fill={p.color} opacity={0.85} rx={3} />
-            <rect x={x} y={y + eH} width={50} height={bH} fill="rgba(255,255,255,.25)" rx={0} />
-            <rect x={x} y={y + eH + bH} width={50} height={cH} fill="rgba(255,255,255,.1)" rx={3} />
-            <text x={x + 25} y={y + eH / 2 + 4} textAnchor="middle" fill="#000" fontSize="9" fontWeight="700" fontFamily="Inter,sans-serif">{p.equities}%</text>
-            <text x={x + 25} y={120} textAnchor="middle" fill={p.color} fontSize="9" fontWeight="700" fontFamily="Inter,sans-serif">{p.label}</text>
-            <text x={x + 25} y={133} textAnchor="middle" fill="rgba(255,255,255,.4)" fontSize="8" fontFamily="Inter,sans-serif">{p.eg}</text>
-          </g>
-        );
-      })}
-      <g>
-        <rect x={230} y={20} width={10} height={8} fill="rgba(255,255,255,.6)" rx={1} />
-        <text x={245} y={28} fill="rgba(255,255,255,.5)" fontSize="8" fontFamily="Inter,sans-serif">Equities</text>
-        <rect x={230} y={33} width={10} height={8} fill="rgba(255,255,255,.25)" rx={1} />
-        <text x={245} y={41} fill="rgba(255,255,255,.5)" fontSize="8" fontFamily="Inter,sans-serif">Bonds</text>
-        <rect x={230} y={46} width={10} height={8} fill="rgba(255,255,255,.1)" rx={1} />
-        <text x={245} y={54} fill="rgba(255,255,255,.5)" fontSize="8" fontFamily="Inter,sans-serif">Cash</text>
-      </g>
-    </svg>
-  );
-}
-
 function DiagramRenderer({ diagramKey }: { diagramKey: string }) {
-  if (diagramKey === 'candlestick') return <DiagramCandlestick />;
-  if (diagramKey === 'moving-average') return <DiagramMovingAverage />;
-  if (diagramKey === 'rsi') return <DiagramRSI />;
-  if (diagramKey === 'pe-comparison') return <DiagramPEComparison />;
+  // Interactive, drag-to-learn simulators embedded right in the lesson
+  if (diagramKey === 'candlestick') return <CandlestickSim />;
+  if (diagramKey === 'moving-average') return <MovingAverageSim />;
+  if (diagramKey === 'rsi') return <RSISim />;
+  if (diagramKey === 'pe-comparison') return <PEComparisonSim />;
+  if (diagramKey === 'risk-profiles') return <RiskProfileSim />;
+  if (diagramKey === 'compound-growth') return <CompoundGrowthSim />;
+  if (diagramKey === 'diversification') return <DiversificationSim />;
+  // Static reference diagrams
   if (diagramKey === 'balance-sheet') return <DiagramBalanceSheet />;
   if (diagramKey === 'exchanges') return <DiagramExchanges />;
   if (diagramKey === 'income-statement') return <DiagramIncomeStatement />;
   if (diagramKey === 'quote') return <DiagramQuote />;
-  if (diagramKey === 'risk-profiles') return <DiagramRiskProfiles />;
   return null;
 }
 
