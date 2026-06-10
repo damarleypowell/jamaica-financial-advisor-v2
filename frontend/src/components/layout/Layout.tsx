@@ -8,7 +8,8 @@ import { useAnalytics } from '../../hooks/useAnalytics.ts';
 import { useUIStore } from '../../stores/ui.ts';
 
 export default function Layout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Desktop pins the sidebar open by default; mobile uses the OptionsDrawer, so it starts closed.
+  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [focusMode, setFocusMode] = useState(false);
   const { theme, optionsDrawerOpen } = useUIStore();
   useAnalytics();
@@ -54,7 +55,7 @@ export default function Layout() {
           margin: '0 auto',
           transition: 'padding-left .25s cubic-bezier(.4,0,.2,1)',
         }}
-        className={`animate-fade-in${focusMode ? '' : ' layout-main'}`}
+        className={`animate-fade-in${focusMode ? '' : ` layout-main ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}`}
       >
         <Outlet />
       </main>
@@ -69,12 +70,17 @@ export default function Layout() {
         </div>
       )}
 
-      {/* Desktop: push content right of sidebar */}
+      {/* Desktop: push content right of sidebar — but reflow when the sidebar is collapsed */}
       <style>{`
         @media (min-width: 1024px) {
           .layout-main {
-            padding-left: 260px !important;
             padding-top: 88px !important;
+          }
+          .layout-main.sidebar-open {
+            padding-left: 260px !important;
+          }
+          .layout-main.sidebar-collapsed {
+            padding-left: 20px !important;
           }
         }
       `}</style>

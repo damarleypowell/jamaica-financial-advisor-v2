@@ -259,19 +259,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
           zIndex: 35,
           flexDirection: 'column',
           overflow: 'hidden',
+          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 260ms cubic-bezier(.4,0,.2,1)',
         }}
       >
         <SidebarContent onClose={() => {}} userTier={userTier} isAdmin={isAdmin} />
       </aside>
-
-      {/* Desktop content offset injected via global style */}
-      <style>{`
-        @media (min-width: 1024px) {
-          .layout-main {
-            padding-left: ${SIDEBAR_W + 20}px !important;
-          }
-        }
-      `}</style>
 
       {/* ── Mobile: backdrop + slide drawer ────────────────────────── */}
       <div className="lg:hidden">
