@@ -16,6 +16,10 @@ const Alpaca = require("@alpacahq/alpaca-trade-api");
 const ALPACA_KEY = process.env.ALPACA_API_KEY || "";
 const ALPACA_SECRET = process.env.ALPACA_SECRET_KEY || "";
 const ALPACA_PAPER = process.env.ALPACA_PAPER !== "false"; // default to paper
+// Free Alpaca data plans only include the IEX feed. The SDK defaults to SIP
+// (paid) — requesting it without entitlement returns stale/garbage snapshots
+// (e.g. SPY frozen at an ancient price). Force IEX unless overridden.
+const ALPACA_FEED = process.env.ALPACA_DATA_FEED || "iex";
 
 let alpaca = null;
 
@@ -63,7 +67,7 @@ async function getUSStockQuote(symbol) {
   const client = getClient();
   if (!client) throw new Error("Alpaca not configured");
 
-  const snapshot = await client.getSnapshot(symbol.toUpperCase());
+  const snapshot = await client.getSnapshot(symbol.toUpperCase(), { feed: ALPACA_FEED });
   return {
     symbol: symbol.toUpperCase(),
     market: "US",
@@ -99,6 +103,7 @@ async function getUSStockBars(symbol, timeframe = "1Day", limit = 100) {
   const bars = await client.getBarsV2(symbol.toUpperCase(), {
     timeframe,
     limit,
+    feed: ALPACA_FEED,
   });
 
   const result = [];
@@ -120,7 +125,7 @@ async function getMultipleQuotes(symbols) {
   const client = getClient();
   if (!client) throw new Error("Alpaca not configured");
 
-  const snapshots = await client.getSnapshots(symbols.map(s => s.toUpperCase()));
+  const snapshots = await client.getSnapshots(symbols.map(s => s.toUpperCase()), { feed: ALPACA_FEED });
   const results = {};
   for (const [sym, snap] of Object.entries(snapshots)) {
     results[sym] = {

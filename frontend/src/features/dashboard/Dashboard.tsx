@@ -191,9 +191,12 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
               boxShadow: mktOpen ? '0 0 10px rgba(0,230,118,.8)' : 'none',
             }} className={mktOpen ? 'animate-pulse-dot' : ''} />
             <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.08em', fontFamily: SANS, color: mktOpen ? '#00e676' : 'rgba(255,255,255,.4)', textTransform: 'uppercase' }}>
-              {mktOpen ? 'Live' : 'Closed'}
+              {mktOpen ? 'Market Open' : 'Closed'}
             </span>
           </div>
+          <span style={{ fontSize: 9.5, fontWeight: 600, color: 'rgba(255,255,255,.28)', letterSpacing: '.04em', marginTop: -4 }}>
+            Quotes may be delayed
+          </span>
 
           {volume > 0 && (
             <div style={{ textAlign: 'right' }}>
@@ -1192,7 +1195,11 @@ export default function Dashboard() {
   }).format(clock);
   const local = new Date(clock.toLocaleString('en-US', { timeZone: 'America/Jamaica' }));
   const d = local.getDay(), m = local.getHours() * 60 + local.getMinutes();
-  const mktOpen = d >= 1 && d <= 5 && m >= 570 && m < 810;
+  const mktOpen = d >= 1 && d <= 5 && m >= 570 && m < 810; // JSE 9:30–13:30 ET
+  // US market hours: 9:30–16:00 ET, Mon–Fri (computed in real ET, not hardcoded).
+  const etLocal = new Date(clock.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const etD = etLocal.getDay(), etM = etLocal.getHours() * 60 + etLocal.getMinutes();
+  const usMktOpen = etD >= 1 && etD <= 5 && etM >= 570 && etM < 960;
 
   const jse = overview?.jseIndex ?? 0;
   const jseΔ = overview?.jseIndexChange ?? 0;
@@ -1315,7 +1322,7 @@ export default function Dashboard() {
         jseΔ={market === 'us' ? (usStocks.find(s => s.symbol === 'SPY')?.pctChange ?? 0) : jseΔ}
         volume={market === 'us' ? usStocks.reduce((a, s) => a + (s.volume ?? 0), 0) : (overview?.totalVolume ?? 0)}
         firstName={firstName} jamTime={jamTime}
-        mktOpen={market === 'us' ? true : mktOpen}
+        mktOpen={market === 'us' ? usMktOpen : mktOpen}
         isConn={isConn}
         advCount={market === 'us' ? usStocks.filter(s => (s.pctChange ?? 0) > 0).length : advCount}
         decCount={market === 'us' ? usStocks.filter(s => (s.pctChange ?? 0) < 0).length : decCount}
