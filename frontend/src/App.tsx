@@ -69,13 +69,15 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
 export default function App() {
   const connectSSE = useMarketStore((s) => s.connectSSE);
   const disconnectSSE = useMarketStore((s) => s.disconnectSSE);
+  const loadStocks = useMarketStore((s) => s.loadStocks);
   const loadUser = useAuthStore((s) => s.loadUser);
 
   useEffect(() => {
-    connectSSE();
+    loadStocks();   // REST snapshot (with names) — resilient if SSE doesn't deliver
+    connectSSE();   // live price updates
     loadUser();
     return () => disconnectSSE();
-  }, [connectSSE, disconnectSSE, loadUser]);
+  }, [connectSSE, disconnectSSE, loadStocks, loadUser]);
 
   return (
     <QueryClientProvider client={queryClient}>

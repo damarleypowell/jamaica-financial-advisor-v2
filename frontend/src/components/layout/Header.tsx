@@ -161,8 +161,8 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
 
   const results = sq.trim()
     ? stocks.filter(s =>
-        s.symbol.toLowerCase().includes(sq.toLowerCase()) ||
-        s.name.toLowerCase().includes(sq.toLowerCase())
+        (s.symbol ?? '').toLowerCase().includes(sq.toLowerCase()) ||
+        (s.name ?? '').toLowerCase().includes(sq.toLowerCase())
       ).slice(0, 7)
     : [];
 

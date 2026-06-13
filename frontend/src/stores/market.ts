@@ -2,10 +2,13 @@ import { create } from 'zustand';
 import type { Stock } from '../types';
 
 function normalizeStock(s: Stock): Stock {
+  // The REST /api/stocks and the SSE stream both send the percentage move as
+  // `change`; the app reads `pctChange`. Map it so both sources agree.
+  const change = (s as unknown as { change?: number }).change;
   return {
     ...s,
     price: s.price ?? 0,
-    pctChange: s.pctChange ?? 0,
+    pctChange: s.pctChange ?? change ?? 0,
     dollarChange: s.dollarChange ?? 0,
     volume: s.volume ?? 0,
   };
@@ -19,6 +22,7 @@ interface MarketState {
 
 interface MarketActions {
   setStocks: (stocks: Stock[]) => void;
+  loadStocks: () => Promise<void>;
   selectSymbol: (symbol: string) => void;
   connectSSE: () => void;
   disconnectSSE: () => void;
@@ -42,6 +46,21 @@ export const useMarketStore = create<MarketStore>((set, get) => ({
   /* ---- actions ---- */
   setStocks: (stocks) => set({ stocks: stocks.map(normalizeStock) }),
 
+  // Fetch the full named stock list over REST so the app works even when SSE
+  // doesn't deliver (e.g. Render buffering long-lived connections). This is the
+  // source of `name` — the SSE payload only carries symbol/price/change/volume.
+  loadStocks: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/stocks`);
+      if (!res.ok) return;
+      const data = (await res.json()) as Stock[];
+      if (Array.isArray(data) && data.length) {
+        const existing = new Map(get().stocks.map((s) => [s.symbol, s]));
+        set({ stocks: data.map((d) => normalizeStock({ ...existing.get(d.symbol), ...d })) });
+      }
+    } catch { /* offline / cold start — SSE may still populate */ }
+  },
+
   selectSymbol: (symbol) => set({ selectedSymbol: symbol }),
 
   connectSSE: () => {
@@ -64,18 +83,19 @@ export const useMarketStore = create<MarketStore>((set, get) => ({
         const { stocks } = get();
 
         if (Array.isArray(data)) {
-          // Full snapshot
-          set({ stocks: data.map(normalizeStock) });
+          // Full snapshot — merge over existing so REST-loaded fields (name,
+          // sector, etc.) survive the SSE payload that omits them.
+          const existing = new Map(stocks.map((s) => [s.symbol, s]));
+          set({ stocks: data.map((d) => normalizeStock({ ...existing.get(d.symbol), ...d })) });
         } else {
-          // Single stock update — merge into existing list
-          const normalized = normalizeStock(data);
-          const idx = stocks.findIndex((s) => s.symbol === normalized.symbol);
+          // Single stock update — merge into the existing record (keep name etc.)
+          const idx = stocks.findIndex((s) => s.symbol === data.symbol);
           if (idx >= 0) {
             const next = [...stocks];
-            next[idx] = normalized;
+            next[idx] = normalizeStock({ ...stocks[idx], ...data });
             set({ stocks: next });
           } else {
-            set({ stocks: [...stocks, normalized] });
+            set({ stocks: [...stocks, normalizeStock(data)] });
           }
         }
       } catch {
