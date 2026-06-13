@@ -35,19 +35,22 @@ function UpgradeWall({ requiredTier, featureName, userTier, signedIn }: {
   const openAuthModal = useUIStore(s => s.openAuthModal);
 
   return (
-    <div className="relative min-h-[60vh]">
-      {/* Blurred page content behind */}
+    <div className="relative" style={{ minHeight: '50vh', maxHeight: '72vh', overflow: 'hidden' }}>
+      {/* Blurred page content behind (height-capped so the page doesn't get tall) */}
       <div className="blur-sm pointer-events-none opacity-25 select-none"><Outlet /></div>
 
-      {/* Overlay */}
-      <div className="absolute inset-0 flex items-center justify-center z-10 p-4">
+      {/* Overlay — fixed + viewport-centered so it's always visible without scrolling */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, pointerEvents: 'none' }}>
         <div style={{
           background: 'var(--color-bg2, #0d1117)',
           border: `1px solid ${color}30`,
           borderRadius: 24,
-          padding: '36px 32px',
+          padding: '32px 28px',
           maxWidth: 420,
           width: '100%',
+          maxHeight: 'calc(100dvh - 120px)',
+          overflowY: 'auto',
+          pointerEvents: 'auto',
           boxShadow: `0 0 0 1px ${color}18, 0 32px 80px rgba(0,0,0,.7), 0 0 60px ${color}10`,
           display: 'flex',
           flexDirection: 'column',

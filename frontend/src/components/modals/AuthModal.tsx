@@ -11,24 +11,21 @@ import {
 import { useUIStore } from '../../stores/ui';
 import { useAuthStore } from '../../stores/auth';
 import { apiPost } from '../../lib/api';
-import type { AccountType } from '../../types';
 
 /* ── Tokens ─────────────────────────────────────────────────────────── */
 const HEAD  = "'Syne', sans-serif";
 const BODY  = "'Inter', sans-serif";
 
-// Brand panel (dark)
-const PANEL = '#060D07';
-
-// Form panel (white)
-const WHITE  = '#FFFFFF';
-const INK    = '#111827';
-const SUB    = '#6B7280';
-const GREEN  = '#00C853';
-const LGREEN = 'rgba(0,200,83,.12)';
-const BORDER = '#E5E7EB';
-const FIELD  = '#F9FAFB';
-const FDARK  = '#00C853';   // green CTA
+// Dark, on-brand modal palette (matches the app's near-black + signal-green theme)
+const PANEL  = '#05090c';            // brand panel (deepest)
+const WHITE  = '#0b1320';            // form-pane surface (named WHITE for legacy refs; now dark)
+const INK    = '#e9eff6';            // primary text
+const SUB    = '#8499ad';            // muted text
+const GREEN  = '#00e676';
+const LGREEN = 'rgba(0,230,118,.12)';
+const BORDER = 'rgba(255,255,255,.09)';
+const FIELD  = 'rgba(255,255,255,.035)';
+const FDARK  = '#00e676';            // green CTA
 
 /* ── Password helpers ───────────────────────────────────────────────── */
 interface PwCheck { len: boolean; up: boolean; lo: boolean; num: boolean; sym: boolean }
@@ -47,7 +44,7 @@ const pwStrength = (p: string) => {
 const S: Record<string, CSSProperties> = {
   label: { display: 'block', fontSize: 12, fontWeight: 500, color: SUB, marginBottom: 6, fontFamily: BODY },
   input: { width: '100%', height: 44, borderRadius: 10, background: FIELD, border: `1.5px solid ${BORDER}`, fontSize: 14, padding: '0 14px', color: INK, outline: 'none', boxSizing: 'border-box', transition: 'border .15s, box-shadow .15s, background .15s', fontFamily: BODY },
-  inputFocus: { border: `1.5px solid rgba(0,200,83,.6)`, boxShadow: '0 0 0 3px rgba(0,200,83,.12)', background: WHITE },
+  inputFocus: { border: `1.5px solid rgba(0,230,118,.6)`, boxShadow: '0 0 0 3px rgba(0,230,118,.14)', background: 'rgba(255,255,255,.06)' },
   inputWrap: { position: 'relative' as const },
   btnDark: { width: '100%', height: 44, borderRadius: 10, background: FDARK, color: '#fff', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', fontFamily: BODY, letterSpacing: '.01em', transition: 'transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s, opacity .15s' },
   link: { background: 'none', border: 'none', color: GREEN, cursor: 'pointer', fontFamily: BODY, fontWeight: 600, fontSize: 13, padding: 0, transition: 'opacity .15s' },
@@ -55,7 +52,7 @@ const S: Record<string, CSSProperties> = {
   h2: { fontSize: 24, fontWeight: 700, color: INK, margin: 0, lineHeight: 1.18, fontFamily: HEAD, letterSpacing: '-0.005em', WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', textRendering: 'optimizeLegibility' },
   sub: { fontSize: 13, color: SUB, margin: '5px 0 0', fontFamily: BODY, lineHeight: 1.5 },
   stack: { display: 'flex', flexDirection: 'column' as const, gap: 12 },
-  errBox: { background: 'rgba(220,38,38,.06)', border: '1.5px solid rgba(220,38,38,.18)', borderRadius: 10, padding: '11px 14px', fontSize: 13, color: '#b91c1c', fontFamily: BODY, display: 'flex', alignItems: 'center', gap: 8 },
+  errBox: { background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.28)', borderRadius: 10, padding: '11px 14px', fontSize: 13, color: '#ff8a8a', fontFamily: BODY, display: 'flex', alignItems: 'center', gap: 8 },
 };
 
 /* ── Micro-components ───────────────────────────────────────────────── */
@@ -63,7 +60,7 @@ function Err({ msg }: { msg: string }) {
   if (!msg) return null;
   return (
     <div style={S.errBox}>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       {msg}
     </div>
   );
@@ -96,7 +93,7 @@ function StrBar({ pw }: { pw: string }) {
   const label = pct < 40 ? 'Weak' : pct < 80 ? 'Fair' : 'Strong';
   return (
     <div style={{ marginTop: 8 }}>
-      <div style={{ height: 3, borderRadius: 99, background: '#EAF0EB', overflow: 'hidden' }}>
+      <div style={{ height: 3, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, background: col, borderRadius: 99, transition: 'width .3s, background .3s' }} />
       </div>
       <div style={{ fontSize: 11, color: col, marginTop: 4, fontFamily: BODY, fontWeight: 600 }}>{pw ? label : ''}</div>
@@ -109,11 +106,11 @@ function PwChecklist({ c }: { c: PwCheck }) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 16px', marginTop: 8 }}>
       {items.map(([met, label]) => (
-        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: met ? GREEN : '#AABCAC', transition: 'color .2s', fontFamily: BODY, fontWeight: met ? 600 : 400 }}>
+        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: met ? GREEN : SUB, transition: 'color .2s', fontFamily: BODY, fontWeight: met ? 600 : 400 }}>
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
             {met
-              ? <><circle cx="6" cy="6" r="6" fill={GREEN} /><path d="M3.5 6l1.8 1.8 3.2-3.6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></>
-              : <circle cx="6" cy="6" r="5.5" stroke="#D0DDD2" />
+              ? <><circle cx="6" cy="6" r="6" fill={GREEN} /><path d="M3.5 6l1.8 1.8 3.2-3.6" stroke="#04060d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></>
+              : <circle cx="6" cy="6" r="5.5" stroke="rgba(255,255,255,.22)" />
             }
           </svg>
           {label}
@@ -283,8 +280,8 @@ function SocialBtn({
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
         width: '100%', height: 44, borderRadius: 10,
-        border: `1.5px solid ${hov ? '#D1D5DB' : BORDER}`,
-        background: hov ? '#F3F4F6' : WHITE,
+        border: `1.5px solid ${hov ? 'rgba(255,255,255,.2)' : BORDER}`,
+        background: hov ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.03)',
         color: INK, fontSize: 14, fontWeight: 600,
         cursor: disabled ? 'not-allowed' : 'pointer',
         fontFamily: BODY, transition: 'all .15s',
@@ -483,7 +480,6 @@ function SignupForm() {
   const [email, setEmail] = useState('');
   const [pw, setPw]       = useState('');
   const [show, setShow]   = useState(false);
-  const [acct, setAcct]   = useState<AccountType>('paper');
   const [err, setErr]     = useState('');
   const [ok, setOk]       = useState(false);
   const [hov, setHov]     = useState(false);
@@ -495,7 +491,7 @@ function SignupForm() {
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setErr('');
     if (!pwOk(pw)) { setErr('Password does not meet all requirements.'); return; }
-    try { await signup(name, email, pw, acct); setOk(true); }
+    try { await signup(name, email, pw, 'paper'); setOk(true); }
     catch (ex: unknown) { setErr(ex instanceof Error ? ex.message : 'Signup failed.'); }
   };
 
@@ -536,19 +532,11 @@ function SignupForm() {
         {pw.length > 0 && <><StrBar pw={pw} /><PwChecklist c={checks} /></>}
       </div>
 
-      <div>
-        <label style={S.label}>Account Type</label>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {(['paper', 'live'] as AccountType[]).map(t => {
-            const active = acct === t;
-            return (
-              <button key={t} type="button" onClick={() => setAcct(t)}
-                style={{ height: 44, borderRadius: 10, border: active ? `1.5px solid rgba(0,200,83,.55)` : `1.5px solid ${BORDER}`, background: active ? 'rgba(0,200,83,.08)' : FIELD, color: active ? '#067D38' : SUB, fontWeight: active ? 700 : 500, fontSize: 13, cursor: 'pointer', transition: 'all .15s', fontFamily: BODY }}>
-                {t === 'paper' ? '📄 Paper Trading' : '⚡ Live Trading'}
-              </button>
-            );
-          })}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderRadius: 10, background: LGREEN, border: `1px solid rgba(0,230,118,.2)` }}>
+        <span style={{ fontSize: 16, lineHeight: 1 }}>📄</span>
+        <span style={{ fontSize: 12.5, color: SUB, fontFamily: BODY, lineHeight: 1.45 }}>
+          You'll start with a <strong style={{ color: INK, fontWeight: 700 }}>paper-trading</strong> account — practice with J$1,000,000 in virtual funds at real live prices. No money at risk.
+        </span>
       </div>
 
       <button type="submit" disabled={dis}
@@ -780,7 +768,8 @@ export default function AuthModal() {
         maxWidth: hasBrand ? 760 : 440,
         maxHeight: 'calc(100vh - 32px)',
         animation: 'modalIn .26s cubic-bezier(.16,1,.3,1)',
-        boxShadow: '0 40px 100px rgba(0,0,0,.45), 0 8px 32px rgba(0,0,0,.25)',
+        border: '1px solid rgba(255,255,255,.08)',
+        boxShadow: '0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(0,230,118,.06), 0 8px 32px rgba(0,0,0,.35)',
       }}>
         {hasBrand && <BrandPanel />}
 
@@ -790,7 +779,7 @@ export default function AuthModal() {
           position: 'relative', minWidth: 0,
           background: WHITE,
         }}>
-          <CloseBtn onClose={closeAuthModal} dark={false} />
+          <CloseBtn onClose={closeAuthModal} dark={true} />
           {views[authModalView] ?? <LoginForm />}
         </div>
       </div>

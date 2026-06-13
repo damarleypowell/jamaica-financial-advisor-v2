@@ -82,10 +82,10 @@ export default function USStocks() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: 'var(--color-text)' }}>US Stocks</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-muted)' }}>Trade US equities via Alpaca Markets — paper or live</p>
+        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-muted)' }}>Practice with US equities — paper trading via Alpaca, real live prices</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16 }} className="lg:grid-cols-[1fr_320px] grid-cols-1">
+      <div className="us-layout">
 
         {/* Stock list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -170,7 +170,7 @@ export default function USStocks() {
         </div>
 
         {/* Order panel */}
-        <div style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 14, padding: '20px', height: 'fit-content', position: 'sticky', top: 100 }}>
+        <div className="us-order" style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 14, padding: '20px', height: 'fit-content' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid var(--color-border)' }}>
             <div style={{ width: 32, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(64,196,255,.1)' }}>
               <i className="fa-solid fa-flag-usa" style={{ fontSize: 12, color: '#40c4ff' }} />
