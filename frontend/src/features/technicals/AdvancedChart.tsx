@@ -195,6 +195,24 @@ const fmt2 = (n?: number) => (n ?? 0).toLocaleString('en-US', { minimumFractionD
 const IND_LABELS: Record<Indicator, string> = { ema20: 'EMA 20', ema50: 'EMA 50', rsi: 'RSI 14', volume: 'Volume', bb: 'BB 20' };
 const IND_COLORS: Record<Indicator, string> = { ema20: '#ffd740', ema50: '#ff9800', rsi: '#ce93d8', volume: '#00e676', bb: '#64b5f6' };
 
+/* ─── complexity levels: progressively reveal tools so beginners aren't overwhelmed ─── */
+type Level = 'simple' | 'intermediate' | 'expert';
+const LEVEL_INDS: Record<Level, Indicator[]> = {
+  simple: [],
+  intermediate: ['ema20', 'ema50', 'rsi', 'volume'],
+  expert: ['ema20', 'ema50', 'rsi', 'volume', 'bb'],
+};
+const LEVEL_DEFAULTS: Record<Level, Indicator[]> = {
+  simple: [],
+  intermediate: ['ema20', 'volume'],
+  expert: ['ema20', 'ema50', 'volume'],
+};
+const LEVEL_HINT: Record<Level, string> = {
+  simple: 'Just the price — clean and beginner-friendly.',
+  intermediate: 'Candles, moving averages, RSI & volume.',
+  expert: 'Everything: Bollinger Bands, drawing tools & ML forecast.',
+};
+
 export default function AdvancedChart() {
   const { symbol: paramSymbol } = useParams<{ symbol?: string }>();
   const stocks   = useMarketStore(s => s.stocks);
@@ -209,10 +227,17 @@ export default function AdvancedChart() {
   const [drawMode, setDraw] = useState<DrawMode>('cursor');
   const [srch, setSrch]     = useState(false);
   const [srchQ, setSrchQ]   = useState('');
-  const [inds, setInds]     = useState<Set<Indicator>>(new Set(['ema20', 'ema50', 'volume']));
+  const [level, setLevel]   = useState<Level>('simple');
+  const [inds, setInds]     = useState<Set<Indicator>>(new Set());
   const [drawnLines, setDrawn] = useState<number[]>([]); // prices of drawn h-lines
 
   const toggleInd = (ind: Indicator) => setInds(prev => { const n = new Set(prev); if (n.has(ind)) n.delete(ind); else n.add(ind); return n; });
+
+  const changeLevel = (l: Level) => {
+    setLevel(l);
+    setInds(new Set(LEVEL_DEFAULTS[l]));
+    if (l === 'simple') { setMode('area'); setDraw('cursor'); }
+  };
 
   /* ── refs ── */
   const wrapRef    = useRef<HTMLDivElement>(null); // main chart mount
@@ -401,6 +426,19 @@ export default function AdvancedChart() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
+      {/* ── complexity level ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'inline-flex', background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 11, padding: 3 }}>
+          {(['simple', 'intermediate', 'expert'] as Level[]).map(l => (
+            <button key={l} onClick={() => changeLevel(l)}
+              style={{ padding: '7px 15px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, textTransform: 'capitalize', transition: 'all .15s', background: level === l ? 'rgba(0,230,118,.12)' : 'transparent', color: level === l ? '#00e676' : 'var(--color-text2)' }}>
+              {l}
+            </button>
+          ))}
+        </div>
+        <span style={{ fontSize: 11.5, color: 'var(--color-muted)' }}>{LEVEL_HINT[level]}</span>
+      </div>
+
       {/* ── header ── */}
       <div style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 16, padding: '12px 16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
         {/* symbol picker */}
@@ -454,7 +492,8 @@ export default function AdvancedChart() {
         )}
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          {/* chart mode */}
+          {/* chart mode — hidden in Simple (area only) */}
+          {level !== 'simple' && (
           <div style={{ display: 'flex', background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', borderRadius: 10, padding: 3, gap: 2 }}>
             {([['area', 'fa-chart-area', 'Area'], ['candle', 'fa-chart-candlestick', 'Candles']] as const).map(([key, icon, label]) => (
               <button key={key} onClick={() => setMode(key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, transition: 'all .15s', background: mode === key ? 'var(--color-green)' : 'transparent', color: mode === key ? 'var(--color-bg)' : 'var(--color-muted)' }}>
@@ -462,6 +501,7 @@ export default function AdvancedChart() {
               </button>
             ))}
           </div>
+          )}
           {/* timeframe */}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', borderRadius: 10, padding: 3, gap: 2 }}>
             {TFS.map(t => (
@@ -483,16 +523,18 @@ export default function AdvancedChart() {
         </div>
       )}
 
-      {/* ── indicator + drawing toolbar ── */}
+      {/* ── indicator + drawing toolbar (hidden in Simple) ── */}
+      {level !== 'simple' && (
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ fontSize: 10, color: 'var(--color-muted)', fontWeight: 600 }}>Indicators:</span>
-          {(Object.keys(IND_LABELS) as Indicator[]).map(ind => (
+          {LEVEL_INDS[level].map(ind => (
             <button key={ind} onClick={() => toggleInd(ind)} style={{ padding: '4px 11px', borderRadius: 8, border: `1px solid ${inds.has(ind) ? IND_COLORS[ind] : 'var(--color-border)'}`, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', background: inds.has(ind) ? IND_COLORS[ind] + '18' : 'rgba(255,255,255,.04)', color: inds.has(ind) ? IND_COLORS[ind] : 'var(--color-muted)' }}>
               {IND_LABELS[ind]}
             </button>
           ))}
         </div>
+        {level === 'expert' && (
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ fontSize: 10, color: 'var(--color-muted)', fontWeight: 600 }}>Draw:</span>
           {([['cursor', 'fa-arrow-pointer', 'Select'], ['hline', 'fa-grip-lines', 'H-Line']] as const).map(([key, icon, label]) => (
@@ -511,7 +553,9 @@ export default function AdvancedChart() {
             </span>
           )}
         </div>
+        )}
       </div>
+      )}
 
       {/* ── main chart pane ── */}
       <div style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 16, overflow: 'hidden', position: 'relative', cursor: drawMode === 'hline' ? 'crosshair' : 'default' }}>
@@ -554,8 +598,8 @@ export default function AdvancedChart() {
         <div ref={rsiDivRef} style={{ width: '100%', height: 110 }} />
       </div>
 
-      {/* ── ML forecast ── */}
-      {symbol && <MLPanel symbol={symbol} />}
+      {/* ── ML forecast — expert only ── */}
+      {symbol && level === 'expert' && <MLPanel symbol={symbol} />}
     </div>
   );
 }
