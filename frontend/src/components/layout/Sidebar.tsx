@@ -16,7 +16,8 @@ const NAV: Section[] = [
     heading: 'My Wealth',
     items: [
       { label: 'Overview',      icon: 'fa-solid fa-house',             to: '/'            },
-      { label: 'My Portfolio',  icon: 'fa-solid fa-wallet',            to: '/portfolio'   },
+      { label: 'Paper Trading', icon: 'fa-solid fa-flask-vial',        to: '/portfolio'   },
+      { label: 'My Portfolio',  icon: 'fa-solid fa-chart-pie',         to: '/holdings'    },
       { label: 'Orders',        icon: 'fa-solid fa-receipt',           to: '/orders'      },
       { label: 'Wealth Planner',icon: 'fa-solid fa-bullseye',          to: '/planner',    tier: 'PRO' },
       { label: 'Alerts',        icon: 'fa-solid fa-bell',              to: '/alerts'      },
@@ -28,15 +29,15 @@ const NAV: Section[] = [
       { label: 'JSE Live',      icon: 'fa-solid fa-chart-line',        to: '/screener',   tier: 'CORE' },
       { label: 'US Stocks',     icon: 'fa-solid fa-flag-usa',          to: '/us-stocks',  tier: 'CORE' },
       { label: 'Watchlists',    icon: 'fa-solid fa-star',              to: '/watchlists'  },
-      { label: 'Charts',        icon: 'fa-solid fa-chart-candlestick', to: '/technicals', tier: 'CORE' },
+      { label: 'Charts',        icon: 'fa-solid fa-chart-candlestick', to: '/technicals'  },
       { label: 'News',          icon: 'fa-solid fa-newspaper',         to: '/news'        },
     ],
   },
   {
     heading: 'AI Advisor',
     items: [
-      { label: 'Chat Advisor',  icon: 'fa-solid fa-robot',             to: '/chat',       tier: 'PRO'  },
-      { label: 'Stock Analysis',icon: 'fa-solid fa-brain',             to: '/analysis',   tier: 'PRO'  },
+      { label: 'Chat Advisor',  icon: 'fa-solid fa-robot',             to: '/chat'        },
+      { label: 'Stock Analysis',icon: 'fa-solid fa-brain',             to: '/analysis'    },
     ],
   },
   {

@@ -12,6 +12,13 @@ interface DrawerSection { heading: string; items: DrawerItem[]; }
 
 const SECTIONS: DrawerSection[] = [
   {
+    heading: 'My Wealth',
+    items: [
+      { label: 'Paper Trading', icon: 'fa-solid fa-flask-vial', to: '/portfolio' },
+      { label: 'My Portfolio',  icon: 'fa-solid fa-chart-pie',  to: '/holdings'  },
+    ],
+  },
+  {
     heading: 'Markets',
     items: [
       { label: 'JSE Live',     icon: 'fa-solid fa-chart-line',        to: '/screener'   },

@@ -19,6 +19,7 @@ const News = lazy(() => import('./features/news/News.tsx'));
 const Watchlists = lazy(() => import('./features/watchlists/Watchlists.tsx'));
 const Screener = lazy(() => import('./features/screener/Screener.tsx'));
 const Portfolio = lazy(() => import('./features/portfolio/Portfolio.tsx'));
+const Holdings = lazy(() => import('./features/holdings/Holdings.tsx'));
 const Orders = lazy(() => import('./features/orders/Orders.tsx'));
 const USStocks    = lazy(() => import('./features/us-stocks/USStocks.tsx'));
 const AIChat = lazy(() => import('./features/chat/AIChat.tsx'));
@@ -96,6 +97,7 @@ export default function App() {
             <Route path="news" element={W(News)} />
             <Route path="watchlists" element={W(Watchlists)} />
             <Route path="portfolio" element={W(Portfolio)} />
+            <Route path="holdings" element={W(Holdings)} />
             <Route path="orders" element={W(Orders)} />
             <Route path="alerts" element={W(Alerts)} />
             <Route path="learn" element={W(Learn)} />
