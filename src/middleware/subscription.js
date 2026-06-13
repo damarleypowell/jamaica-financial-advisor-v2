@@ -19,10 +19,12 @@ const TIER_ORDER = ["FREE", "CORE", "PRO", "ENTERPRISE"];
 
 const TIER_LIMITS = {
   FREE: {
-    maxTrades: 0,
-    maxWatchlists: 0,
-    maxAlerts: 0,
-    aiChats: 0,
+    // Free is a real, usable tier: paper trading + a daily AI-chat cap (like
+    // ChatGPT's free plan). Paid tiers lift the caps and switch to a stronger model.
+    maxTrades: 10, // paper trades / month
+    maxWatchlists: 1,
+    maxAlerts: 3,
+    aiChats: 15, // per day
     usStocks: false,
     advancedAnalytics: false,
     mlPredictions: false,
@@ -133,7 +135,7 @@ async function getUserTier(userId) {
         (!subscription.currentPeriodEnd ||
           new Date(subscription.currentPeriodEnd) > new Date())
       ) {
-        tier = subscription.plan; // FREE | BASIC | PRO | ENTERPRISE
+        tier = subscription.plan; // FREE | CORE | PRO | ENTERPRISE
       }
     } catch (err) {
       console.error("[subscription] Error fetching tier:", err.message);

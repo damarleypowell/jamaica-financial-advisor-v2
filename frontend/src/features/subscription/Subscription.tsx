@@ -13,11 +13,16 @@ interface PayPalConfig { clientId: string | null; mode: 'sandbox' | 'live'; conf
 interface CreateOrderResponse { orderId: string; approveUrl: string; }
 interface CaptureOrderResponse { success: boolean; plan: string; message: string; }
 
+// Prices here are fallbacks; the live values come from GET /api/subscription/plans
+// (the backend catalog is the single source of truth — see PLAN_CATALOG).
 const PLANS = [
-  { id: 'CORE', name: 'Core', priceUSD: 14.99, priceJMD: 2300, badge: null, icon: 'fa-solid fa-bolt', color: '#40c4ff', description: 'Perfect for investors getting started on the JSE.', features: ['50 trades per month', '5 watchlists', '20 price alerts', '50 AI chats/day', 'US stock access', 'Advanced analytics', 'Email support'], missing: ['ML price predictions', 'Voice AI agent'] },
-  { id: 'PRO', name: 'Pro', priceUSD: 49.99, priceJMD: 7700, badge: 'Most Popular', icon: 'fa-solid fa-star', color: '#00e676', description: 'Unlimited trading with AI predictions and voice assistant.', features: ['Unlimited trades', 'Unlimited watchlists', 'Unlimited alerts', 'Unlimited AI chat', 'US stock access', 'ML price predictions', 'Voice AI agent', 'Priority support'], missing: [] },
+  { id: 'CORE', name: 'Core', priceUSD: 14.99, priceJMD: 2400, badge: null, icon: 'fa-solid fa-bolt', color: '#40c4ff', description: 'Perfect for investors getting started on the JSE.', features: ['50 trades per month', '5 watchlists', '20 price alerts', '50 AI chats/day', 'US stock access', 'Advanced analytics', 'Email support'], missing: ['ML price predictions', 'Voice AI agent'] },
+  { id: 'PRO', name: 'Pro', priceUSD: 49.99, priceJMD: 7800, badge: 'Most Popular', icon: 'fa-solid fa-star', color: '#00e676', description: 'Unlimited trading with AI predictions and voice assistant.', features: ['Unlimited trades', 'Unlimited watchlists', 'Unlimited alerts', 'Unlimited AI chat', 'US stock access', 'ML price predictions', 'Voice AI agent', 'Priority support'], missing: [] },
   { id: 'ENTERPRISE', name: 'Enterprise', priceUSD: null, priceJMD: null, badge: 'Custom', icon: 'fa-solid fa-building', color: '#ce93d8', description: 'Custom solutions for institutions and investment firms.', features: ['Everything in Pro', 'API access', 'Custom integrations', 'Dedicated account manager', 'SLA guarantee', 'Team seats', 'White-label options'], missing: [] },
 ];
+
+interface CatalogPlan { plan: string; priceUSD: number | null; priceJMD: number | null; }
+type Plan = (typeof PLANS)[number];
 
 const TIER_RANK: Record<string, number> = { FREE: 0, CORE: 1, PRO: 2, ENTERPRISE: 3 };
 
@@ -99,7 +104,7 @@ function PayPalButtonsInner({ planId, planName, priceUSD, onSuccess, onFallback,
   );
 }
 
-function UpgradeModal({ plan, paypalConfig, onClose, onSuccess }: { plan: typeof PLANS[0]; paypalConfig: PayPalConfig; onClose: () => void; onSuccess: (msg: string) => void }) {
+function UpgradeModal({ plan, paypalConfig, onClose, onSuccess }: { plan: Plan; paypalConfig: PayPalConfig; onClose: () => void; onSuccess: (msg: string) => void }) {
   const qc = useQueryClient();
   const fallbackMut = useMutation({
     mutationFn: (planId: string) => apiPost('/api/subscription/upgrade', { plan: planId }),
@@ -174,11 +179,19 @@ function UpgradeModal({ plan, paypalConfig, onClose, onSuccess }: { plan: typeof
 export default function Subscription() {
   const user = useAuthStore((s) => s.user);
   const qc = useQueryClient();
-  const [selectedPlan, setSelectedPlan] = useState<typeof PLANS[0] | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const { data: sub, isLoading } = useQuery<SubscriptionData>({ queryKey: ['subscription'], queryFn: () => apiGet('/api/subscription'), enabled: !!user });
   const { data: ppConfig } = useQuery<PayPalConfig>({ queryKey: ['paypal-config'], queryFn: () => apiGet('/api/payments/config'), enabled: !!user, staleTime: 300_000 });
+  const { data: catalog } = useQuery<{ plans: CatalogPlan[] }>({ queryKey: ['plans'], queryFn: () => apiGet('/api/subscription/plans'), staleTime: 600_000 });
+
+  // Backend catalog is the source of truth for prices; merge it over the local fallback.
+  const priceMap = new Map((catalog?.plans ?? []).map((p) => [p.plan, p]));
+  const plans: Plan[] = PLANS.map((p) => {
+    const live = priceMap.get(p.id);
+    return live ? ({ ...p, priceUSD: live.priceUSD ?? p.priceUSD, priceJMD: live.priceJMD ?? p.priceJMD } as Plan) : p;
+  });
 
   const currentPlan = sub?.plan || 'FREE';
   const currentRank = TIER_RANK[currentPlan] ?? 0;
@@ -245,7 +258,7 @@ export default function Subscription() {
       <div>
         <p style={{ margin: '0 0 16px', fontSize: 12, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Available Plans</p>
         <div className="grid-plans-3">
-          {PLANS.map(plan => {
+          {plans.map(plan => {
             const isCurrent = currentPlan === plan.id;
             const isUpgrade = TIER_RANK[plan.id] > currentRank;
             const isPro = plan.id === 'PRO';

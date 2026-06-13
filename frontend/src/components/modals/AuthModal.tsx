@@ -52,7 +52,7 @@ const S: Record<string, CSSProperties> = {
   btnDark: { width: '100%', height: 44, borderRadius: 10, background: FDARK, color: '#fff', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', fontFamily: BODY, letterSpacing: '.01em', transition: 'transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s, opacity .15s' },
   link: { background: 'none', border: 'none', color: GREEN, cursor: 'pointer', fontFamily: BODY, fontWeight: 600, fontSize: 13, padding: 0, transition: 'opacity .15s' },
   mutedText: { fontSize: 13, color: SUB, textAlign: 'center' as const, fontFamily: BODY },
-  h2: { fontSize: 22, fontWeight: 800, color: INK, margin: 0, lineHeight: 1.2, fontFamily: HEAD, letterSpacing: '-0.025em' },
+  h2: { fontSize: 24, fontWeight: 700, color: INK, margin: 0, lineHeight: 1.18, fontFamily: HEAD, letterSpacing: '-0.005em', WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', textRendering: 'optimizeLegibility' },
   sub: { fontSize: 13, color: SUB, margin: '5px 0 0', fontFamily: BODY, lineHeight: 1.5 },
   stack: { display: 'flex', flexDirection: 'column' as const, gap: 12 },
   errBox: { background: 'rgba(220,38,38,.06)', border: '1.5px solid rgba(220,38,38,.18)', borderRadius: 10, padding: '11px 14px', fontSize: 13, color: '#b91c1c', fontFamily: BODY, display: 'flex', alignItems: 'center', gap: 8 },
@@ -188,10 +188,10 @@ function BrandPanel() {
               <polyline points="15,7 21,7 21,13" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.18em', color: GREEN, fontFamily: HEAD }}>GOTHAM FINANCIAL</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.22em', color: GREEN, fontFamily: HEAD, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>GOTHAM FINANCIAL</span>
         </div>
 
-        <h1 style={{ fontFamily: HEAD, fontSize: 22, fontWeight: 800, color: '#F0F6F1', lineHeight: 1.18, margin: '0 0 12px', letterSpacing: '-0.025em' }}>
+        <h1 style={{ fontFamily: HEAD, fontSize: 24, fontWeight: 700, color: '#F0F6F1', lineHeight: 1.16, margin: '0 0 12px', letterSpacing: '-0.005em', WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', textRendering: 'optimizeLegibility' }}>
           Your edge in<br />
           the <span style={{ color: GREEN }}>Caribbean<br />market.</span>
         </h1>
@@ -500,9 +500,9 @@ function SignupForm() {
   };
 
   if (ok) return (
-    <Done icon="email" title="Verify your email"
-      body={<>We sent a link to <strong style={{ color: INK }}>{email}</strong>. Click it to activate your account.</>}
-      cta="Back to Sign In" onCta={() => setAuthModalView('login')} />
+    <Done icon="check" title="You're all set!"
+      body={<>Welcome to Gotham. We've emailed a verification link to <strong style={{ color: INK }}>{email}</strong> — but you can start right now. Verify any time from Settings.</>}
+      cta="Start exploring" onCta={() => closeAuthModal()} />
   );
 
   const dis = isLoading || !pwOk(pw);

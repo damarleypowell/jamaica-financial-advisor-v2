@@ -156,19 +156,22 @@ export default function FloatingAIAdvisor() {
     const context = buildContext(symbol, live, rsi, ema20, ema50, pctChange, level);
 
     try {
-      const res = await apiPost<{ response?: string; message?: string }>('/api/ai/chat', {
-        message: userMsg,
+      const res = await apiPost<{ response?: string; content?: string; message?: string }>('/api/chat', {
+        messages: [{ role: 'user', content: userMsg }],
         context,
-        stream: false,
       });
-      const reply = res?.response ?? res?.message ?? 'I could not generate a response. Please try again.';
+      const reply = res?.response ?? res?.content ?? res?.message ?? 'I could not generate a response. Please try again.';
       setMsgs(prev => [...prev, { role: 'ai', text: reply }]);
     } catch (err) {
       // Distinguish error types for a more helpful user message
       let errorText: string;
       const e = err as { status?: number; statusCode?: number; response?: { status?: number }; name?: string; message?: string };
       const status: number | undefined = e?.status ?? e?.statusCode ?? e?.response?.status;
-      if (status === 429) {
+      if (status === 401) {
+        errorText = 'Sign in to chat with the Gotham AI advisor — it\'s free.';
+      } else if (status === 403) {
+        errorText = e?.message || 'You\'ve reached your daily AI chat limit. It resets tomorrow — or upgrade for more.';
+      } else if (status === 429) {
         errorText = 'Too many requests. Please wait a moment.';
       } else if (status !== undefined && status >= 500 && status < 600) {
         errorText = 'AI service unavailable. Try again shortly.';

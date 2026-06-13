@@ -103,17 +103,13 @@ export default function App() {
             <Route path="technicals/:symbol" element={W(AdvancedChart)} />
             <Route path="us-stocks" element={W(USStocks)} />
 
-            {/* ── BASIC+ required (sign in + paid plan) ─────────── */}
+            {/* ── AI is free (sign-in required, daily usage cap) ── */}
+            <Route path="chat" element={W(AIChat)} />
+            <Route path="analysis" element={W(AIAnalysis)} />
+
+            {/* ── CORE+ required (paid plan) ────────────────────── */}
             <Route element={<ProtectedRoute requiredTier="CORE" featureName="Stock Screener" />}>
               <Route path="screener" element={W(Screener)} />
-            </Route>
-
-            {/* ── PRO required ──────────────────────────────────── */}
-            <Route element={<ProtectedRoute requiredTier="PRO" featureName="AI Chat Advisor" />}>
-              <Route path="chat" element={W(AIChat)} />
-            </Route>
-            <Route element={<ProtectedRoute requiredTier="PRO" featureName="AI Stock Analysis" />}>
-              <Route path="analysis" element={W(AIAnalysis)} />
             </Route>
 
             {/* ── Admin ─────────────────────────────────────────── */}

@@ -226,6 +226,19 @@ async function authMiddleware(req, res, next) {
   next();
 }
 
+// ── Optional auth ──────────────────────────────────────────────────────────────
+// Populates req.user when a valid Bearer token is present, but never rejects.
+// Used by AI routes so signed-in users get their subscription-tier model while
+// anonymous callers still work (defaulting to the FREE tier).
+function optionalAuth(req, _res, next) {
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith("Bearer ")) {
+    const user = verifyJWT(auth.slice(7));
+    if (user) req.user = user;
+  }
+  next();
+}
+
 // ── User storage (file-based) ─────────────────────────────────────────────────
 
 function getUsersDB() {
@@ -249,6 +262,7 @@ module.exports = {
   hashPasswordAsync,
   verifyPassword,
   authMiddleware,
+  optionalAuth,
   getUsersDB,
   saveUsersDB,
   BCRYPT_COST_FACTOR,

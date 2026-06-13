@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost } from '../../lib/api';
 import { useAuthStore } from '../../stores/auth';
@@ -48,6 +49,7 @@ export default function Portfolio() {
   const { isAuthenticated } = useAuthStore();
   const stocks = useMarketStore(s => s.stocks);
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const [tab, setTab] = useState<Tab>('trade');
 
@@ -204,6 +206,29 @@ export default function Portfolio() {
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 99, background: 'rgba(0,230,118,.08)', border: '1px solid rgba(0,230,118,.2)' }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00e676', display: 'inline-block' }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: '#00e676', fontFamily: INTER }}>PAPER</span>
+          </div>
+        </div>
+
+        {/* What this is + where to find prices / charts / analysis */}
+        <div style={{ marginTop: 12, padding: '14px 16px', borderRadius: 14, background: 'rgba(64,196,255,.05)', border: '1px solid rgba(64,196,255,.16)' }}>
+          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'rgba(255,255,255,.6)', lineHeight: 1.6, fontFamily: INTER }}>
+            This is your <strong style={{ color: '#fff' }}>practice account</strong> — buy and sell with virtual money at <strong style={{ color: '#fff' }}>real, live JSE &amp; US prices</strong>. To research before you trade, jump to:
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {[
+              { label: 'Live Prices', sub: 'Dashboard', icon: 'fa-solid fa-chart-line', to: '/' },
+              { label: 'Charts', sub: 'Technical view', icon: 'fa-solid fa-chart-area', to: '/technicals' },
+              { label: 'AI Analysis', sub: 'Ask Gotham AI', icon: 'fa-solid fa-robot', to: '/analysis' },
+            ].map(card => (
+              <button key={card.label} onClick={() => navigate(card.to)}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, padding: '10px 12px', borderRadius: 11, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', cursor: 'pointer', transition: 'all .15s', textAlign: 'left', fontFamily: INTER }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(64,196,255,.4)'; e.currentTarget.style.background = 'rgba(64,196,255,.06)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'; e.currentTarget.style.background = 'rgba(255,255,255,.03)'; }}>
+                <i className={card.icon} style={{ fontSize: 13, color: '#40c4ff' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{card.label}</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.4)' }}>{card.sub}</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>

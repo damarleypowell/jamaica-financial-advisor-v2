@@ -4,11 +4,23 @@
 
 const nodemailer = require("nodemailer");
 
+let Resend = null;
+try { ({ Resend } = require("resend")); } catch (_) { /* resend not installed */ }
+
 // ── Configuration ────────────────────────────────────────────────────────────
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || "";
 const EMAIL_FROM = process.env.EMAIL_FROM || "Gotham Financial <noreply@gothamfinancial.com>";
 const APP_URL = process.env.APP_URL || "https://gotham-latk.onrender.com";
+
+// ── Resend (primary provider) ──────────────────────────────────────────────────
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+// Until a domain is verified in Resend, onboarding@resend.dev only delivers to the
+// Resend account owner. After verifying your domain, set RESEND_FROM to an address
+// on it (e.g. "Gotham Financial <noreply@gothamfinancial.com>").
+const RESEND_FROM = process.env.RESEND_FROM || "Gotham Financial <onboarding@resend.dev>";
+const resendClient = RESEND_API_KEY && Resend ? new Resend(RESEND_API_KEY) : null;
+if (resendClient) console.log("  [Email] Resend transport configured (primary)");
 
 // ── Transport ────────────────────────────────────────────────────────────────
 
@@ -37,7 +49,15 @@ if (SENDGRID_API_KEY) {
       secure: EMAIL_PORT === 465,
       auth: { user: EMAIL_USER, pass: EMAIL_PASS },
     });
-    console.log(`  [Email] SMTP transport configured (${EMAIL_HOST}:${EMAIL_PORT})`);
+    console.log(`  [Email] SMTP transport configured (${EMAIL_HOST}:${EMAIL_PORT}) as ${EMAIL_USER}`);
+    // Verify credentials at startup so a bad/expired app password surfaces in the
+    // logs immediately, instead of every verification email silently failing.
+    transporter.verify()
+      .then(() => console.log("  [Email] SMTP connection verified"))
+      .catch((err) => console.warn(
+        `  [Email] SMTP backup unavailable (${err.message}).` +
+        (resendClient ? " Resend is primary, so email still works." : " Regenerate the Gmail App Password.")
+      ));
   } else {
     transporter = {
       sendMail: async (mailOptions) => {
@@ -123,6 +143,40 @@ function buildEmail({ title, preheader, greeting, body, ctaText, ctaUrl, footer 
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// ── Delivery (Resend primary → SMTP/console fallback) ────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Send one email. Tries Resend first (if configured); on any failure, falls back
+ * to the nodemailer transport (Gmail/SendGrid SMTP, or the dev console transport).
+ * @param {{from?:string,to:string,subject:string,text?:string,html?:string,headers?:object}} msg
+ */
+async function deliver(msg) {
+  const { to, subject, text, html, headers } = msg;
+
+  if (resendClient) {
+    try {
+      const result = await resendClient.emails.send({
+        from: RESEND_FROM,
+        to,
+        subject,
+        text,
+        html,
+        headers,
+      });
+      if (result && result.error) {
+        throw new Error(result.error.message || JSON.stringify(result.error));
+      }
+      return { messageId: result?.data?.id, provider: "resend" };
+    } catch (err) {
+      console.error(`[Email] Resend failed for ${to} — falling back to SMTP: ${err.message}`);
+    }
+  }
+
+  return transporter.sendMail({ from: msg.from || EMAIL_FROM, to, subject, text, html, headers });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // ── Email Functions ──────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -145,7 +199,7 @@ async function sendVerificationEmail(email, token, name) {
   });
 
   try {
-    return await transporter.sendMail({
+    return await deliver({
       from: EMAIL_FROM,
       to: email,
       subject: "Verify Your Email — Gotham Financial",
@@ -185,7 +239,7 @@ async function sendPasswordResetEmail(email, token, name) {
   });
 
   try {
-    return await transporter.sendMail({
+    return await deliver({
       from: EMAIL_FROM,
       to: email,
       subject: "Reset Your Password — Gotham Financial",
@@ -258,7 +312,7 @@ async function sendOrderConfirmation(email, order) {
   });
 
   try {
-    return await transporter.sendMail({
+    return await deliver({
       from: EMAIL_FROM,
       to: email,
       subject: `Order Confirmed: ${side} ${order.quantity} ${order.symbol} — Gotham Financial`,
@@ -312,7 +366,7 @@ async function sendWelcomeEmail(email, name) {
   });
 
   try {
-    return await transporter.sendMail({
+    return await deliver({
       from: EMAIL_FROM,
       to: email,
       subject: "Welcome to Gotham Financial — Let's Get Started",
@@ -375,7 +429,7 @@ async function sendAlertTriggered(email, alert) {
   });
 
   try {
-    return await transporter.sendMail({
+    return await deliver({
       from: EMAIL_FROM,
       to: email,
       subject: `Price Alert: ${alert.symbol} has ${direction} J$${alert.targetPrice}`,

@@ -233,21 +233,46 @@ router.post("/api/subscription/upgrade", authMiddleware, async (req, res) => {
     let subscription;
 
     if (USE_DB) {
-      subscription = await prisma.subscription.upsert({
-        where: { userId },
-        update: {
-          plan,
-          status: "ACTIVE",
-          currentPeriodEnd: periodEnd,
-        },
-        create: {
-          id: crypto.randomUUID(),
-          userId,
-          plan,
-          status: "ACTIVE",
-          currentPeriodEnd: periodEnd,
-        },
-      });
+      const upsertSub = () =>
+        prisma.subscription.upsert({
+          where: { userId },
+          update: {
+            plan,
+            status: "ACTIVE",
+            currentPeriodEnd: periodEnd,
+          },
+          create: {
+            id: crypto.randomUUID(),
+            userId,
+            plan,
+            status: "ACTIVE",
+            currentPeriodEnd: periodEnd,
+          },
+        });
+
+      try {
+        subscription = await upsertSub();
+      } catch (err) {
+        // Self-heal: if the live DB enum predates the CORE value, add it and retry
+        // once. (Normally handled at startup; this covers serverless cold paths.)
+        const isEnumError =
+          /invalid input value for enum/i.test(err.message || "") ||
+          err.code === "P2010" ||
+          err.code === "22P02";
+        if (isEnumError) {
+          try {
+            await prisma.$executeRawUnsafe(
+              `ALTER TYPE "SubscriptionPlan" ADD VALUE IF NOT EXISTS 'CORE'`
+            );
+            subscription = await upsertSub();
+          } catch (retryErr) {
+            console.error("[subscription/upgrade] enum self-heal failed:", retryErr.message);
+            throw retryErr;
+          }
+        } else {
+          throw err;
+        }
+      }
     } else {
       // File-based fallback: just acknowledge the upgrade (not persisted)
       subscription = {

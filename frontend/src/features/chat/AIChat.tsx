@@ -104,18 +104,24 @@ export default function AIChat() {
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
+  const [usage, setUsage] = useState<{ used: number; limit: number | 'Unlimited' } | null>(null);
+
   const chatMut = useMutation({
     mutationFn: (msgs: ChatMessage[]) =>
-      apiPost<{ response: string; disclaimer?: string }>('/api/chat', { messages: msgs }),
+      apiPost<{ response: string; disclaimer?: string; usage?: { used: number; limit: number } | null }>('/api/chat', { messages: msgs }),
     onSuccess: (data) => {
       const resp = data.response ?? (data as unknown as string);
+      if (data.usage) setUsage(data.usage);
       setMessages(prev => [...prev, { role: 'assistant', content: typeof resp === 'string' ? resp : JSON.stringify(resp) }]);
     },
-    onError: () => {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'I encountered an issue connecting to the AI service. Please check your connection and try again.',
-      }]);
+    onError: (err: unknown) => {
+      const e = err as { status?: number; message?: string };
+      // 403 = daily AI-chat cap reached (free/core tiers). Show the friendly,
+      // ChatGPT-style limit message the server returns and nudge to upgrade.
+      const content = e?.status === 403
+        ? (e.message || "You've reached your daily AI chat limit. It resets tomorrow — or upgrade for more.")
+        : 'I encountered an issue connecting to the AI service. Please check your connection and try again.';
+      setMessages(prev => [...prev, { role: 'assistant', content }]);
     },
   });
 
@@ -174,6 +180,18 @@ export default function AIChat() {
             <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)' }}>JSE financial assistant · Claude powered · Educational use only</p>
           </div>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {usage && usage.limit !== 'Unlimited' && (
+          <span title="Daily AI chat usage" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 99,
+            fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)',
+            color: (usage.used / (usage.limit as number)) >= 0.8 ? '#ffd740' : 'var(--color-text2)',
+            background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)',
+          }}>
+            <i className="fa-solid fa-bolt" style={{ fontSize: 9, color: 'var(--color-green)' }} />
+            {Math.max(0, (usage.limit as number) - usage.used)} left today
+          </span>
+        )}
         {messages.length > 0 && (
           <button onClick={clearChat} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8,
@@ -187,6 +205,7 @@ export default function AIChat() {
             New chat
           </button>
         )}
+        </div>
       </div>
 
       {/* Messages area */}

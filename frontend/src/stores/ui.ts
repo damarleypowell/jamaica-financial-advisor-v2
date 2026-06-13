@@ -64,3 +64,9 @@ export const useUIStore = create<UIStore>((set, get) => ({
   openOptionsDrawer: () => set({ optionsDrawerOpen: true }),
   closeOptionsDrawer: () => set({ optionsDrawerOpen: false }),
 }));
+
+// Dev-only: expose the UI store so screenshot/automation tooling can drive
+// modals deterministically. Tree-shaken out of production builds.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as unknown as { __ui?: typeof useUIStore }).__ui = useUIStore;
+}

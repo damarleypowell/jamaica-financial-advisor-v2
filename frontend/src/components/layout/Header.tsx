@@ -201,9 +201,9 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
         </button>
 
         {/* Center: wordmark */}
-        <Link to="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: '.1em', color: 'var(--color-green)', lineHeight: 1 }}>GOTHAM</span>
-          <span style={{ fontSize: 8, fontWeight: 600, letterSpacing: '.22em', color: 'var(--color-muted)', lineHeight: 1 }}>FINANCIAL</span>
+        <Link to="/" className="gf-wordmark" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, letterSpacing: '.14em', color: 'var(--color-green)', lineHeight: 1 }}>GOTHAM</span>
+          <span style={{ fontSize: 7.5, fontWeight: 600, letterSpacing: '.34em', color: 'var(--color-muted)', lineHeight: 1, paddingLeft: '.34em' }}>FINANCIAL</span>
         </Link>
 
         {/* Right: avatar (opens options) or search */}
@@ -280,9 +280,9 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
               <circle cx="21" cy="5" r="2.2" fill="#00e676"/>
             </svg>
           </div>
-          <div>
-            <p style={{ fontSize: 12.5, fontWeight: 900, letterSpacing: '.1em', color: '#00e676', lineHeight: 1, margin: 0 }}>GOTHAM</p>
-            <p style={{ fontSize: 8, fontWeight: 600, letterSpacing: '.3em', color: 'var(--color-muted)', lineHeight: 1, margin: 0, marginTop: 2 }}>FINANCIAL</p>
+          <div className="gf-wordmark">
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: '.14em', color: '#00e676', lineHeight: 1, margin: 0 }}>GOTHAM</p>
+            <p style={{ fontSize: 7.5, fontWeight: 600, letterSpacing: '.34em', color: 'var(--color-muted)', lineHeight: 1, margin: 0, marginTop: 3, paddingLeft: '.34em' }}>FINANCIAL</p>
           </div>
         </Link>
 

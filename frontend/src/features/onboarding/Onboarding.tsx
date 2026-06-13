@@ -152,9 +152,9 @@ export default function Onboarding() {
               <i className="fa-solid fa-arrow-left" style={{ fontSize: 13 }} />
             </button>
           )}
-          <div>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 900, letterSpacing: '.1em', color: '#fff', lineHeight: 1 }}>GOTHAM</p>
-            <p style={{ margin: 0, fontSize: 8, fontWeight: 600, letterSpacing: '.28em', color: 'rgba(255,255,255,.3)', lineHeight: 1, marginTop: 3 }}>FINANCIAL</p>
+          <div className="gf-wordmark">
+            <p style={{ margin: 0, fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '.14em', color: '#00e676', lineHeight: 1 }}>GOTHAM</p>
+            <p style={{ margin: 0, fontSize: 7.5, fontWeight: 600, letterSpacing: '.34em', color: 'rgba(255,255,255,.3)', lineHeight: 1, marginTop: 3, paddingLeft: '.34em' }}>FINANCIAL</p>
           </div>
         </div>
         <button onClick={finish} className="ob-skip" style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: SANS, padding: '8px 0', transition: 'color .15s' }}>
@@ -202,9 +202,11 @@ export default function Onboarding() {
 
         {/* Title */}
         <h1 style={{
-          fontSize: 'clamp(26px, 7vw, 36px)', fontWeight: 900,
-          color: '#fff', lineHeight: 1.15, letterSpacing: '-0.025em',
+          fontFamily: "'Syne', sans-serif",
+          fontSize: 'clamp(26px, 7vw, 34px)', fontWeight: 700,
+          color: '#fff', lineHeight: 1.15, letterSpacing: '-0.01em',
           margin: '0 0 14px',
+          WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', textRendering: 'optimizeLegibility',
         }}>
           {current.title}
         </h1>

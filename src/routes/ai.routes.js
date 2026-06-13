@@ -2,8 +2,9 @@ const { Router } = require("express");
 const Anthropic = require("@anthropic-ai/sdk");
 const config = require("../config/env");
 const rateLimit = require("../middleware/rateLimit");
-const { authMiddleware } = require("../middleware/auth");
-const { checkFeature } = require("../middleware/subscription");
+const { authMiddleware, optionalAuth } = require("../middleware/auth");
+const { checkFeature, checkAIChatLimit, getUserTier } = require("../middleware/subscription");
+const { modelForTier } = require("../config/aiModels");
 const marketService = require("../services/market.service");
 const analytics = require("../services/analytics.service");
 const { fetchAllNews } = require("../../news-scraper");
@@ -13,6 +14,14 @@ const { aiGuard } = require("../middleware/aiGuard");
 const router = Router();
 
 const client = new Anthropic({ apiKey: config.anthropicApiKey });
+
+// Resolve which Claude model to use for this request based on the caller's
+// subscription tier (FREE/CORE → Sonnet, PRO/ENTERPRISE → Opus). Anonymous
+// callers default to FREE.
+async function resolveModel(req) {
+  const tier = req.user?.id ? await getUserTier(req.user.id) : "FREE";
+  return modelForTier(tier);
+}
 
 // Shared system prompt block — cached by Anthropic (5-min TTL)
 const JSE_SYSTEM_CACHE_BLOCK = {
@@ -26,7 +35,7 @@ const VOICE_ID = "onwK4e9ZLuTAKqWW03F9"; // Daniel — deep, clear, professional
 // ── AI Chat ──────────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-router.post("/api/chat", aiGuard("chat"), rateLimit(60000, 20), async (req, res) => {
+router.post("/api/chat", authMiddleware, aiGuard("chat"), checkAIChatLimit(), rateLimit(60000, 20), async (req, res) => {
   const { messages, context } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: "Messages array required" });
@@ -46,7 +55,7 @@ ${context ? `\nUser Context: ${context}` : ""}`;
 
   try {
     const response = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: await resolveModel(req),
       max_tokens: 2000,
       system: [
         JSE_SYSTEM_CACHE_BLOCK,
@@ -66,7 +75,10 @@ ${context ? `\nUser Context: ${context}` : ""}`;
     const userId = req.user?.id;
     logAIInteraction(userId, "aiChat", "⚠️ AI responses are educational, not advice.");
 
-    res.json(wrapAIResponse(text, "aiChat", false));
+    // Return both `response` (what the frontend reads) and the compliance wrapper,
+    // plus the caller's daily usage so the UI can show "X chats left today".
+    const wrapped = wrapAIResponse(text, "aiChat", false);
+    res.json({ ...wrapped, response: text, usage: req.aiChatUsage || null });
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError)
       return res.status(401).json({ error: "Invalid API key" });
@@ -80,7 +92,7 @@ ${context ? `\nUser Context: ${context}` : ""}`;
 // ── AI Financial Planner ─────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-router.post("/api/financial-plan", aiGuard("financial-plan"), rateLimit(60000, 5), async (req, res) => {
+router.post("/api/financial-plan", optionalAuth, aiGuard("financial-plan"), rateLimit(60000, 5), async (req, res) => {
   const {
     goals,
     riskTolerance,
@@ -131,7 +143,7 @@ You MUST respond with ONLY valid JSON:
 
   try {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: await resolveModel(req),
       max_tokens: 2500,
       system: [
         JSE_SYSTEM_CACHE_BLOCK,
@@ -172,7 +184,7 @@ You MUST respond with ONLY valid JSON:
 // ── Auto-Invest AI ───────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-router.post("/api/auto-invest", aiGuard("auto-invest"), rateLimit(60000, 3), async (req, res) => {
+router.post("/api/auto-invest", optionalAuth, aiGuard("auto-invest"), rateLimit(60000, 3), async (req, res) => {
   const { holdings, goals, riskTolerance, timeHorizon } = req.body;
   if (!holdings || !Array.isArray(holdings))
     return res.status(400).json({ error: "Holdings array required" });
@@ -256,7 +268,7 @@ All decisions must be based ONLY on the live data provided. Be specific with sha
 
   try {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: await resolveModel(req),
       max_tokens: 2500,
       system: [
         JSE_SYSTEM_CACHE_BLOCK,
@@ -372,7 +384,7 @@ Use exactly this structure:
 All numeric values derived from real data provided.`,
 };
 
-router.post("/analyze", aiGuard("analysis"), rateLimit(60000, 10), async (req, res) => {
+router.post("/analyze", optionalAuth, aiGuard("analysis"), rateLimit(60000, 10), async (req, res) => {
   const { user_input, experience_level } = req.body;
   if (!user_input || !experience_level)
     return res.status(400).json({ error: "Missing required fields" });
@@ -527,7 +539,7 @@ Trading Days in Data:  ${d.candleCount}`;
 
   try {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: await resolveModel(req),
       max_tokens: 1500,
       system: [
         JSE_SYSTEM_CACHE_BLOCK,
@@ -732,7 +744,7 @@ IMPORTANT: Your response will be read aloud via text-to-speech. Keep it:
 
   try {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: await resolveModel(req),
       max_tokens: 500,
       system: systemPrompt,
       messages: [{ role: "user", content: text }],
@@ -798,6 +810,7 @@ IMPORTANT: Your response will be read aloud via text-to-speech. Keep it:
 
 router.post(
   "/api/portfolio/optimize",
+  optionalAuth,
   aiGuard("portfolio-optimize"),
   rateLimit(60000, 5),
   async (req, res) => {
@@ -905,7 +918,7 @@ Provide specific, data-driven portfolio optimization. Rank actions by priority.`
 
     try {
       const response = await client.messages.create({
-        model: "claude-sonnet-4-20250514",
+        model: await resolveModel(req),
         max_tokens: 2000,
         system: [
           JSE_SYSTEM_CACHE_BLOCK,
