@@ -88,29 +88,70 @@ const TIER_BADGE: Record<string, { bg: string; color: string; border: string }> 
 
 /* â"€â"€ JWT auth section â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 function AuthSection({ user, isAuthenticated, openAuthModal, logout }: {
-  user: { subscriptionTier?: string; name?: string } | null;
+  user: { subscriptionTier?: string; name?: string; email?: string } | null;
   isAuthenticated: boolean;
   openAuthModal: (view?: AuthModalView) => void;
   logout: () => void;
 }) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const tier = user?.subscriptionTier ?? 'FREE';
   const tb   = TIER_BADGE[tier] ?? TIER_BADGE.FREE;
   const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?';
+  const isAdmin = tier === 'ENTERPRISE';
+
+  useEffect(() => {
+    const fn = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, []);
 
   if (isAuthenticated) {
+    const items: { icon: string; label: string; to: string; color?: string }[] = [
+      { icon: 'fa-chart-pie',  label: 'My Portfolio',  to: '/holdings' },
+      { icon: 'fa-flask-vial', label: 'Paper Trading', to: '/portfolio' },
+      { icon: 'fa-bell',       label: 'Alerts',        to: '/alerts' },
+      { icon: 'fa-crown',      label: 'Subscription',  to: '/subscription' },
+      { icon: 'fa-gear',       label: 'Settings',      to: '/settings' },
+      ...(isAdmin ? [{ icon: 'fa-shield-halved', label: 'Admin Panel', to: '/admin', color: '#ce93d8' }] : []),
+    ];
+    const goto = (to: string) => { setOpen(false); navigate(to); };
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 99, fontSize: 10, fontWeight: 800, letterSpacing: '.1em', background: tb.bg, border: `1px solid ${tb.border}`, color: tb.color }} className="hidden md:inline-flex">{tier}</span>
-        <div style={{ position: 'relative' }} className="group">
-          <button
-            onClick={logout}
-            title="Sign out"
-            style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(0,230,118,.12)', border: '1px solid rgba(0,230,118,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#00e676', fontFamily: 'var(--font-mono)', transition: 'all 150ms' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,82,82,.12)'; e.currentTarget.style.borderColor = 'rgba(255,82,82,.3)'; e.currentTarget.style.color = '#ff5252'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,230,118,.12)'; e.currentTarget.style.borderColor = 'rgba(0,230,118,.22)'; e.currentTarget.style.color = '#00e676'; }}>
-            {initials}
-          </button>
-        </div>
+      <div ref={ref} style={{ position: 'relative' }}>
+        <button onClick={() => setOpen(v => !v)} title="Account"
+          style={{ width: 34, height: 34, borderRadius: 10, background: open ? 'rgba(0,230,118,.2)' : 'rgba(0,230,118,.12)', border: '1px solid rgba(0,230,118,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#00e676', fontFamily: 'var(--font-mono)', transition: 'all 150ms' }}>
+          {initials}
+        </button>
+        {open && (
+          <div className="animate-fade-in" style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: 248, background: 'var(--color-bg3)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 14, boxShadow: '0 20px 60px rgba(0,0,0,.6)', overflow: 'hidden', zIndex: 60 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'var(--color-text)' }}>{user?.name || 'Investor'}</p>
+              {user?.email && <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>}
+              <span style={{ display: 'inline-flex', marginTop: 8, padding: '2px 9px', borderRadius: 99, fontSize: 9, fontWeight: 800, letterSpacing: '.08em', background: tb.bg, border: `1px solid ${tb.border}`, color: tb.color }}>{tier} PLAN</span>
+            </div>
+            <div style={{ padding: 6 }}>
+              {items.map(it => (
+                <button key={it.to} onClick={() => goto(it.to)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '9px 10px', borderRadius: 9, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--color-text2)', fontSize: 13, fontWeight: 500 }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.05)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <i className={`fa-solid ${it.icon}`} style={{ fontSize: 12, width: 16, textAlign: 'center', color: it.color ?? 'var(--color-muted)' }} />
+                  {it.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ padding: 6, borderTop: '1px solid rgba(255,255,255,.06)' }}>
+              <button onClick={() => { setOpen(false); logout(); }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '9px 10px', borderRadius: 9, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#ff5252', fontSize: 13, fontWeight: 600 }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,82,82,.08)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                <i className="fa-solid fa-right-from-bracket" style={{ fontSize: 12, width: 16, textAlign: 'center' }} />
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
