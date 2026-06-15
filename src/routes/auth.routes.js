@@ -19,6 +19,7 @@ const {
   sendPasswordResetEmail,
   sendVerificationEmail,
   sendWelcomeEmail,
+  codeFromToken,
 } = require("../services/email.service");
 
 // ── Revoked tokens (in-memory session revocation) ────────────────────────────
@@ -784,18 +785,26 @@ router.post(
   rateLimit(60000, 5),
   async (req, res) => {
     try {
-      const { token } = req.body;
-      if (!token) {
-        return res.status(400).json({ error: "Verification token is required" });
+      const { token, code, email } = req.body;
+      const codeStr = code != null ? String(code).trim() : "";
+      const normEmail = email ? String(email).toLowerCase().trim() : "";
+      if (!token && !(codeStr && normEmail)) {
+        return res.status(400).json({ error: "A verification token, or email + code, is required" });
       }
 
       if (USE_DB) {
-        const user = await prisma.user.findFirst({
-          where: { verifyToken: token },
-        });
+        let user = null;
+        if (token) {
+          user = await prisma.user.findFirst({ where: { verifyToken: token } });
+        } else {
+          const candidate = await prisma.user.findUnique({ where: { email: normEmail } });
+          if (candidate && candidate.verifyToken && codeFromToken(candidate.verifyToken) === codeStr) {
+            user = candidate;
+          }
+        }
 
         if (!user) {
-          return res.status(400).json({ error: "Invalid verification token" });
+          return res.status(400).json({ error: token ? "Invalid verification token" : "Invalid or expired code" });
         }
 
         if (user.emailVerified) {
@@ -826,14 +835,19 @@ router.post(
       }
 
       // ── File-based fallback ──
-      const stored = verificationTokens.get(token);
-      if (!stored) {
-        return res.status(400).json({ error: "Invalid verification token" });
-      }
-
       const users = getUsersDB();
-      const user = users.find((u) => u.id === stored.userId);
-      if (user) {
+      let user = null;
+      if (token) {
+        const stored = verificationTokens.get(token);
+        if (stored) user = users.find((u) => u.id === stored.userId);
+      } else {
+        const candidate = users.find((u) => u.email === normEmail);
+        if (candidate && candidate.verifyToken && codeFromToken(candidate.verifyToken) === codeStr) user = candidate;
+      }
+      if (!user) {
+        return res.status(400).json({ error: token ? "Invalid verification token" : "Invalid or expired code" });
+      }
+      {
         user.emailVerified = true;
         delete user.verifyToken;
         saveUsersDB(users);
@@ -843,12 +857,12 @@ router.post(
           console.error("[auth/verify-email] Failed to send welcome email:", err.message);
         });
       }
-      verificationTokens.delete(token);
+      if (token) verificationTokens.delete(token);
 
       logAudit(AuditAction.EMAIL_VERIFIED, {
         userId: user?.id,
         ip: req.ip,
-        email: stored.email,
+        email: user.email,
       });
 
       return res.json({ message: "Email verified successfully" });

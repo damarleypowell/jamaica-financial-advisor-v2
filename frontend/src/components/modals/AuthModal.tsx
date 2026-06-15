@@ -472,6 +472,77 @@ function LoginForm() {
   );
 }
 
+/* ── Email verification code ─────────────────────────────────────────── */
+function VerifyCodeForm({ email, onDone }: { email: string; onDone: () => void }) {
+  const [digits, setDigits] = useState<string[]>(Array(6).fill(''));
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [resent, setResent] = useState(false);
+  const refs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const submit = useCallback(async (code: string) => {
+    setErr(''); setLoading(true);
+    try {
+      await apiPost('/api/auth/verify-email', { email, code });
+      setVerified(true);
+    } catch (ex: unknown) {
+      setErr(ex instanceof Error ? ex.message : 'Invalid code. Check your email and try again.');
+      setDigits(Array(6).fill('')); refs.current[0]?.focus();
+    } finally { setLoading(false); }
+  }, [email]);
+
+  const handleChange = (i: number, v: string) => {
+    if (!/^\d*$/.test(v)) return;
+    const next = [...digits]; next[i] = v.slice(-1); setDigits(next);
+    if (v && i < 5) refs.current[i + 1]?.focus();
+    const code = next.join('');
+    if (code.length === 6 && next.every(d => d)) submit(code);
+  };
+  const handleKey = (i: number, e: ReactKeyboardEvent) => { if (e.key === 'Backspace' && !digits[i] && i > 0) refs.current[i - 1]?.focus(); };
+  const handlePaste = (e: ClipboardEvent) => {
+    e.preventDefault();
+    const p = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!p) return;
+    const next = Array(6).fill(''); for (let i = 0; i < p.length; i++) next[i] = p[i];
+    setDigits(next); if (p.length === 6) submit(p); else refs.current[Math.min(p.length, 5)]?.focus();
+  };
+  useEffect(() => { refs.current[0]?.focus(); }, []);
+
+  const resend = async () => {
+    try { await apiPost('/api/auth/resend-verification', { email }); setResent(true); setTimeout(() => setResent(false), 4000); } catch { /* ignore */ }
+  };
+
+  if (verified) return (
+    <Done icon="check" title="Email verified!" body="You're all set — welcome to Gotham." cta="Continue" onCta={onDone} />
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, padding: '4px 0' }}>
+      <div style={{ width: 60, height: 60, borderRadius: '50%', background: LGREEN, border: `1.5px solid rgba(0,230,118,.25)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke={GREEN} strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <h2 style={S.h2}>Verify your email</h2>
+        <p style={{ ...S.sub, maxWidth: 300, margin: '6px auto 0' }}>Enter the 6-digit code we emailed to <strong style={{ color: INK }}>{email}</strong>.</p>
+      </div>
+      <Err msg={err} />
+      <div style={{ display: 'flex', gap: 8 }} onPaste={handlePaste}>
+        {digits.map((d, i) => (
+          <input key={i} ref={el => { refs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={d}
+            onChange={e => handleChange(i, e.target.value)} onKeyDown={e => handleKey(i, e)}
+            style={{ width: 44, height: 52, borderRadius: 10, background: FIELD, border: d ? `1.5px solid rgba(0,230,118,.4)` : `1.5px solid ${BORDER}`, textAlign: 'center', fontSize: 20, fontWeight: 700, color: INK, outline: 'none', boxSizing: 'border-box' }} />
+        ))}
+      </div>
+      {loading && <p style={{ fontSize: 13, color: SUB, fontFamily: BODY }}>Verifying…</p>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, alignItems: 'center' }}>
+        <button type="button" onClick={resend} style={{ ...S.link, fontSize: 13 }}>{resent ? 'New code sent ✓' : 'Resend code'}</button>
+        <button type="button" onClick={onDone} style={{ ...S.link, color: SUB, fontSize: 12.5 }}>Skip for now — verify later in Settings</button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Signup ─────────────────────────────────────────────────────────── */
 function SignupForm() {
   const { signup, isLoading } = useAuthStore();
@@ -495,11 +566,7 @@ function SignupForm() {
     catch (ex: unknown) { setErr(ex instanceof Error ? ex.message : 'Signup failed.'); }
   };
 
-  if (ok) return (
-    <Done icon="check" title="You're all set!"
-      body={<>Welcome to Gotham. We've emailed a verification link to <strong style={{ color: INK }}>{email}</strong> — but you can start right now. Verify any time from Settings.</>}
-      cta="Start exploring" onCta={() => closeAuthModal()} />
-  );
+  if (ok) return <VerifyCodeForm email={email} onDone={() => closeAuthModal()} />;
 
   const dis = isLoading || !pwOk(pw);
 

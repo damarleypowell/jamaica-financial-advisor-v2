@@ -3,6 +3,7 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 
 let Resend = null;
 try { ({ Resend } = require("resend")); } catch (_) { /* resend not installed */ }
@@ -181,17 +182,34 @@ async function deliver(msg) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Send an email verification link to a newly registered user.
+ * Derive a stable 6-digit verification code from the (secret, server-stored)
+ * verify token. The code is shown only in the email — it's never sent to the
+ * browser — and verification recomputes it from the token, so no extra storage
+ * or DB migration is needed.
+ */
+function codeFromToken(token) {
+  if (!token) return "000000";
+  const h = crypto.createHash("sha256").update(String(token)).digest("hex");
+  return String(parseInt(h.slice(0, 8), 16) % 1000000).padStart(6, "0");
+}
+
+/**
+ * Send an email verification link + 6-digit code to a newly registered user.
  */
 async function sendVerificationEmail(email, token, name) {
   const verifyUrl = `${APP_URL}/verify-email?token=${encodeURIComponent(token)}`;
+  const code = codeFromToken(token);
   const html = buildEmail({
     title: "Verify Your Email — Gotham Financial",
-    preheader: "Please verify your email address to activate your Gotham Financial account.",
+    preheader: "Verify your email to activate your Gotham Financial account.",
     greeting: `Welcome, ${name || "Investor"}!`,
     body: `
-      <p>Thank you for joining Gotham Financial. To get started, please verify your email address by clicking the button below.</p>
-      <p>This link will expire in <strong>24 hours</strong>.</p>
+      <p>Thanks for joining Gotham Financial. Enter this 6-digit code in the app to verify your email:</p>
+      <div class="info-box" style="text-align:center;">
+        <div class="label">Your verification code</div>
+        <div class="value" style="font-size:30px;letter-spacing:8px;color:#00c853;">${code}</div>
+      </div>
+      <p>Or just tap the button below. Either way, this expires in <strong>24 hours</strong>.</p>
     `,
     ctaText: "Verify My Email",
     ctaUrl: verifyUrl,
@@ -202,8 +220,8 @@ async function sendVerificationEmail(email, token, name) {
     return await deliver({
       from: EMAIL_FROM,
       to: email,
-      subject: "Verify Your Email — Gotham Financial",
-      text: `Welcome to Gotham Financial, ${name || "Investor"}! Verify your email: ${verifyUrl}`,
+      subject: `Your Gotham Financial code: ${code}`,
+      text: `Welcome to Gotham Financial, ${name || "Investor"}! Your verification code is ${code}. Or verify here: ${verifyUrl}`,
       html,
       headers: {
         "X-Mailer": "Gotham-Financial/2.0",
@@ -455,4 +473,5 @@ module.exports = {
   sendWelcomeEmail,
   sendOrderConfirmation,
   sendAlertTriggered,
+  codeFromToken,
 };
