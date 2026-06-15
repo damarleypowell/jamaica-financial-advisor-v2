@@ -60,7 +60,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
   signup: async (name: string, email: string, password: string, accountType: AccountType) => {
     set({ isLoading: true });
     try {
-      const res = await apiPost<{ token?: string; user?: User }>('/api/auth/signup', { name, email, password, accountType });
+      const promo = localStorage.getItem('gf_promo') || undefined;
+      const res = await apiPost<{ token?: string; user?: User }>('/api/auth/signup', { name, email, password, accountType, promo });
       if (res.token) {
         localStorage.setItem('jse_token', res.token);
         const user = await apiGet<User>('/api/auth/me');

@@ -82,6 +82,12 @@ export default function App() {
   const loadUser = useAuthStore((s) => s.loadUser);
 
   useEffect(() => {
+    // Capture a promo/referral code from the link (?ref= or ?promo=) so it
+    // applies on signup even after navigation.
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref') || params.get('promo');
+    if (ref) localStorage.setItem('gf_promo', ref.trim());
+
     loadStocks();   // REST snapshot (with names) — resilient if SSE doesn't deliver
     connectSSE();   // live price updates
     loadUser();

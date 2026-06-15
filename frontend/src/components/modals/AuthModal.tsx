@@ -555,6 +555,7 @@ function SignupForm() {
   const [ok, setOk]       = useState(false);
   const [hov, setHov]     = useState(false);
   const checks = chkPw(pw);
+  const promo = typeof window !== 'undefined' ? localStorage.getItem('gf_promo') : null;
 
   const onOk  = useCallback(() => closeAuthModal(), [closeAuthModal]);
   const onErr = useCallback((m: string) => setErr(m), []);
@@ -576,6 +577,15 @@ function SignupForm() {
         <h2 style={S.h2}>Create your account</h2>
         <p style={S.sub}>Free forever — start in under a minute</p>
       </div>
+
+      {promo && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 13px', borderRadius: 10, background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.3)' }}>
+          <span style={{ fontSize: 16, lineHeight: 1 }}>🎉</span>
+          <span style={{ fontSize: 12.5, color: SUB, fontFamily: BODY, lineHeight: 1.45 }}>
+            You're an early member — <strong style={{ color: GREEN }}>free Pro included</strong> (first 30 sign-ups). No card needed.
+          </span>
+        </div>
+      )}
 
       <OAuthSection onSuccess={onOk} onError={onErr} />
       <Err msg={err} />
