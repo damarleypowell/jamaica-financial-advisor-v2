@@ -8,6 +8,7 @@ import { apiGet, apiPost } from '../../lib/api';
 import MainChart from './MainChart';
 import StockPanel from './StockPanel';
 import StockTable from './StockTable';
+import GoalNextSteps from './GoalNextSteps';
 
 interface Overview {
   jseIndex?: number; jseIndexChange?: number; totalVolume?: number;
@@ -1222,6 +1223,9 @@ export default function Dashboard() {
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* ── Goal-based next steps (from onboarding choice) ── */}
+      <GoalNextSteps />
 
       {/* ── Wealth section (logged-in users) ─────────────── */}
       {isAuthenticated ? (

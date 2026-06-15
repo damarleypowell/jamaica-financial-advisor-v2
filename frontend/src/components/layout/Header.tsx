@@ -254,8 +254,9 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
               {initials}
             </button>
           ) : (
-            <button className="top-icon-btn" onClick={() => openAuthModal('login')} style={{ color: 'var(--color-green)' }}>
-              <i className="fa-solid fa-right-to-bracket" style={{ fontSize: 17 }} />
+            <button onClick={() => openAuthModal('signup')}
+              style={{ padding: '7px 15px', borderRadius: 10, background: 'var(--color-green)', color: '#04060d', fontSize: 12.5, fontWeight: 800, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 2px 12px rgba(0,230,118,.3)' }}>
+              Sign Up
             </button>
           )}
         </div>

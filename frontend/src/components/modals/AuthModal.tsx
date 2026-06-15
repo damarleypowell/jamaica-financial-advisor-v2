@@ -674,7 +674,10 @@ function ResetForm() {
   const [ok, setOk] = useState(false);
   const [hov, setHov] = useState(false);
   const checks = chkPw(pw);
-  const token = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('resetToken') ?? '' : '';
+  // The reset email links with ?token=…; accept ?resetToken= too for safety.
+  const token = typeof window !== 'undefined'
+    ? (new URLSearchParams(window.location.search).get('token') ?? new URLSearchParams(window.location.search).get('resetToken') ?? '')
+    : '';
 
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setErr('');

@@ -10,6 +10,7 @@ import FeatureGuide from './components/ui/FeatureGuide.tsx';
 import AppTour from './components/ui/AppTour.tsx';
 import { useMarketStore } from './stores/market.ts';
 import { useAuthStore } from './stores/auth.ts';
+import { useUIStore } from './stores/ui.ts';
 import FloatingAIAdvisor from './components/FloatingAIAdvisor.tsx';
 
 /* ---------- Lazy-loaded route components ---------- */
@@ -66,6 +67,13 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/* Password-reset link from email lands here — open the reset form over the app. */
+function ResetPasswordRoute() {
+  const openAuthModal = useUIStore((s) => s.openAuthModal);
+  useEffect(() => { openAuthModal('reset'); }, [openAuthModal]);
+  return <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }} />;
+}
+
 /* ---------- App ---------- */
 export default function App() {
   const connectSSE = useMarketStore((s) => s.connectSSE);
@@ -91,6 +99,7 @@ export default function App() {
           {/* Full-screen routes — no sidebar */}
           <Route path="onboarding" element={<Suspense fallback={<PageLoader />}><Onboarding /></Suspense>} />
           <Route path="verify-email" element={<Suspense fallback={<PageLoader />}><VerifyEmail /></Suspense>} />
+          <Route path="reset-password" element={<ResetPasswordRoute />} />
 
           <Route element={<Layout />}>
             {/* ── Open to all (FREE) ─────────────────────────────── */}
@@ -123,6 +132,9 @@ export default function App() {
               <Route path="admin" element={W(Admin)} />
             </Route>
           </Route>
+
+          {/* Catch-all — never leave the user on a blank screen */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
         {/* Global modals */}
