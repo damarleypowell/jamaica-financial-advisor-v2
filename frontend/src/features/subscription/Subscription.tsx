@@ -108,7 +108,7 @@ function UpgradeModal({ plan, paypalConfig, onClose, onSuccess }: { plan: Plan; 
   const qc = useQueryClient();
   const fallbackMut = useMutation({
     mutationFn: (planId: string) => apiPost('/api/subscription/upgrade', { plan: planId }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['subscription'] }); onSuccess(`${plan.name} plan activated! Payment processing will be enabled soon.`); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['subscription'] }); onSuccess(`${plan.name} unlocked — free during beta. Enjoy!`); },
   });
 
   const handleSuccess = (msg: string) => { qc.invalidateQueries({ queryKey: ['subscription'] }); onSuccess(msg); };
@@ -154,12 +154,12 @@ function UpgradeModal({ plan, paypalConfig, onClose, onSuccess }: { plan: Plan; 
               </PayPalScriptProvider>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(255,215,64,.06)', border: '1px solid rgba(255,215,64,.2)', display: 'flex', gap: 10 }}>
-                  <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 13, color: '#ffd740', flexShrink: 0, marginTop: 1 }} />
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text2)', lineHeight: 1.5 }}>Payment processing is being configured — activating directly for now. You will not be charged until billing is fully set up.</p>
+                <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.2)', display: 'flex', gap: 10 }}>
+                  <i className="fa-solid fa-gift" style={{ fontSize: 13, color: '#00e676', flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text2)', lineHeight: 1.5 }}><strong style={{ color: '#fff' }}>Free during beta.</strong> Every paid feature is unlocked at no cost while we're in early access — no card, no charge.</p>
                 </div>
                 <button onClick={() => fallbackMut.mutate(plan.id)} disabled={fallbackMut.isPending} style={{ width: '100%', padding: '12px', borderRadius: 12, background: '#00e676', color: '#04060d', fontSize: 14, fontWeight: 700, border: 'none', cursor: fallbackMut.isPending ? 'not-allowed' : 'pointer', opacity: fallbackMut.isPending ? .6 : 1 }}>
-                  {fallbackMut.isPending ? 'Activating...' : `Activate ${plan.name} Plan`}
+                  {fallbackMut.isPending ? 'Activating…' : `Unlock ${plan.name} — free beta`}
                 </button>
               </div>
             )}

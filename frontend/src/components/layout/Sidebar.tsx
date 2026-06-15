@@ -52,8 +52,8 @@ const NAV: Section[] = [
 
 const MOBILE_NAV_BASE: NavItem[] = [
   { label: 'Home',      icon: 'fa-solid fa-house',       to: '/'          },
-  { label: 'Invest',    icon: 'fa-solid fa-seedling',    to: '/screener'  },
-  { label: 'Portfolio', icon: 'fa-solid fa-wallet',      to: '/portfolio' },
+  { label: 'Invest',    icon: 'fa-solid fa-seedling',    to: '/invest'    },
+  { label: 'Portfolio', icon: 'fa-solid fa-chart-pie',   to: '/holdings'  },
   { label: 'You',       icon: 'fa-solid fa-circle-user', to: '/settings'  },
 ];
 
