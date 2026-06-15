@@ -28,6 +28,14 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// Tier is NOT a User column — it lives in the Subscription relation (admin
+// emails are treated as ENTERPRISE). Derive it from a user that included
+// `subscription: { select: { plan: true } }`.
+function tierOf(u) {
+  if (u && ADMIN_EMAILS.includes((u.email || "").toLowerCase())) return "ENTERPRISE";
+  return (u && u.subscription && u.subscription.plan) || "FREE";
+}
+
 const startTime = Date.now();
 
 // ── Security event log (in-memory ring buffer) ────────────────────────────────
@@ -69,9 +77,9 @@ router.get("/api/admin/dashboard", authMiddleware, requireAdmin, async (req, res
       prisma.order.count({ where: { createdAt: { gte: startOfMonth } } }),
       prisma.subscription?.count({ where: { status: "ACTIVE" } }).catch(() => 0) ?? 0,
       prisma.priceAlert?.count({ where: { isTriggered: false } }).catch(() => 0) ?? 0,
-      prisma.user.findMany({ orderBy: { createdAt: "desc" }, take: 10, select: { id: true, name: true, email: true, createdAt: true, kycStatus: true, isActive: true, subscriptionTier: true } }),
+      prisma.user.findMany({ orderBy: { createdAt: "desc" }, take: 10, select: { id: true, name: true, email: true, createdAt: true, kycStatus: true, isActive: true, subscription: { select: { plan: true } } } }),
       prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 10, include: { user: { select: { name: true, email: true } } } }),
-      prisma.user.groupBy({ by: ["subscriptionTier"], _count: { subscriptionTier: true } }),
+      prisma.subscription.groupBy({ by: ["plan"], where: { status: "ACTIVE" }, _count: { plan: true } }).catch(() => []),
       prisma.order.groupBy({ by: ["status"], _count: { status: true } }),
     ]);
 
@@ -87,8 +95,13 @@ router.get("/api/admin/dashboard", authMiddleware, requireAdmin, async (req, res
     res.json({
       totalUsers, newUsersToday, newUsersMonth, newUsersLastMonth,
       totalOrders, ordersToday, ordersMonth, activeSubscriptions, totalAlerts,
-      recentUsers, recentOrders,
-      subscriptionBreakdown: subscriptionBreakdown.map(s => ({ plan: s.subscriptionTier || "FREE", count: s._count.subscriptionTier })),
+      recentUsers: recentUsers.map(u => ({ ...u, subscriptionTier: tierOf(u) })),
+      recentOrders,
+      subscriptionBreakdown: (() => {
+        const paid = subscriptionBreakdown.map(s => ({ plan: s.plan, count: s._count.plan }));
+        const paidTotal = paid.reduce((a, b) => a + b.count, 0);
+        return [{ plan: "FREE", count: Math.max(0, totalUsers - paidTotal) }, ...paid];
+      })(),
       ordersByStatus: ordersByStatus.map(o => ({ status: o.status, count: o._count.status })),
       userGrowth: growth,
     });
@@ -117,17 +130,22 @@ router.get("/api/admin/users", authMiddleware, requireAdmin, async (req, res) =>
       { name: { contains: search, mode: "insensitive" } },
       { email: { contains: search, mode: "insensitive" } },
     ];
-    if (tier) where.subscriptionTier = tier;
+    if (tier) where.subscription = tier === "FREE" ? { is: null } : { is: { plan: tier } };
     if (status === "active") where.isActive = true;
     if (status === "suspended") where.isActive = false;
 
-    const [users, total] = await Promise.all([
+    const [rawUsers, total] = await Promise.all([
       prisma.user.findMany({
         where, skip, take: limit, orderBy: { createdAt: "desc" },
-        select: { id: true, name: true, email: true, createdAt: true, updatedAt: true, isActive: true, emailVerified: true, kycStatus: true, subscriptionTier: true, accountType: true, onboardingCompleted: true, _count: { select: { orders: true, portfolioPositions: true } } },
+        select: { id: true, name: true, email: true, createdAt: true, updatedAt: true, isActive: true, emailVerified: true, kycStatus: true, onboardingCompleted: true, settings: true, subscription: { select: { plan: true, status: true } }, _count: { select: { orders: true, portfolioPositions: true } } },
       }),
       prisma.user.count({ where }),
     ]);
+
+    const users = rawUsers.map(u => {
+      const { settings, subscription, ...rest } = u;
+      return { ...rest, subscriptionTier: tierOf(u), accountType: (settings && settings.accountType) || "paper" };
+    });
 
     res.json({ users, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
@@ -144,11 +162,11 @@ router.get("/api/admin/users/:id", authMiddleware, requireAdmin, async (req, res
     if (!USE_DB) return res.status(404).json({ error: "Not found" });
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
-      include: { wallets: true, portfolioPositions: true, orders: { orderBy: { createdAt: "desc" }, take: 20 }, priceAlerts: { take: 10 } },
+      include: { wallets: true, portfolioPositions: true, orders: { orderBy: { createdAt: "desc" }, take: 20 }, priceAlerts: { take: 10 }, subscription: true },
     });
     if (!user) return res.status(404).json({ error: "User not found" });
     const { passwordHash, salt, twoFactorSecret, ...safe } = user;
-    res.json(safe);
+    res.json({ ...safe, subscriptionTier: tierOf(user), accountType: (user.settings && user.settings.accountType) || "paper" });
   } catch (err) {
     res.status(500).json({ error: "Internal server error" });
   }
@@ -164,25 +182,48 @@ router.put("/api/admin/users/:id", authMiddleware, requireAdmin, async (req, res
     const VALID_TIERS = ["FREE", "CORE", "PRO", "ENTERPRISE"];
     const VALID_KYC   = ["NONE", "PENDING", "VERIFIED", "REJECTED"];
 
+    const id = req.params.id;
     const data = {};
     const { isActive, kycStatus, subscriptionTier, emailVerified, accountType, notes } = req.body;
     if (typeof isActive === "boolean") data.isActive = isActive;
     if (kycStatus && VALID_KYC.includes(kycStatus)) data.kycStatus = kycStatus;
-    if (subscriptionTier && VALID_TIERS.includes(subscriptionTier)) data.subscriptionTier = subscriptionTier;
     if (typeof emailVerified === "boolean") data.emailVerified = emailVerified;
-    if (accountType && ["paper", "live"].includes(accountType)) data.accountType = accountType;
-    if (notes !== undefined) data.settings = { notes };
 
-    if (Object.keys(data).length === 0) return res.status(400).json({ error: "No valid fields to update" });
+    // accountType + notes live in the settings JSON — merge, don't overwrite.
+    if ((accountType && ["paper", "live"].includes(accountType)) || notes !== undefined) {
+      const cur = await prisma.user.findUnique({ where: { id }, select: { settings: true } });
+      const merged = (cur && cur.settings && typeof cur.settings === "object") ? { ...cur.settings } : {};
+      if (accountType && ["paper", "live"].includes(accountType)) merged.accountType = accountType;
+      if (notes !== undefined) merged.notes = notes;
+      data.settings = merged;
+    }
 
-    const user = await prisma.user.update({
-      where: { id: req.params.id }, data,
-      select: { id: true, name: true, email: true, isActive: true, kycStatus: true, subscriptionTier: true, emailVerified: true },
-    });
+    // Tier is in the Subscription table, not on User.
+    if (subscriptionTier && VALID_TIERS.includes(subscriptionTier)) {
+      if (subscriptionTier === "FREE") {
+        await prisma.subscription.deleteMany({ where: { userId: id } });
+      } else {
+        const periodEnd = new Date(); periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+        await prisma.subscription.upsert({
+          where: { userId: id },
+          update: { plan: subscriptionTier, status: "ACTIVE", currentPeriodEnd: periodEnd },
+          create: { id: require("crypto").randomUUID(), userId: id, plan: subscriptionTier, status: "ACTIVE", currentPeriodEnd: periodEnd },
+        });
+      }
+    }
 
-    logAudit?.("ADMIN_USER_UPDATE", { adminId: req.user.id, adminEmail: req.user.email, targetUserId: req.params.id, changes: data, ip: req.ip });
-    pushEvent("USER_UPDATE", `Admin ${req.user.email} updated user ${req.params.id}: ${JSON.stringify(data)}`, "low");
-    res.json(user);
+    if (Object.keys(data).length === 0 && !subscriptionTier) {
+      return res.status(400).json({ error: "No valid fields to update" });
+    }
+
+    const sel = { id: true, name: true, email: true, isActive: true, kycStatus: true, emailVerified: true, subscription: { select: { plan: true } } };
+    const updated = Object.keys(data).length > 0
+      ? await prisma.user.update({ where: { id }, data, select: sel })
+      : await prisma.user.findUnique({ where: { id }, select: sel });
+
+    logAudit?.("ADMIN_USER_UPDATE", { adminId: req.user.id, adminEmail: req.user.email, targetUserId: id, changes: { ...data, subscriptionTier }, ip: req.ip });
+    pushEvent("USER_UPDATE", `Admin ${req.user.email} updated user ${id}`, "low");
+    res.json({ ...updated, subscriptionTier: tierOf(updated) });
   } catch (err) {
     console.error("[admin/users PUT]", err.message);
     res.status(500).json({ error: "Internal server error" });
