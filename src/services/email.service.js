@@ -463,6 +463,41 @@ async function sendAlertTriggered(email, alert) {
   }
 }
 
+/**
+ * Notify the founder/admin whenever a new user signs up.
+ */
+async function sendSignupNotification(to, user) {
+  if (!to) return;
+  const when = new Date().toLocaleString("en-US", { timeZone: "America/Jamaica" });
+  const html = buildEmail({
+    title: "New Gotham Financial sign-up",
+    preheader: `${user.name || "Someone"} just signed up.`,
+    greeting: "New sign-up 🎉",
+    body: `
+      <p>A new user just created an account on Gotham Financial.</p>
+      <div class="info-box">
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:6px;">
+          <tr><td style="padding:6px 0;color:#6b7a8d;font-size:13px;">Name</td><td style="padding:6px 0;text-align:right;color:#e8edf2;font-weight:700;font-size:14px;">${user.name || "—"}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7a8d;font-size:13px;">Email</td><td style="padding:6px 0;text-align:right;color:#00c853;font-size:14px;">${user.email}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7a8d;font-size:13px;">Plan</td><td style="padding:6px 0;text-align:right;color:#e8edf2;font-size:14px;">${user.plan || "FREE"}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7a8d;font-size:13px;">Time</td><td style="padding:6px 0;text-align:right;color:#e8edf2;font-size:13px;">${when}</td></tr>
+        </table>
+      </div>
+    `,
+  });
+  try {
+    return await deliver({
+      from: EMAIL_FROM,
+      to,
+      subject: `New sign-up: ${user.name || user.email}`,
+      text: `New Gotham Financial sign-up: ${user.name || ""} <${user.email}> at ${when}`,
+      html,
+    });
+  } catch (err) {
+    console.error("[Email] Failed to send signup notification:", err?.message || err);
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ── Exports ──────────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
@@ -471,6 +506,7 @@ module.exports = {
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendWelcomeEmail,
+  sendSignupNotification,
   sendOrderConfirmation,
   sendAlertTriggered,
   codeFromToken,

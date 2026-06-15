@@ -19,6 +19,7 @@ const {
   sendPasswordResetEmail,
   sendVerificationEmail,
   sendWelcomeEmail,
+  sendSignupNotification,
   codeFromToken,
 } = require("../services/email.service");
 
@@ -221,6 +222,15 @@ const PROMO_LIMIT = parseInt(process.env.PROMO_LIMIT || "30", 10);
 const PROMO_PLAN = process.env.PROMO_PLAN || "PRO";
 const PROMO_MARKER = "promo:launch"; // marks promo grants so we can count them
 
+// Founder gets an email on every new sign-up; every new user gets a welcome.
+const SIGNUP_NOTIFY_EMAIL = process.env.SIGNUP_NOTIFY_EMAIL || "damarleypowellbuisness@gmail.com";
+
+function notifyNewSignup(user, plan) {
+  sendWelcomeEmail(user.email, user.name).catch((e) => console.error("[signup] welcome email:", e.message));
+  sendSignupNotification(SIGNUP_NOTIFY_EMAIL, { name: user.name, email: user.email, plan: plan || "FREE" })
+    .catch((e) => console.error("[signup] admin notify:", e.message));
+}
+
 /** Grant the promo plan to a new user while seats remain (no code/link needed). */
 async function grantLaunchPromo(userId) {
   if (!USE_DB) return false;
@@ -301,6 +311,9 @@ router.post("/api/auth/signup", rateLimit.signup(), async (req, res) => {
 
       // First N sign-ups get a free PRO plan automatically (while seats remain).
       const promoGranted = await grantLaunchPromo(user.id);
+
+      // Welcome the new user + notify the founder (fire-and-forget).
+      notifyNewSignup(user, promoGranted ? PROMO_PLAN : "FREE");
 
       // Send verification email (fire-and-forget, don't block signup)
       sendVerificationEmail(user.email, verifyToken, user.name).catch((err) => {
@@ -856,10 +869,7 @@ router.post(
           },
         });
 
-        // Send welcome email (fire-and-forget)
-        sendWelcomeEmail(user.email, user.name).catch((err) => {
-          console.error("[auth/verify-email] Failed to send welcome email:", err.message);
-        });
+        // (Welcome email is sent at signup, not on verification.)
 
         logAudit(AuditAction.EMAIL_VERIFIED, {
           userId: user.id,
@@ -888,10 +898,7 @@ router.post(
         delete user.verifyToken;
         saveUsersDB(users);
 
-        // Send welcome email (fire-and-forget)
-        sendWelcomeEmail(user.email, user.name).catch((err) => {
-          console.error("[auth/verify-email] Failed to send welcome email:", err.message);
-        });
+        // (Welcome email is sent at signup, not on verification.)
       }
       if (token) verificationTokens.delete(token);
 
@@ -1802,6 +1809,7 @@ router.post("/api/auth/google", async (req, res) => {
           },
         });
         logAudit(AuditAction.SIGNUP, { ip: req.ip, userId: user.id, email: user.email });
+        notifyNewSignup(user, "FREE");
       }
       const token = signJWTWithIP({ id: user.id, name: user.name, email: user.email }, req.ip);
       return res.json({
@@ -1890,6 +1898,7 @@ router.post("/api/auth/apple", async (req, res) => {
           },
         });
         logAudit(AuditAction.SIGNUP, { ip: req.ip, userId: user.id, email: user.email });
+        notifyNewSignup(user, "FREE");
       }
       const token = signJWTWithIP({ id: user.id, name: user.name, email: user.email }, req.ip);
       return res.json({
