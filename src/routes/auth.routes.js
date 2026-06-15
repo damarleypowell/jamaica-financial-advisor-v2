@@ -216,15 +216,14 @@ const USE_DB = !!(process.env.DATABASE_URL && prisma);
 
 const router = Router();
 
-// ── Launch promo: the first N signups via the promo link get a free PRO plan ──
-const PROMO_CODE = (process.env.PROMO_CODE || "LAUNCH30").toUpperCase();
+// ── Launch promo: the first N sign-ups get a free PRO plan automatically ──────
 const PROMO_LIMIT = parseInt(process.env.PROMO_LIMIT || "30", 10);
 const PROMO_PLAN = process.env.PROMO_PLAN || "PRO";
-const PROMO_MARKER = `promo:${PROMO_CODE}`;
+const PROMO_MARKER = "promo:launch"; // marks promo grants so we can count them
 
-/** Grant the promo plan to a new user if the code is valid and the cap isn't hit. */
-async function tryGrantPromo(userId, promo) {
-  if (!USE_DB || !promo || String(promo).trim().toUpperCase() !== PROMO_CODE) return false;
+/** Grant the promo plan to a new user while seats remain (no code/link needed). */
+async function grantLaunchPromo(userId) {
+  if (!USE_DB) return false;
   try {
     const used = await prisma.subscription.count({ where: { stripeSubscriptionId: PROMO_MARKER } });
     if (used >= PROMO_LIMIT) return false;
@@ -242,9 +241,9 @@ router.get("/api/promo/status", async (_req, res) => {
   try {
     let used = 0;
     if (USE_DB) used = await prisma.subscription.count({ where: { stripeSubscriptionId: PROMO_MARKER } });
-    res.json({ code: PROMO_CODE, plan: PROMO_PLAN, limit: PROMO_LIMIT, used, remaining: Math.max(0, PROMO_LIMIT - used) });
+    res.json({ plan: PROMO_PLAN, limit: PROMO_LIMIT, used, remaining: Math.max(0, PROMO_LIMIT - used) });
   } catch (_) {
-    res.json({ code: PROMO_CODE, plan: PROMO_PLAN, limit: PROMO_LIMIT, used: 0, remaining: PROMO_LIMIT });
+    res.json({ plan: PROMO_PLAN, limit: PROMO_LIMIT, used: 0, remaining: PROMO_LIMIT });
   }
 });
 
@@ -254,7 +253,7 @@ router.get("/api/promo/status", async (_req, res) => {
 
 router.post("/api/auth/signup", rateLimit.signup(), async (req, res) => {
   try {
-    const { name, email, password, accountType, promo } = req.body;
+    const { name, email, password, accountType } = req.body;
     const isPaperTrading = accountType !== "live";
     if (!name || !email || !password)
       return res
@@ -300,8 +299,8 @@ router.post("/api/auth/signup", rateLimit.signup(), async (req, res) => {
         },
       });
 
-      // First N signups via the promo link get a free PRO plan.
-      const promoGranted = await tryGrantPromo(user.id, promo);
+      // First N sign-ups get a free PRO plan automatically (while seats remain).
+      const promoGranted = await grantLaunchPromo(user.id);
 
       // Send verification email (fire-and-forget, don't block signup)
       sendVerificationEmail(user.email, verifyToken, user.name).catch((err) => {
