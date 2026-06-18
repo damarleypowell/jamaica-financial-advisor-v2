@@ -114,12 +114,29 @@ Rules:
 - Redact credit card numbers, SSNs, passwords, API keys from the sanitized field
 - Keep your response under 300 tokens`;
 
+// Haiku frequently wraps its reply in ```json fences (and sometimes adds prose)
+// despite the "JSON only" instruction. Strip fences / extract the first {...}
+// object before parsing — otherwise JSON.parse throws on a perfectly valid
+// classification and the guard "fails safe", 403-ing every single message.
+function extractJsonObject(text) {
+  if (!text) return "{}";
+  let t = String(text).trim();
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) t = fence[1].trim();
+  if (!t.startsWith("{")) {
+    const s = t.indexOf("{");
+    const e = t.lastIndexOf("}");
+    if (s !== -1 && e > s) t = t.slice(s, e + 1);
+  }
+  return t;
+}
+
 async function runGuardClassifier(userText, feature) {
   const prompt = `Feature: ${feature}\nUser input to classify:\n---\n${userText.slice(0, 2000)}\n---`;
 
   const resp = await guardClient.messages.create({
     model:      "claude-haiku-4-5-20251001",
-    max_tokens: 256,
+    max_tokens: 512,
     system:     GUARD_SYSTEM,
     messages:   [{ role: "user", content: prompt }],
   });
@@ -127,9 +144,9 @@ async function runGuardClassifier(userText, feature) {
   const raw = resp.content.find(b => b.type === "text")?.text ?? "{}";
 
   try {
-    return JSON.parse(raw);
+    return JSON.parse(extractJsonObject(raw));
   } catch {
-    // If Haiku returns something we can't parse, fail safe
+    // If Haiku returns something we still can't parse, fail safe
     return { safe: false, reason: "Guard parse error", topic: "unknown", sanitized: "" };
   }
 }
