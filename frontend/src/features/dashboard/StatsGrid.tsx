@@ -21,7 +21,7 @@ function BreadthBar({ a, d, u }: { a: number; d: number; u: number }) {
   const total = a + d + u || 1;
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ height: 4, borderRadius: 99, display: 'flex', gap: 2, overflow: 'hidden', background: 'rgba(255,255,255,.04)' }}>
+      <div style={{ height: 4, borderRadius: 99, display: 'flex', gap: 2, overflow: 'hidden', background: 'rgba(var(--fg),.04)' }}>
         <div style={{ height: '100%', borderRadius: 99, background: '#00e676', transition: 'width .5s', width: `${(a/total)*100}%` }} />
         <div style={{ height: '100%', borderRadius: 99, background: '#ff5252', transition: 'width .5s', width: `${(d/total)*100}%` }} />
       </div>
@@ -57,7 +57,7 @@ function StatCard({ icon, color, bg, grad, label, value, sub, change, extra }: C
             <i className={icon} style={{ fontSize: 14, color }} />
           </div>
           {change !== undefined && Math.abs(change) > 0.001 && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 7px', borderRadius: 99, fontSize: 10, fontWeight: 700, border: '1px solid', color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)', background: pos ? 'rgba(0,230,118,.08)' : neg ? 'rgba(255,82,82,.08)' : 'rgba(255,255,255,.04)', borderColor: pos ? 'rgba(0,230,118,.22)' : neg ? 'rgba(255,82,82,.22)' : 'rgba(255,255,255,.08)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 7px', borderRadius: 99, fontSize: 10, fontWeight: 700, border: '1px solid', color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)', background: pos ? 'rgba(0,230,118,.08)' : neg ? 'rgba(255,82,82,.08)' : 'rgba(var(--fg),.04)', borderColor: pos ? 'rgba(0,230,118,.22)' : neg ? 'rgba(255,82,82,.22)' : 'rgba(var(--fg),.08)' }}>
               <i className={`fa-solid ${pos ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'}`} style={{ fontSize: 7 }} />
               {pos ? '+' : ''}{change.toFixed(2)}%
             </span>

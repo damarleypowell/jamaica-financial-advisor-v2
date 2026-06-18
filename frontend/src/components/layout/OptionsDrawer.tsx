@@ -86,7 +86,7 @@ export default function OptionsDrawer() {
           <div style={{ padding: '0 16px 8px' }}>
             <button
               onClick={() => { openAuthModal('login'); closeOptionsDrawer(); }}
-              style={{ width: '100%', padding: '14px', borderRadius: 14, background: 'var(--color-green)', color: '#04060d', fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+              style={{ width: '100%', padding: '14px', borderRadius: 14, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
               Sign In / Create Account
             </button>
           </div>

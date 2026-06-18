@@ -51,11 +51,11 @@ function MiniChart({ data }: { data: { time: string; value: number }[] }) {
         fontSize: 10,
       },
       grid: {
-        vertLines: { color: 'rgba(255, 255, 255, 0.04)' },
-        horzLines: { color: 'rgba(255, 255, 255, 0.04)' },
+        vertLines: { color: 'rgba(var(--fg), 0.04)' },
+        horzLines: { color: 'rgba(var(--fg), 0.04)' },
       },
-      rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.06)' },
-      timeScale: { borderColor: 'rgba(255, 255, 255, 0.06)', timeVisible: false },
+      rightPriceScale: { borderColor: 'rgba(var(--fg), 0.06)' },
+      timeScale: { borderColor: 'rgba(var(--fg), 0.06)', timeVisible: false },
       crosshair: {
         vertLine: { color: 'rgba(0, 200, 83, 0.3)', width: 1, style: 2 },
         horzLine: { color: 'rgba(0, 200, 83, 0.3)', width: 1, style: 2 },

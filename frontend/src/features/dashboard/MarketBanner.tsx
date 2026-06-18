@@ -34,8 +34,8 @@ export default function MarketBanner() {
     <div style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 14, padding: '11px 18px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 20px' }}>
       {/* Status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <div style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: open ? 'rgba(0,230,118,.1)' : 'rgba(255,255,255,.04)', border: `1px solid ${open ? 'rgba(0,230,118,.2)' : 'var(--color-border)'}` }}>
-          <span style={{ display: 'block', width: 8, height: 8, borderRadius: '50%', background: open ? '#00e676' : isConn ? '#ffd740' : 'rgba(255,255,255,.2)' }} className={open ? 'animate-pulse-dot' : ''} />
+        <div style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: open ? 'rgba(0,230,118,.1)' : 'rgba(var(--fg),.04)', border: `1px solid ${open ? 'rgba(0,230,118,.2)' : 'var(--color-border)'}` }}>
+          <span style={{ display: 'block', width: 8, height: 8, borderRadius: '50%', background: open ? '#00e676' : isConn ? '#ffd740' : 'rgba(var(--fg),.2)' }} className={open ? 'animate-pulse-dot' : ''} />
         </div>
         <div>
           <p style={{ margin: 0, fontSize: 12, fontWeight: 800, lineHeight: 1, color: open ? '#00e676' : 'var(--color-text2)' }}>{open ? 'JSE Open' : 'JSE Closed'}</p>
@@ -82,12 +82,12 @@ export default function MarketBanner() {
           </div>
         )}
         <div style={{ display: 'flex', gap: 6 }}>
-          <Link to="/screener" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', transition: 'all 150ms' }}
+          <Link to="/screener" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', transition: 'all 150ms' }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,230,118,.3)'; (e.currentTarget as HTMLElement).style.color = '#00e676'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text2)'; }}>
             <i className="fa-solid fa-filter" style={{ fontSize: 9 }} />Screener
           </Link>
-          <Link to="/watchlists" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', transition: 'all 150ms' }}
+          <Link to="/watchlists" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', transition: 'all 150ms' }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,230,118,.3)'; (e.currentTarget as HTMLElement).style.color = '#00e676'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text2)'; }}>
             <i className="fa-solid fa-eye" style={{ fontSize: 9 }} />Watchlist

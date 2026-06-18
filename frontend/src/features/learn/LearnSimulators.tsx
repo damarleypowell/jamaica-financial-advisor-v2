@@ -25,7 +25,7 @@ function Slider({ label, value, min, max, step, onChange, fmt, color = GREEN }: 
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-        <span style={{ fontSize: 11.5, fontWeight: 600, color: 'rgba(255,255,255,.55)', fontFamily: FONT }}>{label}</span>
+        <span style={{ fontSize: 11.5, fontWeight: 600, color: 'rgba(var(--fg),.55)', fontFamily: FONT }}>{label}</span>
         <span style={{ fontSize: 13, fontWeight: 800, color, fontFamily: MONO }}>{fmt(value)}</span>
       </div>
       <input
@@ -33,7 +33,7 @@ function Slider({ label, value, min, max, step, onChange, fmt, color = GREEN }: 
         onChange={e => onChange(Number(e.target.value))}
         style={{
           width: '100%', height: 6, borderRadius: 99, appearance: 'none', WebkitAppearance: 'none',
-          background: `linear-gradient(90deg, ${color} ${pct}%, rgba(255,255,255,.1) ${pct}%)`,
+          background: `linear-gradient(90deg, ${color} ${pct}%, rgba(var(--fg),.1) ${pct}%)`,
           outline: 'none', cursor: 'pointer',
         }}
       />
@@ -48,12 +48,12 @@ export function SimStyles() {
       input[type=range]::-webkit-slider-thumb {
         -webkit-appearance: none; appearance: none;
         width: 18px; height: 18px; border-radius: 50%;
-        background: #fff; cursor: pointer; border: 3px solid #04060d;
+        background: #fff; cursor: pointer; border: 3px solid var(--color-bg);
         box-shadow: 0 2px 8px rgba(0,0,0,.5); margin-top: -6px;
       }
       input[type=range]::-moz-range-thumb {
         width: 18px; height: 18px; border-radius: 50%;
-        background: #fff; cursor: pointer; border: 3px solid #04060d;
+        background: #fff; cursor: pointer; border: 3px solid var(--color-bg);
       }
       @keyframes simFadeUp { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform: translateY(0);} }
       @keyframes simDraw { from { stroke-dashoffset: var(--len);} to { stroke-dashoffset: 0;} }
@@ -85,7 +85,7 @@ function CountUp({ value, prefix = 'J$' }: { value: number; prefix?: string }) {
 }
 
 const cardBox: React.CSSProperties = {
-  background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.07)',
+  background: 'rgba(var(--fg),.025)', border: '1px solid rgba(var(--fg),.07)',
   borderRadius: 14, padding: '16px 18px',
 };
 
@@ -126,7 +126,7 @@ export function CompoundGrowthSim() {
 
   return (
     <div style={{ animation: 'simFadeUp .3s ease' }}>
-      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(255,255,255,.5)', lineHeight: 1.6, fontFamily: FONT }}>
+      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(var(--fg),.5)', lineHeight: 1.6, fontFamily: FONT }}>
         The single most powerful force in investing. Drag the sliders and watch how small, consistent
         contributions snowball over time — the <span style={{ color: GREEN, fontWeight: 700 }}>green area</span> is
         what your money <em>earns on its own</em>.
@@ -141,11 +141,11 @@ export function CompoundGrowthSim() {
         </defs>
         {/* gridlines */}
         {[0.25, 0.5, 0.75].map(g => (
-          <line key={g} x1={0} y1={H * g} x2={W} y2={H * g} stroke="rgba(255,255,255,.05)" strokeWidth={1} />
+          <line key={g} x1={0} y1={H * g} x2={W} y2={H * g} stroke="rgba(var(--fg),.05)" strokeWidth={1} />
         ))}
         <path d={areaPath} fill="url(#cgGrad)" style={{ transition: 'd .4s ease' }} />
         {/* contributions line (what you put in) */}
-        <polyline points={contribPts} fill="none" stroke="rgba(255,255,255,.35)" strokeWidth={1.5} strokeDasharray="4 3" />
+        <polyline points={contribPts} fill="none" stroke="rgba(var(--fg),.35)" strokeWidth={1.5} strokeDasharray="4 3" />
         {/* balance line */}
         <polyline
           key={`${initial}-${monthly}-${rate}-${years}`}
@@ -156,7 +156,7 @@ export function CompoundGrowthSim() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
         <div style={{ ...cardBox, padding: '10px 12px', textAlign: 'center' }}>
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>You put in</div>
+          <div style={{ fontSize: 9, color: 'rgba(var(--fg),.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>You put in</div>
           <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', fontFamily: MONO, marginTop: 3 }}><CountUp value={final.contributed} /></div>
         </div>
         <div style={{ ...cardBox, padding: '10px 12px', textAlign: 'center', borderColor: 'rgba(0,230,118,.25)', background: 'rgba(0,230,118,.06)' }}>
@@ -164,7 +164,7 @@ export function CompoundGrowthSim() {
           <div style={{ fontSize: 14, fontWeight: 800, color: GREEN, fontFamily: MONO, marginTop: 3 }}><CountUp value={growth} /></div>
         </div>
         <div style={{ ...cardBox, padding: '10px 12px', textAlign: 'center' }}>
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>Final value</div>
+          <div style={{ fontSize: 9, color: 'rgba(var(--fg),.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>Final value</div>
           <div style={{ fontSize: 14, fontWeight: 800, color: BLUE, fontFamily: MONO, marginTop: 3 }}><CountUp value={final.balance} /></div>
         </div>
       </div>
@@ -175,7 +175,7 @@ export function CompoundGrowthSim() {
       <Slider label="Years invested" value={years} min={1} max={40} step={1} onChange={setYears} fmt={v => `${v} yr`} color={GREEN} />
 
       <div style={{ marginTop: 4, padding: '10px 12px', borderRadius: 10, background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.18)' }}>
-        <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,.6)', fontFamily: FONT, lineHeight: 1.6 }}>
+        <span style={{ fontSize: 11.5, color: 'rgba(var(--fg),.6)', fontFamily: FONT, lineHeight: 1.6 }}>
           💡 At these settings, <strong style={{ color: GREEN }}>{Math.round((growth / final.balance) * 100)}%</strong> of your
           final wealth came from <strong>growth</strong>, not from money you saved. That's compounding — and it gets
           dramatically bigger the longer you stay invested.
@@ -209,7 +209,7 @@ export function CandlestickSim() {
 
   return (
     <div style={{ animation: 'simFadeUp .3s ease' }}>
-      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(255,255,255,.5)', lineHeight: 1.6, fontFamily: FONT }}>
+      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(var(--fg),.5)', lineHeight: 1.6, fontFamily: FONT }}>
         Every candle tells a story of one time period. Drag the four prices and watch the candle rebuild itself.
         A <span style={{ color: GREEN, fontWeight: 700 }}>green</span> body means it closed higher than it opened;{' '}
         <span style={{ color: RED, fontWeight: 700 }}>red</span> means it fell.
@@ -225,10 +225,10 @@ export function CandlestickSim() {
           <rect x={cx - 26} y={bodyTop} width={52} height={bodyH} rx={3} fill={color} fillOpacity={bull ? 0.85 : 0.85}
             style={{ transition: 'y .15s, height .15s' }} />
           {/* labels */}
-          <line x1={cx + 34} y1={yOf(hi)} x2={cx + 70} y2={yOf(hi)} stroke="rgba(255,255,255,.2)" strokeWidth={1} strokeDasharray="2 2" />
-          <text x={cx + 74} y={yOf(hi) + 3} fill="rgba(255,255,255,.5)" fontSize={9} fontFamily={MONO}>High</text>
-          <line x1={cx + 34} y1={yOf(lo)} x2={cx + 70} y2={yOf(lo)} stroke="rgba(255,255,255,.2)" strokeWidth={1} strokeDasharray="2 2" />
-          <text x={cx + 74} y={yOf(lo) + 3} fill="rgba(255,255,255,.5)" fontSize={9} fontFamily={MONO}>Low</text>
+          <line x1={cx + 34} y1={yOf(hi)} x2={cx + 70} y2={yOf(hi)} stroke="rgba(var(--fg),.2)" strokeWidth={1} strokeDasharray="2 2" />
+          <text x={cx + 74} y={yOf(hi) + 3} fill="rgba(var(--fg),.5)" fontSize={9} fontFamily={MONO}>High</text>
+          <line x1={cx + 34} y1={yOf(lo)} x2={cx + 70} y2={yOf(lo)} stroke="rgba(var(--fg),.2)" strokeWidth={1} strokeDasharray="2 2" />
+          <text x={cx + 74} y={yOf(lo) + 3} fill="rgba(var(--fg),.5)" fontSize={9} fontFamily={MONO}>Low</text>
           <text x={cx - 90} y={yOf(open) + 3} fill={GREEN} fontSize={9} fontFamily={MONO}>Open</text>
           <text x={cx - 92} y={yOf(close) + 3} fill={BLUE} fontSize={9} fontFamily={MONO}>Close</text>
         </svg>
@@ -242,7 +242,7 @@ export function CandlestickSim() {
       </div>
 
       <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 10, background: `${color}10`, border: `1px solid ${color}30` }}>
-        <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,.65)', fontFamily: FONT, lineHeight: 1.6 }}>
+        <span style={{ fontSize: 11.5, color: 'rgba(var(--fg),.65)', fontFamily: FONT, lineHeight: 1.6 }}>
           {bull
             ? <>📈 <strong style={{ color: GREEN }}>Bullish candle.</strong> Buyers won this period — it closed J${close - open} above the open. The body is the open→close range; the thin wicks show how far price spiked before settling.</>
             : <>📉 <strong style={{ color: RED }}>Bearish candle.</strong> Sellers won — it closed J${open - close} below the open. Long wicks mean price tried to move but got rejected.</>}
@@ -266,7 +266,7 @@ export function DiversificationSim() {
 
   return (
     <div style={{ animation: 'simFadeUp .3s ease' }}>
-      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(255,255,255,.5)', lineHeight: 1.6, fontFamily: FONT }}>
+      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(var(--fg),.5)', lineHeight: 1.6, fontFamily: FONT }}>
         "Don't put all your eggs in one basket." Add more stocks and watch your portfolio's wild swings
         calm down. There's a floor though — <span style={{ color: BLUE, fontWeight: 700 }}>market risk</span> can
         never be fully removed.
@@ -288,10 +288,10 @@ export function DiversificationSim() {
 
       {/* risk meter */}
       <div style={{ marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 11.5, fontWeight: 600, color: 'rgba(255,255,255,.55)', fontFamily: FONT }}>Portfolio volatility (risk)</span>
+        <span style={{ fontSize: 11.5, fontWeight: 600, color: 'rgba(var(--fg),.55)', fontFamily: FONT }}>Portfolio volatility (risk)</span>
         <span style={{ fontSize: 13, fontWeight: 800, color: riskColor, fontFamily: MONO }}>{totalRisk.toFixed(1)}%</span>
       </div>
-      <div style={{ position: 'relative', height: 14, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden', marginBottom: 6 }}>
+      <div style={{ position: 'relative', height: 14, borderRadius: 99, background: 'rgba(var(--fg),.06)', overflow: 'hidden', marginBottom: 6 }}>
         <div style={{ position: 'absolute', inset: 0, width: `${riskPct}%`, background: riskColor, borderRadius: 99, transition: 'width .35s cubic-bezier(.4,0,.2,1), background .35s' }} />
         {/* market-risk floor marker */}
         <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${(marketRisk / 50) * 100}%`, width: 2, background: BLUE }} />
@@ -303,7 +303,7 @@ export function DiversificationSim() {
       <Slider label="Number of stocks" value={holdings} min={1} max={20} step={1} onChange={setHoldings} fmt={v => `${v} stock${v > 1 ? 's' : ''}`} />
 
       <div style={{ marginTop: 4, padding: '10px 12px', borderRadius: 10, background: 'rgba(64,196,255,.06)', border: '1px solid rgba(64,196,255,.18)' }}>
-        <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,.6)', fontFamily: FONT, lineHeight: 1.6 }}>
+        <span style={{ fontSize: 11.5, color: 'rgba(var(--fg),.6)', fontFamily: FONT, lineHeight: 1.6 }}>
           {holdings === 1
             ? '⚠️ One stock = maximum risk. If that single company stumbles, your whole portfolio does too.'
             : holdings < 8
@@ -334,7 +334,7 @@ export default function InteractiveSimulators() {
       <h2 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: 8, fontFamily: FONT }}>
         <span style={{ fontSize: 16 }}>🎮</span> Interactive Simulators
       </h2>
-      <p style={{ margin: '0 0 14px', fontSize: 12, color: 'rgba(255,255,255,.4)', fontFamily: FONT }}>
+      <p style={{ margin: '0 0 14px', fontSize: 12, color: 'rgba(var(--fg),.4)', fontFamily: FONT }}>
         Learn by doing — drag, tweak, and watch. No jargon walls.
       </p>
 
@@ -347,9 +347,9 @@ export default function InteractiveSimulators() {
               display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0,
               padding: '9px 14px', borderRadius: 11, cursor: 'pointer', fontFamily: FONT,
               fontSize: 12.5, fontWeight: 700,
-              background: on ? 'rgba(0,230,118,.12)' : 'rgba(255,255,255,.03)',
-              border: `1px solid ${on ? 'rgba(0,230,118,.35)' : 'rgba(255,255,255,.08)'}`,
-              color: on ? GREEN : 'rgba(255,255,255,.55)',
+              background: on ? 'rgba(0,230,118,.12)' : 'rgba(var(--fg),.03)',
+              border: `1px solid ${on ? 'rgba(0,230,118,.35)' : 'rgba(var(--fg),.08)'}`,
+              color: on ? GREEN : 'rgba(var(--fg),.55)',
               transition: 'all .15s',
             }}>
               <span style={{ fontSize: 14 }}>{s.icon}</span>{s.label}
@@ -386,23 +386,23 @@ export function MovingAverageSim() {
   return (
     <div style={{ animation: 'simFadeUp .3s ease' }}>
       <SimStyles />
-      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(255,255,255,.5)', lineHeight: 1.6, fontFamily: FONT }}>
+      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(var(--fg),.5)', lineHeight: 1.6, fontFamily: FONT }}>
         A moving average smooths out the noise to reveal the <em>trend</em>. Drag the window: a short average
         hugs the price and reacts fast; a long one is smoother but slower.
       </p>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 150, marginBottom: 14, overflow: 'visible' }}>
-        {[0.25, 0.5, 0.75].map(g => <line key={g} x1={0} y1={H * g} x2={W} y2={H * g} stroke="rgba(255,255,255,.05)" strokeWidth={1} />)}
-        <polyline points={pricePts} fill="none" stroke="rgba(255,255,255,.4)" strokeWidth={1.5} />
+        {[0.25, 0.5, 0.75].map(g => <line key={g} x1={0} y1={H * g} x2={W} y2={H * g} stroke="rgba(var(--fg),.05)" strokeWidth={1} />)}
+        <polyline points={pricePts} fill="none" stroke="rgba(var(--fg),.4)" strokeWidth={1.5} />
         <polyline points={maPts} fill="none" stroke={GOLD} strokeWidth={2.5} strokeLinejoin="round" style={{ transition: 'all .25s' }} />
         <circle cx={xs(prices.length - 1)} cy={ys(prices[prices.length - 1])} r={4} fill={bull ? GREEN : RED} />
       </svg>
       <div style={{ display: 'flex', gap: 14, marginBottom: 12, fontSize: 10.5, fontFamily: FONT }}>
-        <span style={{ color: 'rgba(255,255,255,.5)' }}>▬ Price</span>
+        <span style={{ color: 'rgba(var(--fg),.5)' }}>▬ Price</span>
         <span style={{ color: GOLD }}>▬ {win}-period MA</span>
       </div>
       <Slider label="Moving-average window" value={win} min={2} max={10} step={1} onChange={setWin} fmt={v => `${v} periods`} color={GOLD} />
       <div style={{ marginTop: 4, padding: '10px 12px', borderRadius: 10, background: `${bull ? GREEN : RED}10`, border: `1px solid ${bull ? GREEN : RED}30` }}>
-        <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,.65)', fontFamily: FONT, lineHeight: 1.6 }}>
+        <span style={{ fontSize: 11.5, color: 'rgba(var(--fg),.65)', fontFamily: FONT, lineHeight: 1.6 }}>
           {bull
             ? '📈 Price is ABOVE its moving average — generally read as an uptrend. A cross back below is a common exit signal.'
             : '📉 Price is BELOW its moving average — generally read as weakness or a downtrend.'}
@@ -420,15 +420,15 @@ export function RSISim() {
   return (
     <div style={{ animation: 'simFadeUp .3s ease' }}>
       <SimStyles />
-      <p style={{ margin: '0 0 16px', fontSize: 12.5, color: 'rgba(255,255,255,.5)', lineHeight: 1.6, fontFamily: FONT }}>
+      <p style={{ margin: '0 0 16px', fontSize: 12.5, color: 'rgba(var(--fg),.5)', lineHeight: 1.6, fontFamily: FONT }}>
         RSI measures momentum on a 0–100 scale. Drag it and watch the zone change — above 70 is often
         “overbought” (may pull back), below 30 is “oversold” (may bounce).
       </p>
       <div style={{ position: 'relative', height: 22, borderRadius: 99, overflow: 'hidden', marginBottom: 10,
         background: 'linear-gradient(90deg, #00e676 0%, #00e676 30%, #2a2f2a 30%, #2a2f2a 70%, #ff5252 70%, #ff5252 100%)' }}>
-        <div style={{ position: 'absolute', top: -3, bottom: -3, left: `calc(${rsi}% - 2px)`, width: 4, background: '#fff', borderRadius: 2, boxShadow: '0 0 8px rgba(255,255,255,.6)', transition: 'left .15s' }} />
+        <div style={{ position: 'absolute', top: -3, bottom: -3, left: `calc(${rsi}% - 2px)`, width: 4, background: '#fff', borderRadius: 2, boxShadow: '0 0 8px rgba(var(--fg),.6)', transition: 'left .15s' }} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: 'rgba(255,255,255,.4)', fontFamily: MONO, marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: 'rgba(var(--fg),.4)', fontFamily: MONO, marginBottom: 16 }}>
         <span style={{ color: GREEN }}>0 · Oversold</span><span>50</span><span style={{ color: RED }}>Overbought · 100</span>
       </div>
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
@@ -437,7 +437,7 @@ export function RSISim() {
       </div>
       <Slider label="RSI value" value={rsi} min={0} max={100} step={1} onChange={setRsi} fmt={v => `${v}`} color={color} />
       <div style={{ marginTop: 4, padding: '10px 12px', borderRadius: 10, background: `${color}10`, border: `1px solid ${color}30` }}>
-        <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,.65)', fontFamily: FONT, lineHeight: 1.6 }}>
+        <span style={{ fontSize: 11.5, color: 'rgba(var(--fg),.65)', fontFamily: FONT, lineHeight: 1.6 }}>
           {rsi >= 70 ? '⚠️ Overbought: risen fast, may be due for a pause. Not an automatic “sell” — strong stocks can stay overbought.'
             : rsi <= 30 ? '💎 Oversold: selling may be overdone and a bounce is possible. Confirm with price action first.'
             : '⚖️ Neutral: no momentum extreme. RSI is most useful near the 30 and 70 edges.'}
@@ -456,11 +456,11 @@ export function PEComparisonSim() {
   const verdict = eps <= 0 ? 'No earnings' : pe < sectorAvg * 0.8 ? 'Cheap vs sector' : pe > sectorAvg * 1.2 ? 'Expensive vs sector' : 'Fairly valued';
   const vColor = eps <= 0 ? RED : pe < sectorAvg * 0.8 ? GREEN : pe > sectorAvg * 1.2 ? RED : GOLD;
   const barMax = 30;
-  const bars: [string, number, string][] = [['This stock', Math.min(pe, barMax), vColor], ['Sector avg', sectorAvg, 'rgba(255,255,255,.4)']];
+  const bars: [string, number, string][] = [['This stock', Math.min(pe, barMax), vColor], ['Sector avg', sectorAvg, 'rgba(var(--fg),.4)']];
   return (
     <div style={{ animation: 'simFadeUp .3s ease' }}>
       <SimStyles />
-      <p style={{ margin: '0 0 16px', fontSize: 12.5, color: 'rgba(255,255,255,.5)', lineHeight: 1.6, fontFamily: FONT }}>
+      <p style={{ margin: '0 0 16px', fontSize: 12.5, color: 'rgba(var(--fg),.5)', lineHeight: 1.6, fontFamily: FONT }}>
         The P/E ratio = price ÷ earnings per share — how many dollars you pay for J$1 of annual profit.
         Set a price and EPS, then compare to a typical sector average of {sectorAvg}×.
       </p>
@@ -470,10 +470,10 @@ export function PEComparisonSim() {
       </div>
       {bars.map(([label, val, c]) => (
         <div key={label} style={{ marginBottom: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: 'rgba(255,255,255,.5)', marginBottom: 3, fontFamily: FONT }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: 'rgba(var(--fg),.5)', marginBottom: 3, fontFamily: FONT }}>
             <span>{label}</span><span style={{ fontFamily: MONO }}>{val.toFixed(1)}×</span>
           </div>
-          <div style={{ height: 12, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+          <div style={{ height: 12, borderRadius: 99, background: 'rgba(var(--fg),.06)', overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${(val / barMax) * 100}%`, background: c, borderRadius: 99, transition: 'width .3s' }} />
           </div>
         </div>
@@ -483,7 +483,7 @@ export function PEComparisonSim() {
         <Slider label="Earnings per share (annual)" value={eps} min={0} max={25} step={0.5} onChange={setEps} fmt={v => `J$${v}`} color={GREEN} />
       </div>
       <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(64,196,255,.06)', border: '1px solid rgba(64,196,255,.18)' }}>
-        <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,.6)', fontFamily: FONT, lineHeight: 1.6 }}>
+        <span style={{ fontSize: 11.5, color: 'rgba(var(--fg),.6)', fontFamily: FONT, lineHeight: 1.6 }}>
           💡 A high P/E isn’t automatically “bad” — it can mean investors expect fast growth. Always compare within the same sector.
         </span>
       </div>
@@ -507,14 +507,14 @@ export function RiskProfileSim() {
   return (
     <div style={{ animation: 'simFadeUp .3s ease' }}>
       <SimStyles />
-      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(255,255,255,.5)', lineHeight: 1.6, fontFamily: FONT }}>
+      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(var(--fg),.5)', lineHeight: 1.6, fontFamily: FONT }}>
         A classic rule of thumb: hold roughly <strong style={{ color: '#fff' }}>(110 − your age)%</strong> in
         stocks, with the rest in safer bonds and cash. Drag your age and watch the mix shift from
         growth-focused to safety-focused.
       </p>
       <div style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
         <svg viewBox="0 0 140 140" style={{ width: 130, height: 130, flexShrink: 0 }}>
-          <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth={16} />
+          <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(var(--fg),.06)" strokeWidth={16} />
           {segs.map(s => {
             const len = (s.val / 100) * C;
             const el = (
@@ -526,13 +526,13 @@ export function RiskProfileSim() {
             return el;
           })}
           <text x={70} y={66} textAnchor="middle" fill="#fff" fontSize={18} fontWeight={800} fontFamily={MONO}>{stocks}%</text>
-          <text x={70} y={82} textAnchor="middle" fill="rgba(255,255,255,.4)" fontSize={8} fontFamily={FONT}>in stocks</text>
+          <text x={70} y={82} textAnchor="middle" fill="rgba(var(--fg),.4)" fontSize={8} fontFamily={FONT}>in stocks</text>
         </svg>
         <div style={{ flex: 1, minWidth: 140 }}>
           {segs.map(s => (
             <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span style={{ width: 10, height: 10, borderRadius: 3, background: s.color, flexShrink: 0 }} />
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', fontFamily: FONT, flex: 1 }}>{s.label}</span>
+              <span style={{ fontSize: 12, color: 'rgba(var(--fg),.6)', fontFamily: FONT, flex: 1 }}>{s.label}</span>
               <span style={{ fontSize: 13, fontWeight: 800, color: s.color, fontFamily: MONO }}>{s.val}%</span>
             </div>
           ))}
@@ -540,7 +540,7 @@ export function RiskProfileSim() {
       </div>
       <Slider label="Your age" value={age} min={18} max={70} step={1} onChange={setAge} fmt={v => `${v} yrs`} color={GREEN} />
       <div style={{ marginTop: 4, padding: '10px 12px', borderRadius: 10, background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.18)' }}>
-        <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,.6)', fontFamily: FONT, lineHeight: 1.6 }}>
+        <span style={{ fontSize: 11.5, color: 'rgba(var(--fg),.6)', fontFamily: FONT, lineHeight: 1.6 }}>
           {age <= 30 ? '🚀 Young = long runway. You can ride out crashes, so a higher stock weighting captures more growth.'
             : age <= 50 ? '⚖️ Mid-career: still growth-tilted, but bonds start cushioning the ride.'
             : '🛡️ Closer to needing the money: safety matters more, so the mix leans to bonds and cash. Adjust to your own comfort.'}

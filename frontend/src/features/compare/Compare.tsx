@@ -132,7 +132,7 @@ export default function Compare() {
                     value={inputs[idx]}
                     onChange={e => handleInput(idx, e.target.value)}
                     placeholder="SYMBOL"
-                    style={{ width: 130, height: 38, padding: '0 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,.05)', border: `1px solid ${sym && stocks.some(s => s.symbol === sym) ? 'rgba(0,230,118,.4)' : 'var(--color-border)'}`, color: 'var(--color-text)', outline: 'none', letterSpacing: '.05em' }}
+                    style={{ width: 130, height: 38, padding: '0 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'rgba(var(--fg),.05)', border: `1px solid ${sym && stocks.some(s => s.symbol === sym) ? 'rgba(0,230,118,.4)' : 'var(--color-border)'}`, color: 'var(--color-text)', outline: 'none', letterSpacing: '.05em' }}
                     onFocus={e => (e.target as HTMLInputElement).style.borderColor = 'rgba(0,230,118,.4)'}
                     onBlur={() => { setTimeout(() => {}, 200); }}
                   />
@@ -162,7 +162,7 @@ export default function Compare() {
           ))}
           {symbols.length < 4 && (
             <button onClick={addSlot}
-              style={{ height: 38, padding: '0 16px', borderRadius: 9, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-end' }}>
+              style={{ height: 38, padding: '0 16px', borderRadius: 9, fontSize: 11, fontWeight: 600, background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-end' }}>
               <i className="fa-solid fa-plus" style={{ fontSize: 9 }} /> Add Stock
             </button>
           )}
@@ -180,14 +180,14 @@ export default function Compare() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+                  <tr style={{ borderBottom: '1px solid rgba(var(--fg),.06)' }}>
                     <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', color: 'var(--color-muted)', minWidth: 130 }}>Metric</th>
                     {displayStocks.map((s) => {
                       const pos = (s?.pctChange ?? 0) > 0, neg = (s?.pctChange ?? 0) < 0;
                       return (
                         <th key={s.symbol} style={{ padding: '14px 20px', textAlign: 'center', minWidth: 160 }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(255,255,255,.05)' }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(var(--fg),.05)' }}>
                               <span style={{ fontSize: 9, fontWeight: 900, color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)' }}>{s.symbol?.slice(0,3)}</span>
                             </div>
                             <span style={{ fontSize: 13, fontWeight: 900, fontFamily: 'var(--font-mono)', color: 'var(--color-text)' }}>{s.symbol}</span>
@@ -200,7 +200,7 @@ export default function Compare() {
                 </thead>
                 <tbody>
                   {METRICS.map((metric, mi) => (
-                    <tr key={metric.key} style={{ borderBottom: '1px solid rgba(255,255,255,.025)', background: mi % 2 === 0 ? 'rgba(255,255,255,.01)' : 'transparent' }}>
+                    <tr key={metric.key} style={{ borderBottom: '1px solid rgba(var(--fg),.025)', background: mi % 2 === 0 ? 'rgba(var(--fg),.01)' : 'transparent' }}>
                       <td style={{ padding: '11px 20px', fontSize: 11, fontWeight: 600, color: 'var(--color-muted)', whiteSpace: 'nowrap' }}>{metric.label}</td>
                       {displayStocks.map((s) => {
                         const val = (s as unknown as Record<string, unknown>)[metric.key];

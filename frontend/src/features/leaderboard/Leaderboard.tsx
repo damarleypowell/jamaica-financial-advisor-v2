@@ -96,7 +96,7 @@ export default function Leaderboard() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+              <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                 {['Rank', 'Trader', 'Return', 'Portfolio Value', 'Win Rate', 'Trades', 'Tier'].map((h, i) => (
                   <th key={h} style={{ padding: '11px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', textAlign: i <= 1 ? 'left' : 'right' }}>{h}</th>
                 ))}
@@ -107,8 +107,8 @@ export default function Leaderboard() {
                 const c = tierColor(e.tier);
                 const isMe = user && user.name.split(' ')[0] === e.name.split(' ')[0];
                 return (
-                  <tr key={e.rank} style={{ borderBottom: '1px solid rgba(255,255,255,.025)', background: isMe ? 'rgba(0,230,118,.04)' : '' }}
-                    onMouseEnter={el => (el.currentTarget.style.background = 'rgba(255,255,255,.025)')}
+                  <tr key={e.rank} style={{ borderBottom: '1px solid rgba(var(--fg),.025)', background: isMe ? 'rgba(0,230,118,.04)' : '' }}
+                    onMouseEnter={el => (el.currentTarget.style.background = 'rgba(var(--fg),.025)')}
                     onMouseLeave={el => (el.currentTarget.style.background = isMe ? 'rgba(0,230,118,.04)' : '')}>
                     <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-muted)' }}>#{e.rank}</td>
                     <td style={{ padding: '12px 16px' }}>

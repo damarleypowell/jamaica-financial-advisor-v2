@@ -72,7 +72,7 @@ export function ConfettiOverlay({ trigger, message, subMessage, onComplete }: Co
       {message && (
         <div style={{ textAlign: 'center', marginTop: 8 }}>
           <p style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>{message}</p>
-          {subMessage && <p style={{ margin: 0, fontSize: 14, color: 'rgba(255,255,255,.6)' }}>{subMessage}</p>}
+          {subMessage && <p style={{ margin: 0, fontSize: 14, color: 'rgba(var(--fg),.6)' }}>{subMessage}</p>}
         </div>
       )}
     </div>

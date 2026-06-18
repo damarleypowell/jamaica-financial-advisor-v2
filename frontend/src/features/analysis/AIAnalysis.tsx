@@ -104,7 +104,7 @@ export default function AIAnalysis() {
               <button key={sym} onClick={() => handleChip(sym)} disabled={mutation.isPending} style={{
                 padding: '4px 11px', borderRadius: 99, fontSize: 11, fontWeight: 700,
                 fontFamily: 'var(--font-mono)', cursor: mutation.isPending ? 'not-allowed' : 'pointer', transition: 'all 140ms',
-                background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)',
+                background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)',
                 color: 'var(--color-text2)', opacity: mutation.isPending ? .5 : 1,
               }}
                 onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = activeLevel.color + '55'; el.style.color = activeLevel.color; }}
@@ -129,7 +129,7 @@ export default function AIAnalysis() {
             style={{
               width: '100%', padding: '14px 16px', borderRadius: 12, fontSize: 13,
               lineHeight: 1.6, resize: 'none', outline: 'none',
-              background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)',
+              background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)',
               color: 'var(--color-text)', fontFamily: 'var(--font-sans)',
               transition: 'border-color 180ms', boxSizing: 'border-box',
               opacity: mutation.isPending ? .55 : 1, cursor: mutation.isPending ? 'not-allowed' : 'text',
@@ -139,8 +139,8 @@ export default function AIAnalysis() {
           />
           <button onClick={handleAnalyze} disabled={!query.trim() || mutation.isPending} style={{
             width: '100%', marginTop: 10, height: 48, borderRadius: 12, border: 'none', cursor: query.trim() ? 'pointer' : 'not-allowed',
-            background: query.trim() ? `linear-gradient(135deg, ${activeLevel.color}, ${activeLevel.color}bb)` : 'rgba(255,255,255,.05)',
-            color: query.trim() ? '#04060d' : 'var(--color-muted)', fontSize: 14, fontWeight: 800,
+            background: query.trim() ? `linear-gradient(135deg, ${activeLevel.color}, ${activeLevel.color}bb)` : 'rgba(var(--fg),.05)',
+            color: query.trim() ? 'var(--color-bg)' : 'var(--color-muted)', fontSize: 14, fontWeight: 800,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             boxShadow: query.trim() ? `0 4px 20px ${activeLevel.color}33` : 'none',
             transition: 'all 200ms', opacity: mutation.isPending ? .7 : 1,
@@ -201,7 +201,7 @@ export default function AIAnalysis() {
                 ? "You've reached your AI usage limit. Try again shortly or upgrade your plan."
                 : (mutation.error as ApiError)?.message || 'Something went wrong reaching the AI. Please try again.'}
             </p>
-            <button onClick={handleAnalyze} style={{ marginTop: 12, padding: '7px 16px', borderRadius: 9, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>
+            <button onClick={handleAnalyze} style={{ marginTop: 12, padding: '7px 16px', borderRadius: 9, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>
               <i className="fa-solid fa-rotate-right" style={{ marginRight: 6, fontSize: 11 }} /> Retry
             </button>
           </div>
@@ -223,7 +223,7 @@ export default function AIAnalysis() {
             <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 11px', borderRadius: 99, background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.28)', color: '#00e676', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
               <i className="fa-solid fa-circle-check" style={{ fontSize: 11 }} /> Complete
             </span>
-            <button onClick={() => mutation.reset()} style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer', flexShrink: 0 }}>
+            <button onClick={() => mutation.reset()} style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer', flexShrink: 0 }}>
               New query
             </button>
           </div>

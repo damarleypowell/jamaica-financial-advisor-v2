@@ -17,7 +17,7 @@ function Donut({ slices }: { slices: { label: string; value: number; color: stri
   const R = 54, C = 2 * Math.PI * R;
   return (
     <svg viewBox="0 0 140 140" style={{ width: 140, height: 140, flexShrink: 0 }}>
-      <circle cx="70" cy="70" r={R} fill="none" stroke="rgba(255,255,255,.05)" strokeWidth="16" />
+      <circle cx="70" cy="70" r={R} fill="none" stroke="rgba(var(--fg),.05)" strokeWidth="16" />
       {slices.map((s, i) => {
         const frac = s.value / total;
         const dash = frac * C;
@@ -29,7 +29,7 @@ function Donut({ slices }: { slices: { label: string; value: number; color: stri
         acc += frac;
         return el;
       })}
-      <text x="70" y="66" textAnchor="middle" fontSize="11" fill="rgba(255,255,255,.4)" fontFamily="'JetBrains Mono'">HOLDINGS</text>
+      <text x="70" y="66" textAnchor="middle" fontSize="11" fill="rgba(var(--fg),.4)" fontFamily="'JetBrains Mono'">HOLDINGS</text>
       <text x="70" y="84" textAnchor="middle" fontSize="20" fontWeight="800" fill="#fff" fontFamily="'JetBrains Mono'">{slices.length}</text>
     </svg>
   );
@@ -133,7 +133,7 @@ export default function Holdings() {
           <strong style={{ color: '#fff' }}>Read-only.</strong> Enter holdings manually — we value and visualise them, but never connect to or move money in your brokerage.
         </span>
         <button disabled title="Coming soon — auto-sync from US brokerages"
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 9, fontSize: 11.5, fontWeight: 700, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'not-allowed' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 9, fontSize: 11.5, fontWeight: 700, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'not-allowed' }}>
           <i className="fa-solid fa-link" style={{ fontSize: 10 }} /> Connect US brokerage · soon
         </button>
       </div>
@@ -174,13 +174,13 @@ export default function Holdings() {
             <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', marginBottom: 6 }}>Stock</label>
             <input value={symbol || symSearch} onChange={e => { setSymSearch(e.target.value.toUpperCase()); setSymbol(''); setShowDrop(true); }} onFocus={() => setShowDrop(true)} onBlur={() => setTimeout(() => setShowDrop(false), 150)}
               placeholder="Search symbol or company…"
-              style={{ width: '100%', height: 40, padding: '0 14px', borderRadius: 10, background: 'rgba(255,255,255,.04)', border: `1px solid ${symbol ? 'rgba(0,230,118,.3)' : 'var(--color-border)'}`, color: 'var(--color-text)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', height: 40, padding: '0 14px', borderRadius: 10, background: 'rgba(var(--fg),.04)', border: `1px solid ${symbol ? 'rgba(0,230,118,.3)' : 'var(--color-border)'}`, color: 'var(--color-text)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
             {showDrop && !symbol && filtered.length > 0 && (
-              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4, background: 'var(--color-bg3)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 11, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,.5)' }}>
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4, background: 'var(--color-bg3)', border: '1px solid rgba(var(--fg),.1)', borderRadius: 11, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,.5)' }}>
                 {filtered.map(s => (
                   <button key={s.symbol} onMouseDown={() => { setSymbol(s.symbol); setSymSearch(''); setAvgCost(String(s.price || '')); setShowDrop(false); }}
                     style={{ width: '100%', padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.05)')}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.05)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                     <span><span style={{ fontSize: 12, fontWeight: 800, fontFamily: MONO, color: '#fff', marginRight: 8 }}>{s.symbol}</span><span style={{ fontSize: 11, color: 'var(--color-muted)' }}>{s.name}</span></span>
                     <span style={{ fontSize: 11, fontFamily: MONO, color: 'var(--color-text2)' }}>J${f2(s.price)}</span>
@@ -193,21 +193,21 @@ export default function Holdings() {
             <div>
               <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', marginBottom: 6 }}>Shares</label>
               <input value={shares} onChange={e => setShares(e.target.value)} type="number" min="0" placeholder="e.g. 100"
-                style={{ width: '100%', height: 40, padding: '0 14px', borderRadius: 10, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontSize: 13, fontFamily: MONO, outline: 'none', boxSizing: 'border-box' }} />
+                style={{ width: '100%', height: 40, padding: '0 14px', borderRadius: 10, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontSize: 13, fontFamily: MONO, outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', marginBottom: 6 }}>Avg cost (J$)</label>
               <input value={avgCost} onChange={e => setAvgCost(e.target.value)} type="number" min="0" step="0.01" placeholder="0.00"
-                style={{ width: '100%', height: 40, padding: '0 14px', borderRadius: 10, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontSize: 13, fontFamily: MONO, outline: 'none', boxSizing: 'border-box' }} />
+                style={{ width: '100%', height: 40, padding: '0 14px', borderRadius: 10, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontSize: 13, fontFamily: MONO, outline: 'none', boxSizing: 'border-box' }} />
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={addHolding} disabled={saveMut.isPending}
-              style={{ flex: 1, height: 42, borderRadius: 11, background: '#00e676', color: '#04060d', fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer', opacity: saveMut.isPending ? .6 : 1 }}>
+              style={{ flex: 1, height: 42, borderRadius: 11, background: '#00e676', color: 'var(--color-bg)', fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer', opacity: saveMut.isPending ? .6 : 1 }}>
               {saveMut.isPending ? 'Saving…' : 'Add holding'}
             </button>
             <button onClick={() => { setAdding(false); setSymbol(''); setSymSearch(''); setShares(''); setAvgCost(''); }}
-              style={{ height: 42, padding: '0 18px', borderRadius: 11, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              style={{ height: 42, padding: '0 18px', borderRadius: 11, background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
           </div>
         </div>
       )}
@@ -237,7 +237,7 @@ export default function Holdings() {
                 <p style={{ margin: 0, fontSize: 11, fontWeight: 700, fontFamily: MONO, color: r.pnl >= 0 ? '#00e676' : '#ff5252' }}>{r.pnl >= 0 ? '+' : ''}{r.pnlPct.toFixed(2)}%</p>
               </div>
               <button onClick={() => removeHolding(r.symbol!)} title="Remove"
-                style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer', flexShrink: 0 }}>
+                style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer', flexShrink: 0 }}>
                 <i className="fa-solid fa-xmark" style={{ fontSize: 11 }} />
               </button>
             </div>

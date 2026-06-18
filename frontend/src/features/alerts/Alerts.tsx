@@ -319,7 +319,7 @@ export default function Alerts() {
                   style={{
                     width: '100%', boxSizing: 'border-box',
                     paddingLeft: 34, paddingRight: symbol ? 32 : 12, paddingTop: 10, paddingBottom: 10,
-                    background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)',
+                    background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)',
                     borderRadius: 10, fontSize: 13, color: 'var(--color-text)', outline: 'none',
                     cursor: symbol ? 'default' : 'text',
                   }}
@@ -338,13 +338,13 @@ export default function Alerts() {
 
               {/* Dropdown */}
               {showDropdown && searchResults.length > 0 && !symbol && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'var(--color-bg3)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,.45)', zIndex: 60, overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'var(--color-bg3)', border: '1px solid rgba(var(--fg),.1)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,.45)', zIndex: 60, overflow: 'hidden' }}>
                   {searchResults.map(s => (
                     <button
                       key={s.symbol}
                       onMouseDown={() => { setSymbol(s.symbol); setSymbolSearch(s.symbol); setShowDropdown(false); }}
                       style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.05)')}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.05)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
                       <div style={{ width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,230,118,.08)', flexShrink: 0 }}>
@@ -370,7 +370,7 @@ export default function Alerts() {
             <select
               value={condition}
               onChange={e => setCondition(e.target.value as AlertCondition)}
-              style={{ width: '100%', padding: '10px 12px', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 13, color: 'var(--color-text)', outline: 'none', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none' }}
+              style={{ width: '100%', padding: '10px 12px', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 13, color: 'var(--color-text)', outline: 'none', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none' }}
             >
               {(Object.entries(CONDITION_LABELS) as [AlertCondition, string][]).map(([val, label]) => (
                 <option key={val} value={val} style={{ background: 'var(--color-bg3)' }}>{label}</option>
@@ -390,7 +390,7 @@ export default function Alerts() {
               value={targetPrice}
               onChange={e => { setTargetPrice(e.target.value); setFormError(''); }}
               placeholder={condition.includes('PERCENT') ? 'e.g. 5' : 'e.g. 120.00'}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 13, color: 'var(--color-text)', outline: 'none' }}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 13, color: 'var(--color-text)', outline: 'none' }}
               onFocus={e => (e.target.style.borderColor = 'rgba(0,230,118,.45)')}
               onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
             />
@@ -402,7 +402,7 @@ export default function Alerts() {
             disabled={createMut.isPending || atLimit || !symbol || !targetPrice}
             style={{
               padding: '10px 22px', borderRadius: 10, fontSize: 13, fontWeight: 700,
-              background: atLimit ? 'rgba(255,255,255,.06)' : 'var(--color-green)',
+              background: atLimit ? 'rgba(var(--fg),.06)' : 'var(--color-green)',
               color: atLimit ? 'var(--color-muted)' : 'var(--color-bg)',
               border: 'none', cursor: createMut.isPending || atLimit || !symbol || !targetPrice ? 'not-allowed' : 'pointer',
               opacity: createMut.isPending || !symbol || !targetPrice ? .5 : 1,

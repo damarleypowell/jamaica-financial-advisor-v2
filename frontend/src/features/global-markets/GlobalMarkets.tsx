@@ -58,7 +58,7 @@ export default function GlobalMarkets() {
               <span className="badge badge-red"><i className="fa-solid fa-arrow-down" style={{ fontSize: 7 }} />{losers}</span>
             </>
           )}
-          {updatedAt && <span style={{ fontSize: 10, color: 'var(--color-muted)', padding: '5px 10px', borderRadius: 8, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)' }}>Updated {updatedAt}</span>}
+          {updatedAt && <span style={{ fontSize: 10, color: 'var(--color-muted)', padding: '5px 10px', borderRadius: 8, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)' }}>Updated {updatedAt}</span>}
         </div>
       </div>
 
@@ -98,14 +98,14 @@ export default function GlobalMarkets() {
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border2)'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'}
                     >
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${pos ? '#00e676' : neg ? '#ff5252' : 'rgba(255,255,255,.1)'},transparent)` }} />
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${pos ? '#00e676' : neg ? '#ff5252' : 'rgba(var(--fg),.1)'},transparent)` }} />
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{idx.name}</p>
                           {idx.exchange && <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--color-muted)' }}>{idx.exchange}{idx.currency ? ` · ${idx.currency}` : ''}</p>}
                         </div>
                         {idx.pctChange != null && (
-                          <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 99, marginLeft: 8, flexShrink: 0, color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)', background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(255,255,255,.06)', border: `1px solid ${pos ? 'rgba(0,230,118,.2)' : neg ? 'rgba(255,82,82,.2)' : 'rgba(255,255,255,.08)'}` }}>
+                          <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 99, marginLeft: 8, flexShrink: 0, color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)', background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(var(--fg),.06)', border: `1px solid ${pos ? 'rgba(0,230,118,.2)' : neg ? 'rgba(255,82,82,.2)' : 'rgba(var(--fg),.08)'}` }}>
                             {pos ? '+' : ''}{idx.pctChange.toFixed(2)}%
                           </span>
                         )}

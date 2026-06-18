@@ -50,7 +50,7 @@ export function UpgradeNudge({ context, data, compact = false, requiredTier = 'C
         background: `${color}0f`, border: `1px solid ${color}25`,
       }}>
         <span style={{ fontSize: 11, color }}></span>
-        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)' }}>{headline}</span>
+        <span style={{ fontSize: 12, color: 'rgba(var(--fg),.7)' }}>{headline}</span>
         <button
           onClick={() => navigate('/subscription')}
           style={{ fontSize: 11, fontWeight: 700, color, background: 'none', border: 'none', cursor: 'pointer', padding: 0, whiteSpace: 'nowrap' }}
@@ -86,12 +86,12 @@ export function UpgradeNudge({ context, data, compact = false, requiredTier = 'C
 
       <div style={{ flex: 1 }}>
         <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: '#fff' }}>{headline}</p>
-        <p style={{ margin: '0 0 12px', fontSize: 12, color: 'rgba(255,255,255,.5)', lineHeight: 1.5 }}>{sub}</p>
+        <p style={{ margin: '0 0 12px', fontSize: 12, color: 'rgba(var(--fg),.5)', lineHeight: 1.5 }}>{sub}</p>
         <button
           onClick={() => navigate('/subscription')}
           style={{
             padding: '8px 18px', borderRadius: 10,
-            background: color, color: '#04060d',
+            background: color, color: 'var(--color-bg)',
             fontSize: 12, fontWeight: 800, border: 'none', cursor: 'pointer',
             boxShadow: `0 2px 12px ${color}35`,
           }}
@@ -102,7 +102,7 @@ export function UpgradeNudge({ context, data, compact = false, requiredTier = 'C
 
       <button
         onClick={() => setDismissed(true)}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,.25)', fontSize: 16, padding: 0, flexShrink: 0, lineHeight: 1 }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(var(--fg),.25)', fontSize: 16, padding: 0, flexShrink: 0, lineHeight: 1 }}
       >
         
       </button>

@@ -17,14 +17,14 @@ const HEAD  = "'Syne', sans-serif";
 const BODY  = "'Inter', sans-serif";
 
 // Dark, on-brand modal palette (matches the app's near-black + signal-green theme)
-const PANEL  = '#05090c';            // brand panel (deepest)
-const WHITE  = '#0b1320';            // form-pane surface (named WHITE for legacy refs; now dark)
+const PANEL  = 'var(--color-bg2)';            // brand panel (deepest)
+const WHITE  = 'var(--color-bg2)';            // form-pane surface (named WHITE for legacy refs; now dark)
 const INK    = '#e9eff6';            // primary text
 const SUB    = '#8499ad';            // muted text
 const GREEN  = '#00e676';
 const LGREEN = 'rgba(0,230,118,.12)';
-const BORDER = 'rgba(255,255,255,.09)';
-const FIELD  = 'rgba(255,255,255,.035)';
+const BORDER = 'rgba(var(--fg),.09)';
+const FIELD  = 'rgba(var(--fg),.035)';
 const FDARK  = '#00e676';            // green CTA
 
 /* ── Password helpers ───────────────────────────────────────────────── */
@@ -44,7 +44,7 @@ const pwStrength = (p: string) => {
 const S: Record<string, CSSProperties> = {
   label: { display: 'block', fontSize: 12, fontWeight: 500, color: SUB, marginBottom: 6, fontFamily: BODY },
   input: { width: '100%', height: 44, borderRadius: 10, background: FIELD, border: `1.5px solid ${BORDER}`, fontSize: 14, padding: '0 14px', color: INK, outline: 'none', boxSizing: 'border-box', transition: 'border .15s, box-shadow .15s, background .15s', fontFamily: BODY },
-  inputFocus: { border: `1.5px solid rgba(0,230,118,.6)`, boxShadow: '0 0 0 3px rgba(0,230,118,.14)', background: 'rgba(255,255,255,.06)' },
+  inputFocus: { border: `1.5px solid rgba(0,230,118,.6)`, boxShadow: '0 0 0 3px rgba(0,230,118,.14)', background: 'rgba(var(--fg),.06)' },
   inputWrap: { position: 'relative' as const },
   btnDark: { width: '100%', height: 44, borderRadius: 10, background: FDARK, color: '#fff', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', fontFamily: BODY, letterSpacing: '.01em', transition: 'transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s, opacity .15s' },
   link: { background: 'none', border: 'none', color: GREEN, cursor: 'pointer', fontFamily: BODY, fontWeight: 600, fontSize: 13, padding: 0, transition: 'opacity .15s' },
@@ -93,7 +93,7 @@ function StrBar({ pw }: { pw: string }) {
   const label = pct < 40 ? 'Weak' : pct < 80 ? 'Fair' : 'Strong';
   return (
     <div style={{ marginTop: 8 }}>
-      <div style={{ height: 3, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
+      <div style={{ height: 3, borderRadius: 99, background: 'rgba(var(--fg),.08)', overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, background: col, borderRadius: 99, transition: 'width .3s, background .3s' }} />
       </div>
       <div style={{ fontSize: 11, color: col, marginTop: 4, fontFamily: BODY, fontWeight: 600 }}>{pw ? label : ''}</div>
@@ -109,8 +109,8 @@ function PwChecklist({ c }: { c: PwCheck }) {
         <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: met ? GREEN : SUB, transition: 'color .2s', fontFamily: BODY, fontWeight: met ? 600 : 400 }}>
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
             {met
-              ? <><circle cx="6" cy="6" r="6" fill={GREEN} /><path d="M3.5 6l1.8 1.8 3.2-3.6" stroke="#04060d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></>
-              : <circle cx="6" cy="6" r="5.5" stroke="rgba(255,255,255,.22)" />
+              ? <><circle cx="6" cy="6" r="6" fill={GREEN} /><path d="M3.5 6l1.8 1.8 3.2-3.6" stroke="var(--color-bg)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></>
+              : <circle cx="6" cy="6" r="5.5" stroke="rgba(var(--fg),.22)" />
             }
           </svg>
           {label}
@@ -192,7 +192,7 @@ function BrandPanel() {
           Your edge in<br />
           the <span style={{ color: GREEN }}>Caribbean<br />market.</span>
         </h1>
-        <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.35)', margin: 0, fontFamily: BODY, lineHeight: 1.65 }}>
+        <p style={{ fontSize: 12.5, color: 'rgba(var(--fg),.35)', margin: 0, fontFamily: BODY, lineHeight: 1.65 }}>
           AI-powered tools for every Caribbean investor. JSE, TTSE, ECSE and beyond.
         </p>
       </div>
@@ -200,7 +200,7 @@ function BrandPanel() {
       {/* Chart */}
       <div style={{ position: 'relative', zIndex: 1, margin: '24px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', fontFamily: BODY, letterSpacing: '.04em' }}>PORTFOLIO</span>
+          <span style={{ fontSize: 11, color: 'rgba(var(--fg),.3)', fontFamily: BODY, letterSpacing: '.04em' }}>PORTFOLIO</span>
           <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: BODY }}>+12.4%</span>
         </div>
         <svg viewBox="0 0 232 64" fill="none" style={{ width: '100%', overflow: 'visible' }}>
@@ -217,7 +217,7 @@ function BrandPanel() {
         <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
           {[['NCB','72.50','+2.4%'],['GKC','94.20','+1.8%'],['SCI','58.75','+0.6%']].map(([sym, price, chg]) => (
             <div key={sym} style={{ flex: 1, padding: '8px 8px', borderRadius: 10, background: 'rgba(0,200,83,.06)', border: '1px solid rgba(0,200,83,.12)' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,.4)', fontFamily: BODY, letterSpacing: '.05em' }}>{sym}</div>
+              <div style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(var(--fg),.4)', fontFamily: BODY, letterSpacing: '.05em' }}>{sym}</div>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#EEF5EF', fontFamily: BODY, marginTop: 2 }}>{price}</div>
               <div style={{ fontSize: 10, fontWeight: 700, color: GREEN, fontFamily: BODY }}>{chg}</div>
             </div>
@@ -236,7 +236,7 @@ function BrandPanel() {
             <div style={{ width: 36, height: 28, borderRadius: 8, background: 'rgba(0,200,83,.08)', border: '1px solid rgba(0,200,83,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <span style={{ fontSize: 9.5, fontWeight: 800, color: GREEN, fontFamily: HEAD }}>{n}</span>
             </div>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.38)', fontFamily: BODY, lineHeight: 1.4 }}>{l}</span>
+            <span style={{ fontSize: 12, color: 'rgba(var(--fg),.38)', fontFamily: BODY, lineHeight: 1.4 }}>{l}</span>
           </div>
         ))}
       </div>
@@ -280,8 +280,8 @@ function SocialBtn({
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
         width: '100%', height: 44, borderRadius: 10,
-        border: `1.5px solid ${hov ? 'rgba(255,255,255,.2)' : BORDER}`,
-        background: hov ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.03)',
+        border: `1.5px solid ${hov ? 'rgba(var(--fg),.2)' : BORDER}`,
+        background: hov ? 'rgba(var(--fg),.07)' : 'rgba(var(--fg),.03)',
         color: INK, fontSize: 14, fontWeight: 600,
         cursor: disabled ? 'not-allowed' : 'pointer',
         fontFamily: BODY, transition: 'all .15s',
@@ -803,11 +803,11 @@ function CloseBtn({ onClose, dark }: { onClose: () => void; dark?: boolean }) {
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{
         position: 'absolute', top: 16, right: 16, width: 32, height: 32, borderRadius: '50%',
-        border: dark ? '1px solid rgba(255,255,255,.1)' : `1px solid ${BORDER}`,
-        background: hov ? (dark ? 'rgba(255,255,255,.08)' : '#F2F6F3') : 'transparent',
+        border: dark ? '1px solid rgba(var(--fg),.1)' : `1px solid ${BORDER}`,
+        background: hov ? (dark ? 'rgba(var(--fg),.08)' : '#F2F6F3') : 'transparent',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: 'pointer', transition: 'background .15s', zIndex: 10,
-        color: dark ? 'rgba(255,255,255,.5)' : SUB,
+        color: dark ? 'rgba(var(--fg),.5)' : SUB,
       }}>
       <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -843,7 +843,7 @@ export default function AuthModal() {
       `}</style>
 
       {/* Backdrop */}
-      <div onClick={closeAuthModal} style={{ position: 'absolute', inset: 0, background: 'rgba(6,13,7,.75)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', animation: 'fadeIn .2s ease' }} />
+      <div onClick={closeAuthModal} style={{ position: 'absolute', inset: 0, background: 'rgba(var(--surf),.75)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', animation: 'fadeIn .2s ease' }} />
 
       {/* Card */}
       <div style={{
@@ -852,7 +852,7 @@ export default function AuthModal() {
         maxWidth: hasBrand ? 760 : 440,
         maxHeight: 'calc(100vh - 32px)',
         animation: 'modalIn .26s cubic-bezier(.16,1,.3,1)',
-        border: '1px solid rgba(255,255,255,.08)',
+        border: '1px solid rgba(var(--fg),.08)',
         boxShadow: '0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(0,230,118,.06), 0 8px 32px rgba(0,0,0,.35)',
       }}>
         {hasBrand && <BrandPanel />}

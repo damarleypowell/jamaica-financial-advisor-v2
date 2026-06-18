@@ -42,7 +42,7 @@ function UsageBar({ label, icon, used, limit }: { label: string; icon: string; u
         </span>
       </div>
       {!isUnlimited && (
-        <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+        <div style={{ height: 4, borderRadius: 99, background: 'rgba(var(--fg),.06)', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${pct}%`, borderRadius: 99, background: isNear ? '#ffd740' : '#00e676', transition: 'width .4s' }} />
         </div>
       )}
@@ -73,7 +73,7 @@ function PayPalButtonsInner({ planId, planName, priceUSD, onSuccess, onFallback,
   );
 
   const fallbackBtn = (
-    <button onClick={onFallback} disabled={fallbackLoading} style={{ width: '100%', padding: '11px', borderRadius: 12, background: '#00e676', color: '#04060d', fontSize: 13, fontWeight: 700, border: 'none', cursor: fallbackLoading ? 'not-allowed' : 'pointer', opacity: fallbackLoading ? .6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+    <button onClick={onFallback} disabled={fallbackLoading} style={{ width: '100%', padding: '11px', borderRadius: 12, background: '#00e676', color: 'var(--color-bg)', fontSize: 13, fontWeight: 700, border: 'none', cursor: fallbackLoading ? 'not-allowed' : 'pointer', opacity: fallbackLoading ? .6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
       {fallbackLoading ? <><div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid currentColor', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }} /> Activating...</> : `Activate ${planName} Plan`}
     </button>
   );
@@ -117,7 +117,7 @@ function UpgradeModal({ plan, paypalConfig, onClose, onSuccess }: { plan: Plan; 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }} />
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 440, background: 'var(--color-bg2)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,.8)', animation: 'fadeIn .22s ease' }}>
+      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 440, background: 'var(--color-bg2)', border: '1px solid rgba(var(--fg),.1)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,.8)', animation: 'fadeIn .22s ease' }}>
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -129,7 +129,7 @@ function UpgradeModal({ plan, paypalConfig, onClose, onSuccess }: { plan: Plan; 
               <p style={{ margin: 0, fontSize: 11, color: 'var(--color-muted)' }}>${plan.priceUSD}/mo · ≈ JA${plan.priceJMD?.toLocaleString()}/mo</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,.06)', border: '1px solid var(--color-border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(var(--fg),.06)', border: '1px solid var(--color-border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <i className="fa-solid fa-xmark" style={{ fontSize: 12, color: 'var(--color-muted)' }} />
           </button>
         </div>
@@ -158,7 +158,7 @@ function UpgradeModal({ plan, paypalConfig, onClose, onSuccess }: { plan: Plan; 
                   <i className="fa-solid fa-gift" style={{ fontSize: 13, color: '#00e676', flexShrink: 0, marginTop: 1 }} />
                   <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text2)', lineHeight: 1.5 }}><strong style={{ color: '#fff' }}>Free during beta.</strong> Every paid feature is unlocked at no cost while we're in early access — no card, no charge.</p>
                 </div>
-                <button onClick={() => fallbackMut.mutate(plan.id)} disabled={fallbackMut.isPending} style={{ width: '100%', padding: '12px', borderRadius: 12, background: '#00e676', color: '#04060d', fontSize: 14, fontWeight: 700, border: 'none', cursor: fallbackMut.isPending ? 'not-allowed' : 'pointer', opacity: fallbackMut.isPending ? .6 : 1 }}>
+                <button onClick={() => fallbackMut.mutate(plan.id)} disabled={fallbackMut.isPending} style={{ width: '100%', padding: '12px', borderRadius: 12, background: '#00e676', color: 'var(--color-bg)', fontSize: 14, fontWeight: 700, border: 'none', cursor: fallbackMut.isPending ? 'not-allowed' : 'pointer', opacity: fallbackMut.isPending ? .6 : 1 }}>
                   {fallbackMut.isPending ? 'Activating…' : `Unlock ${plan.name} — free beta`}
                 </button>
               </div>
@@ -271,7 +271,7 @@ export default function Subscription() {
                 boxShadow: isPro ? '0 8px 32px rgba(0,230,118,.08)' : 'none',
               }}>
                 {plan.badge && (
-                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '3px 14px', borderRadius: 99, fontSize: 10, fontWeight: 800, letterSpacing: '.06em', background: isPro ? '#00e676' : '#ce93d8', color: isPro ? '#04060d' : '#04060d', whiteSpace: 'nowrap' }}>
+                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '3px 14px', borderRadius: 99, fontSize: 10, fontWeight: 800, letterSpacing: '.06em', background: isPro ? '#00e676' : '#ce93d8', color: isPro ? 'var(--color-bg)' : 'var(--color-bg)', whiteSpace: 'nowrap' }}>
                     {plan.badge}
                   </div>
                 )}
@@ -330,8 +330,8 @@ export default function Subscription() {
                 ) : isUpgrade ? (
                   <button onClick={() => setSelectedPlan(plan)} style={{
                     padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'all 180ms',
-                    background: isPro ? '#00e676' : 'rgba(255,255,255,.07)',
-                    color: isPro ? '#04060d' : 'var(--color-text)',
+                    background: isPro ? '#00e676' : 'rgba(var(--fg),.07)',
+                    color: isPro ? 'var(--color-bg)' : 'var(--color-text)',
                     boxShadow: isPro ? '0 4px 20px rgba(0,230,118,.3)' : 'none',
                   }}
                     onMouseEnter={e => { if (isPro) (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 28px rgba(0,230,118,.45)'; }}

@@ -77,7 +77,7 @@ export default function Screener() {
       <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--color-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.1em' }}>{label}</label>
       <input value={val} onChange={e => set(e.target.value)} placeholder={placeholder}
         type="number"
-        style={{ width: '100%', padding: '7px 10px', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }}
+        style={{ width: '100%', padding: '7px 10px', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }}
         onFocus={e => (e.target.style.borderColor = 'rgba(0,230,118,.4)')}
         onBlur={e => (e.target.style.borderColor = 'var(--color-border)')} />
     </div>
@@ -116,7 +116,7 @@ export default function Screener() {
             <div style={{ position: 'relative' }}>
               <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: 'var(--color-muted)' }} />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Symbol or name..."
-                style={{ width: '100%', paddingLeft: 30, paddingRight: 10, paddingTop: 7, paddingBottom: 7, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', paddingLeft: 30, paddingRight: 10, paddingTop: 7, paddingBottom: 7, background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }}
                 onFocus={e => (e.target.style.borderColor = 'rgba(0,230,118,.4)')}
                 onBlur={e => (e.target.style.borderColor = 'var(--color-border)')} />
             </div>
@@ -124,7 +124,7 @@ export default function Screener() {
           <div>
             <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--color-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.1em' }}>Sector</label>
             <select value={sector} onChange={e => setSector(e.target.value)}
-              style={{ width: '100%', padding: '7px 10px', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: sector ? 'var(--color-text)' : 'var(--color-muted)', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+              style={{ width: '100%', padding: '7px 10px', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: sector ? 'var(--color-text)' : 'var(--color-muted)', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
               <option value="">All Sectors</option>
               {sectors.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -147,7 +147,7 @@ export default function Screener() {
         <div className="screener-table-wrap" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+              <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                 {COLS.map(col => (
                   <th key={col.key} onClick={() => handleSort(col.key)} style={{ padding: '11px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', cursor: 'pointer', userSelect: 'none', textAlign: col.right ? 'right' : 'left', color: sortKey === col.key ? 'var(--color-green)' : 'var(--color-muted)', transition: 'color .15s' }}>
                     {col.label}<SortIcon k={col.key} />
@@ -159,7 +159,7 @@ export default function Screener() {
               {results.length === 0 ? (
                 <tr><td colSpan={7}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '52px 20px', gap: 10 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(var(--fg),.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <i className="fa-solid fa-filter-circle-xmark" style={{ fontSize: 20, color: 'var(--color-muted)', opacity: .35 }} />
                     </div>
                     <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text2)' }}>No stocks match your filters</p>
@@ -170,12 +170,12 @@ export default function Screener() {
                 const pos = (s.pctChange ?? 0) > 0, neg = (s.pctChange ?? 0) < 0;
                 return (
                   <tr key={s.symbol} onClick={() => { selectSymbol(s.symbol); openStockDetail(s.symbol); }}
-                    style={{ borderBottom: '1px solid rgba(255,255,255,.025)', cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.025)')}
+                    style={{ borderBottom: '1px solid rgba(var(--fg),.025)', cursor: 'pointer' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.025)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}>
                     <td style={{ padding: '10px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.08)' : 'rgba(255,255,255,.04)', flexShrink: 0 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.08)' : 'rgba(var(--fg),.04)', flexShrink: 0 }}>
                           <span style={{ fontSize: 8, fontWeight: 800, color: pos ? 'var(--color-green)' : neg ? 'var(--color-red)' : 'var(--color-muted)' }}>{s.symbol.slice(0,3)}</span>
                         </div>
                         <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{s.symbol}</span>
@@ -202,7 +202,7 @@ export default function Screener() {
         <div className="screener-cards-wrap">
           {results.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '52px 20px', gap: 10 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(var(--fg),.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <i className="fa-solid fa-filter-circle-xmark" style={{ fontSize: 20, color: 'var(--color-muted)', opacity: .35 }} />
               </div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text2)' }}>No stocks match your filters</p>
@@ -211,15 +211,15 @@ export default function Screener() {
           ) : results.map((s) => {
             const pos = (s.pctChange ?? 0) > 0, neg = (s.pctChange ?? 0) < 0;
             const accentColor = pos ? 'var(--color-green)' : neg ? 'var(--color-red)' : 'var(--color-muted)';
-            const accentBg    = pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.08)' : 'rgba(255,255,255,.04)';
+            const accentBg    = pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.08)' : 'rgba(var(--fg),.04)';
             return (
               <div key={s.symbol}
                 onClick={() => { selectSymbol(s.symbol); openStockDetail(s.symbol); }}
-                style={{ background: 'rgba(255,255,255,.03)', border: '1px solid var(--color-border)', borderRadius: 12, padding: '12px 14px', cursor: 'pointer', transition: 'background .15s' }}
-                onTouchStart={e => (e.currentTarget.style.background = 'rgba(255,255,255,.06)')}
-                onTouchEnd={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.06)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}>
+                style={{ background: 'rgba(var(--fg),.03)', border: '1px solid var(--color-border)', borderRadius: 12, padding: '12px 14px', cursor: 'pointer', transition: 'background .15s' }}
+                onTouchStart={e => (e.currentTarget.style.background = 'rgba(var(--fg),.06)')}
+                onTouchEnd={e => (e.currentTarget.style.background = 'rgba(var(--fg),.03)')}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.06)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(var(--fg),.03)')}>
                 {/* Row 1: symbol badge + name + price */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: accentBg, flexShrink: 0 }}>
@@ -238,17 +238,17 @@ export default function Screener() {
                 </div>
                 {/* Row 2: $ change, volume, market cap */}
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <div style={{ flex: 1, background: 'rgba(255,255,255,.03)', borderRadius: 7, padding: '6px 8px' }}>
+                  <div style={{ flex: 1, background: 'rgba(var(--fg),.03)', borderRadius: 7, padding: '6px 8px' }}>
                     <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 2 }}>$ Chg</div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: chg(s.dollarChange), fontFamily: 'var(--font-mono)' }}>
                       {(s.dollarChange ?? 0) !== 0 ? `${(s.dollarChange ?? 0) > 0 ? '+' : ''}$${fmt2(Math.abs(s.dollarChange ?? 0))}` : '$0.00'}
                     </div>
                   </div>
-                  <div style={{ flex: 1, background: 'rgba(255,255,255,.03)', borderRadius: 7, padding: '6px 8px' }}>
+                  <div style={{ flex: 1, background: 'rgba(var(--fg),.03)', borderRadius: 7, padding: '6px 8px' }}>
                     <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 2 }}>Volume</div>
                     <div style={{ fontSize: 11, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>{fmtVol(s.volume)}</div>
                   </div>
-                  <div style={{ flex: 1, background: 'rgba(255,255,255,.03)', borderRadius: 7, padding: '6px 8px' }}>
+                  <div style={{ flex: 1, background: 'rgba(var(--fg),.03)', borderRadius: 7, padding: '6px 8px' }}>
                     <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 2 }}>Mkt Cap</div>
                     <div style={{ fontSize: 11, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>{s.marketCap ? fmtVol(s.marketCap) : '—'}</div>
                   </div>

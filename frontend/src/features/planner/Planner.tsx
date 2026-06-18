@@ -21,7 +21,7 @@ function Field({ label, value, onChange, type = 'number', suffix }: { label: str
       <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', marginBottom: 6 }}>{label}</label>
       <div style={{ position: 'relative' }}>
         <input type={type} value={value} onChange={e => onChange(e.target.value)}
-          style={{ width: '100%', height: 38, padding: suffix ? '0 36px 0 12px' : '0 12px', borderRadius: 9, fontSize: 13, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }}
+          style={{ width: '100%', height: 38, padding: suffix ? '0 36px 0 12px' : '0 12px', borderRadius: 9, fontSize: 13, fontFamily: 'var(--font-mono)', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }}
           onFocus={e => (e.target as HTMLElement).style.borderColor = 'rgba(0,230,118,.4)'}
           onBlur={e => (e.target as HTMLElement).style.borderColor = 'var(--color-border)'}
         />
@@ -33,7 +33,7 @@ function Field({ label, value, onChange, type = 'number', suffix }: { label: str
 
 function ResultRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(var(--fg),.04)' }}>
       <span style={{ fontSize: 12, color: 'var(--color-muted)' }}>{label}</span>
       <span style={{ fontSize: highlight ? 18 : 13, fontWeight: highlight ? 900 : 600, fontFamily: 'var(--font-mono)', color: highlight ? '#00e676' : 'var(--color-text)' }}>{value}</span>
     </div>
@@ -105,7 +105,7 @@ export default function Planner() {
       </div>
 
       {/* Mode tabs */}
-      <div style={{ display: 'flex', gap: 6, padding: '4px', borderRadius: 12, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', width: 'fit-content' }}>
+      <div style={{ display: 'flex', gap: 6, padding: '4px', borderRadius: 12, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', width: 'fit-content' }}>
         {MODES.map(m => (
           <button key={m.key} onClick={() => setMode(m.key)}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', transition: 'all 150ms', background: mode === m.key ? 'var(--color-green)' : 'transparent', color: mode === m.key ? 'var(--color-bg)' : 'var(--color-muted)', boxShadow: mode === m.key ? '0 2px 10px rgba(0,230,118,.3)' : 'none' }}>
@@ -187,12 +187,12 @@ export default function Planner() {
               <ResultRow label="Projected nest egg (inflation-adj.)" value={fmtCur(retirementReal)} />
               <ResultRow label="Investment growth" value={`${((retirementFuture / totalContributions - 1) * 100).toFixed(1)}%`} />
               {/* Progress bar */}
-              <div style={{ marginTop: 16, padding: '12px 0', borderTop: '1px solid rgba(255,255,255,.06)' }}>
+              <div style={{ marginTop: 16, padding: '12px 0', borderTop: '1px solid rgba(var(--fg),.06)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                   <span style={{ fontSize: 10, color: 'var(--color-muted)' }}>Today</span>
                   <span style={{ fontSize: 10, color: 'var(--color-muted)' }}>Retirement</span>
                 </div>
-                <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+                <div style={{ height: 6, borderRadius: 99, background: 'rgba(var(--fg),.06)', overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${Math.min(100, (0 / years) * 100)}%`, background: 'var(--color-green)', borderRadius: 99, transition: 'width .5s' }} />
                 </div>
               </div>
@@ -223,7 +223,7 @@ export default function Planner() {
               <ResultRow label={`Leisure (${leisurePct}%)`} value={fmtCur(parseFloat(leisure))} />
               <ResultRow label="Remaining / Unallocated" value={fmtCur(remaining)} highlight />
               {/* 50/30/20 check */}
-              <div style={{ marginTop: 12, padding: '12px', borderRadius: 10, background: 'rgba(255,255,255,.03)', border: '1px solid var(--color-border)' }}>
+              <div style={{ marginTop: 12, padding: '12px', borderRadius: 10, background: 'rgba(var(--fg),.03)', border: '1px solid var(--color-border)' }}>
                 <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)' }}>50/30/20 Rule Check</p>
                 {[
                   { label: 'Essentials (target 50%)', actual: parseFloat(essentialsPct), target: 50 },
@@ -235,7 +235,7 @@ export default function Planner() {
                       <span style={{ fontSize: 10, color: 'var(--color-muted)' }}>{item.label}</span>
                       <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 700, color: Math.abs(item.actual - item.target) <= 5 ? '#00e676' : '#ffd740' }}>{item.actual}%</span>
                     </div>
-                    <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+                    <div style={{ height: 4, borderRadius: 99, background: 'rgba(var(--fg),.06)', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${Math.min(100, item.actual / (item.target * 2) * 100)}%`, background: Math.abs(item.actual - item.target) <= 5 ? '#00e676' : '#ffd740', borderRadius: 99 }} />
                     </div>
                   </div>

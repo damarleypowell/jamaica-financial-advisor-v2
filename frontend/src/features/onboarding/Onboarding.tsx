@@ -98,7 +98,7 @@ export default function Onboarding() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(160deg, #04060d 0%, #081410 50%, #04060d 100%)',
+      background: 'linear-gradient(160deg, var(--color-bg) 0%, var(--color-bg2) 50%, var(--color-bg) 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 0 env(safe-area-inset-bottom, 32px)', position: 'relative', overflow: 'hidden',
       fontFamily: SANS,
@@ -113,12 +113,12 @@ export default function Onboarding() {
           to   { opacity: 1; transform: translateY(0); }
         }
         .ob-cta:active { transform: scale(.98); }
-        .ob-back:hover { color: #fff !important; background: rgba(255,255,255,.06) !important; }
-        .ob-skip:hover { color: rgba(255,255,255,.6) !important; }
+        .ob-back:hover { color: #fff !important; background: rgba(var(--fg),.06) !important; }
+        .ob-skip:hover { color: rgba(var(--fg),.6) !important; }
       `}</style>
 
       {/* ── Top progress bar (research: a progress bar alone lifts completion ~20%) ── */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'rgba(255,255,255,.06)', zIndex: 4 }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'rgba(var(--fg),.06)', zIndex: 4 }}>
         <div style={{
           height: '100%', width: `${progress}%`, background: current.color,
           boxShadow: `0 0 12px ${current.color}`,
@@ -144,8 +144,8 @@ export default function Onboarding() {
               className="ob-back"
               style={{
                 width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)',
-                color: 'rgba(255,255,255,.55)', cursor: 'pointer',
+                background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.08)',
+                color: 'rgba(var(--fg),.55)', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'color .15s, background .15s',
               }}>
@@ -154,10 +154,10 @@ export default function Onboarding() {
           )}
           <div className="gf-wordmark">
             <p style={{ margin: 0, fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '.14em', color: '#00e676', lineHeight: 1 }}>GOTHAM</p>
-            <p style={{ margin: 0, fontSize: 7.5, fontWeight: 600, letterSpacing: '.34em', color: 'rgba(255,255,255,.3)', lineHeight: 1, marginTop: 3, paddingLeft: '.34em' }}>FINANCIAL</p>
+            <p style={{ margin: 0, fontSize: 7.5, fontWeight: 600, letterSpacing: '.34em', color: 'rgba(var(--fg),.3)', lineHeight: 1, marginTop: 3, paddingLeft: '.34em' }}>FINANCIAL</p>
           </div>
         </div>
-        <button onClick={finish} className="ob-skip" style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: SANS, padding: '8px 0', transition: 'color .15s' }}>
+        <button onClick={finish} className="ob-skip" style={{ fontSize: 13, color: 'rgba(var(--fg),.35)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: SANS, padding: '8px 0', transition: 'color .15s' }}>
           Skip
         </button>
       </div>
@@ -167,7 +167,7 @@ export default function Onboarding() {
         {STEPS.map((_, i) => (
           <div key={i} style={{
             width: i === step ? 24 : 6, height: 6, borderRadius: 99,
-            background: i === step ? current.color : i < step ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.1)',
+            background: i === step ? current.color : i < step ? 'rgba(var(--fg),.3)' : 'rgba(var(--fg),.1)',
             transition: 'all 300ms cubic-bezier(.4,0,.2,1)',
             boxShadow: i === step ? `0 0 8px ${current.color}70` : 'none',
           }} />
@@ -185,7 +185,7 @@ export default function Onboarding() {
           animation: 'obSlideIn .4s cubic-bezier(.22,1,.36,1)',
         }}>
         {/* Emoji */}
-        <div style={{ fontSize: 64, marginBottom: 20, lineHeight: 1, filter: 'drop-shadow(0 0 24px rgba(255,255,255,.08))' }}>
+        <div style={{ fontSize: 64, marginBottom: 20, lineHeight: 1, filter: 'drop-shadow(0 0 24px rgba(var(--fg),.08))' }}>
           {current.emoji}
         </div>
 
@@ -212,7 +212,7 @@ export default function Onboarding() {
         </h1>
 
         {/* Body */}
-        <p style={{ fontSize: 15, color: 'rgba(255,255,255,.5)', lineHeight: 1.7, margin: '0 0 28px', maxWidth: 360 }}>
+        <p style={{ fontSize: 15, color: 'rgba(var(--fg),.5)', lineHeight: 1.7, margin: '0 0 28px', maxWidth: 360 }}>
           {current.body}
         </p>
 
@@ -240,15 +240,15 @@ export default function Onboarding() {
               <div key={r.name} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '10px 14px', borderRadius: 12,
-                background: i === 0 ? 'rgba(0,230,118,.07)' : 'rgba(255,255,255,.03)',
-                border: `1px solid ${i === 0 ? 'rgba(0,230,118,.2)' : 'rgba(255,255,255,.06)'}`,
+                background: i === 0 ? 'rgba(0,230,118,.07)' : 'rgba(var(--fg),.03)',
+                border: `1px solid ${i === 0 ? 'rgba(0,230,118,.2)' : 'rgba(var(--fg),.06)'}`,
                 textAlign: 'left',
               }}>
                 <span style={{ fontSize: 20, width: 28, textAlign: 'center', flexShrink: 0 }}>{r.emoji}</span>
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: i === 0 ? '#fff' : 'rgba(255,255,255,.5)' }}>{r.name}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: i === 0 ? '#fff' : 'rgba(var(--fg),.5)' }}>{r.name}</span>
                 </div>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.2)', fontWeight: 700 }}>{r.range}</span>
+                <span style={{ fontSize: 10, color: 'rgba(var(--fg),.2)', fontWeight: 700 }}>{r.range}</span>
                 {i === 0 && <span style={{ fontSize: 9, fontWeight: 800, color: '#00e676', background: 'rgba(0,230,118,.12)', padding: '2px 8px', borderRadius: 99, border: '1px solid rgba(0,230,118,.2)' }}>YOU START HERE</span>}
               </div>
             ))}
@@ -264,21 +264,21 @@ export default function Onboarding() {
                 <button key={g} onClick={() => setSelectedGoal(i)} aria-pressed={active} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '13px 16px', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
-                  background: active ? 'rgba(64,196,255,.1)' : 'rgba(255,255,255,.03)',
-                  border: `1px solid ${active ? 'rgba(64,196,255,.3)' : 'rgba(255,255,255,.07)'}`,
+                  background: active ? 'rgba(64,196,255,.1)' : 'rgba(var(--fg),.03)',
+                  border: `1px solid ${active ? 'rgba(64,196,255,.3)' : 'rgba(var(--fg),.07)'}`,
                   transition: 'all .15s',
                   fontFamily: SANS,
                 }}>
                   <div style={{
                     width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                    border: `2px solid ${active ? '#40c4ff' : 'rgba(255,255,255,.2)'}`,
+                    border: `2px solid ${active ? '#40c4ff' : 'rgba(var(--fg),.2)'}`,
                     background: active ? '#40c4ff' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'all .15s',
                   }}>
-                    {active && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#04060d' }} />}
+                    {active && <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-bg)' }} />}
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: active ? '#fff' : 'rgba(255,255,255,.55)' }}>{g}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: active ? '#fff' : 'rgba(var(--fg),.55)' }}>{g}</span>
                 </button>
               );
             })}
@@ -305,7 +305,7 @@ export default function Onboarding() {
           style={{
             width: '100%', padding: '17px', borderRadius: 16,
             background: current.color,
-            border: 'none', color: '#04060d', fontWeight: 900, fontSize: 15,
+            border: 'none', color: 'var(--color-bg)', fontWeight: 900, fontSize: 15,
             cursor: 'pointer', fontFamily: SANS,
             boxShadow: `0 6px 28px ${current.color}40`,
             transition: 'opacity .15s, transform .1s',
@@ -321,7 +321,7 @@ export default function Onboarding() {
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={() => { openAuthModal('login'); finish(); }}
-              style={{ flex: 1, padding: '14px', borderRadius: 14, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.7)', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: SANS }}>
+              style={{ flex: 1, padding: '14px', borderRadius: 14, background: 'rgba(var(--fg),.06)', border: '1px solid rgba(var(--fg),.1)', color: 'rgba(var(--fg),.7)', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: SANS }}>
               Log In
             </button>
             <button
@@ -337,7 +337,7 @@ export default function Onboarding() {
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap',
             gap: '4px 14px', margin: '6px 0 0',
-            fontSize: 10.5, fontWeight: 600, color: 'rgba(255,255,255,.3)',
+            fontSize: 10.5, fontWeight: 600, color: 'rgba(var(--fg),.3)',
           }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><i className="fa-solid fa-lock" style={{ fontSize: 9, color: '#00e676' }} />Bank-level encryption</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><i className="fa-regular fa-credit-card" style={{ fontSize: 9, color: '#00e676' }} />No card required</span>
@@ -345,7 +345,7 @@ export default function Onboarding() {
           </div>
         ) : (
           /* Step counter */
-          <p style={{ textAlign: 'center', margin: '4px 0 0', fontSize: 11, color: 'rgba(255,255,255,.2)' }}>
+          <p style={{ textAlign: 'center', margin: '4px 0 0', fontSize: 11, color: 'rgba(var(--fg),.2)' }}>
             Step {step + 1} of {STEPS.length}
           </p>
         )}

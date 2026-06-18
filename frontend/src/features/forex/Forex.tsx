@@ -36,7 +36,7 @@ export default function Forex() {
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: 'var(--color-text)' }}>Forex Rates</h1>
           <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-muted)' }}>Live currency exchange rates — JMD pairs</p>
         </div>
-        {updatedAt && <span style={{ fontSize: 10, color: 'var(--color-muted)', padding: '5px 10px', borderRadius: 8, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)' }}>Updated {updatedAt}</span>}
+        {updatedAt && <span style={{ fontSize: 10, color: 'var(--color-muted)', padding: '5px 10px', borderRadius: 8, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)' }}>Updated {updatedAt}</span>}
       </div>
 
       {/* Rate cards */}
@@ -79,7 +79,7 @@ export default function Forex() {
                     </div>
                   </div>
                   {r.pctChange != null && (
-                    <span style={{ fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 99, color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)', background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(255,255,255,.05)', border: `1px solid ${pos ? 'rgba(0,230,118,.2)' : neg ? 'rgba(255,82,82,.2)' : 'rgba(255,255,255,.08)'}` }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 99, color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)', background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(var(--fg),.05)', border: `1px solid ${pos ? 'rgba(0,230,118,.2)' : neg ? 'rgba(255,82,82,.2)' : 'rgba(var(--fg),.08)'}` }}>
                       {pos ? '+' : ''}{r.pctChange.toFixed(3)}%
                     </span>
                   )}
@@ -95,7 +95,7 @@ export default function Forex() {
                 )}
 
                 {(r.bid != null || r.ask != null) && (
-                  <div style={{ display: 'flex', gap: 12, marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.05)' }}>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(var(--fg),.05)' }}>
                     <div>
                       <p style={{ margin: 0, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--color-muted)' }}>Bid</p>
                       <p style={{ margin: 0, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#ff5252' }}>{fmt2(r.bid)}</p>
@@ -150,7 +150,7 @@ function ForexConverter({ rates }: { rates: ForexRate[] }) {
 
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
         <input value={amount} onChange={e => setAmount(e.target.value)} type="number" min="0"
-          style={{ width: 140, height: 42, padding: '0 14px', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none' }}
+          style={{ width: 140, height: 42, padding: '0 14px', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none' }}
           onFocus={e => (e.target as HTMLElement).style.borderColor = 'rgba(0,230,118,.4)'}
           onBlur={e => (e.target as HTMLElement).style.borderColor = 'var(--color-border)'}
         />

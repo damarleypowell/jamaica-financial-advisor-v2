@@ -225,7 +225,7 @@ export default function FloatingAIAdvisor() {
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = open ? 'rotate(45deg) scale(0.95)' : 'scale(1.08)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = open ? 'rotate(45deg) scale(0.9)' : 'scale(1)'; }}
       >
-        <i className={`fa-solid ${open ? 'fa-xmark' : 'fa-microphone-lines'}`} style={{ fontSize: 20, color: '#04060d' }} />
+        <i className={`fa-solid ${open ? 'fa-xmark' : 'fa-microphone-lines'}`} style={{ fontSize: 20, color: 'var(--color-bg)' }} />
       </button>
 
       {/* ── advisor panel ── */}
@@ -250,12 +250,12 @@ export default function FloatingAIAdvisor() {
               </p>
             </div>
             {/* expertise level */}
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 2, gap: 1, flexShrink: 0 }}>
+            <div style={{ display: 'flex', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 2, gap: 1, flexShrink: 0 }}>
               {(['beginner', 'intermediate', 'expert'] as Level[]).map(l => (
                 <button key={l} onClick={() => setLevel(l)}
                   style={{ padding: '3px 7px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 9, fontWeight: 700, transition: 'all .15s', textTransform: 'capitalize',
                     background: level === l ? '#00c853' : 'transparent',
-                    color: level === l ? '#04060d' : 'var(--color-muted)' }}>
+                    color: level === l ? 'var(--color-bg)' : 'var(--color-muted)' }}>
                   {l.slice(0, 3).toUpperCase()}
                 </button>
               ))}
@@ -288,9 +288,9 @@ export default function FloatingAIAdvisor() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {QUICK_ASKS.map(q => (
                     <button key={q} onClick={() => send(q)}
-                      style={{ padding: '8px 12px', borderRadius: 10, border: '1px solid var(--color-border)', background: 'rgba(255,255,255,.03)', color: 'var(--color-text2)', fontSize: 12, cursor: 'pointer', textAlign: 'left', transition: 'all .15s' }}
+                      style={{ padding: '8px 12px', borderRadius: 10, border: '1px solid var(--color-border)', background: 'rgba(var(--fg),.03)', color: 'var(--color-text2)', fontSize: 12, cursor: 'pointer', textAlign: 'left', transition: 'all .15s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,230,118,.06)'; e.currentTarget.style.borderColor = 'rgba(0,230,118,.3)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.03)'; e.currentTarget.style.borderColor = 'var(--color-border)'; }}>
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(var(--fg),.03)'; e.currentTarget.style.borderColor = 'var(--color-border)'; }}>
                       {q}
                     </button>
                   ))}
@@ -301,9 +301,9 @@ export default function FloatingAIAdvisor() {
               <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
                 <div style={{
                   maxWidth: '85%', padding: '10px 13px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                  background: m.role === 'user' ? 'linear-gradient(135deg, #00c853, #00e676)' : 'rgba(255,255,255,.06)',
+                  background: m.role === 'user' ? 'linear-gradient(135deg, #00c853, #00e676)' : 'rgba(var(--fg),.06)',
                   border: m.role === 'ai' ? '1px solid var(--color-border)' : 'none',
-                  fontSize: 13, lineHeight: 1.55, color: m.role === 'user' ? '#04060d' : 'var(--color-text)',
+                  fontSize: 13, lineHeight: 1.55, color: m.role === 'user' ? 'var(--color-bg)' : 'var(--color-text)',
                   fontWeight: m.role === 'user' ? 600 : 400,
                 }}>
                   {m.text}
@@ -312,7 +312,7 @@ export default function FloatingAIAdvisor() {
             ))}
             {loading && (
               <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                <div style={{ padding: '10px 14px', borderRadius: '16px 16px 16px 4px', background: 'rgba(255,255,255,.06)', border: '1px solid var(--color-border)', display: 'flex', gap: 5, alignItems: 'center' }}>
+                <div style={{ padding: '10px 14px', borderRadius: '16px 16px 16px 4px', background: 'rgba(var(--fg),.06)', border: '1px solid var(--color-border)', display: 'flex', gap: 5, alignItems: 'center' }}>
                   {[0, 1, 2].map(i => (
                     <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#00e676', opacity: .6, animation: `blink 1.2s ${i * 0.2}s infinite` }} />
                   ))}
@@ -328,17 +328,17 @@ export default function FloatingAIAdvisor() {
               value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
               placeholder="Ask about the chart, indicators, patterns…"
               rows={2}
-              style={{ flex: 1, padding: '9px 12px', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 12, fontSize: 13, color: 'var(--color-text)', outline: 'none', resize: 'none', lineHeight: 1.45, fontFamily: 'inherit' }}
+              style={{ flex: 1, padding: '9px 12px', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 12, fontSize: 13, color: 'var(--color-text)', outline: 'none', resize: 'none', lineHeight: 1.45, fontFamily: 'inherit' }}
             />
             {/* mic */}
             <button onClick={listening ? stopListening : startListening}
-              style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${listening ? '#ff5252' : 'var(--color-border)'}`, background: listening ? 'rgba(255,82,82,.12)' : 'rgba(255,255,255,.05)', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}>
+              style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${listening ? '#ff5252' : 'var(--color-border)'}`, background: listening ? 'rgba(255,82,82,.12)' : 'rgba(var(--fg),.05)', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}>
               <i className={`fa-solid ${listening ? 'fa-stop' : 'fa-microphone'}`} style={{ fontSize: 13, color: listening ? '#ff5252' : 'var(--color-muted)' }} />
             </button>
             {/* send */}
             <button onClick={() => send(input)} disabled={!input.trim() || loading}
-              style={{ width: 38, height: 38, borderRadius: 10, border: 'none', background: input.trim() && !loading ? '#00c853' : 'rgba(255,255,255,.06)', cursor: input.trim() && !loading ? 'pointer' : 'default', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}>
-              <i className="fa-solid fa-paper-plane" style={{ fontSize: 13, color: input.trim() && !loading ? '#04060d' : 'var(--color-muted)' }} />
+              style={{ width: 38, height: 38, borderRadius: 10, border: 'none', background: input.trim() && !loading ? '#00c853' : 'rgba(var(--fg),.06)', cursor: input.trim() && !loading ? 'pointer' : 'default', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}>
+              <i className="fa-solid fa-paper-plane" style={{ fontSize: 13, color: input.trim() && !loading ? 'var(--color-bg)' : 'var(--color-muted)' }} />
             </button>
           </div>
 

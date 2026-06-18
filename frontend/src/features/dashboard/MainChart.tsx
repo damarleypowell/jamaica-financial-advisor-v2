@@ -111,13 +111,13 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
       width: containerRef.current.clientWidth,
       height: 220,
       layout: { background: { color: 'transparent' }, textColor: 'rgba(180,200,220,0.65)', fontSize: 10 },
-      grid: { vertLines: { color: 'rgba(255,255,255,0.025)' }, horzLines: { color: 'rgba(255,255,255,0.025)' } },
+      grid: { vertLines: { color: 'rgba(var(--fg),0.025)' }, horzLines: { color: 'rgba(var(--fg),0.025)' } },
       crosshair: {
         vertLine: { color: 'rgba(0,230,118,0.4)', width: 1, style: 2 },
         horzLine: { color: 'rgba(0,230,118,0.4)', width: 1, style: 2 },
       },
-      rightPriceScale: { borderColor: 'rgba(255,255,255,0.03)', scaleMargins: { top: 0.08, bottom: showVol ? 0.18 : 0.04 } },
-      timeScale: { borderColor: 'rgba(255,255,255,0.03)', timeVisible: true, fixLeftEdge: true, rightOffset: 3 },
+      rightPriceScale: { borderColor: 'rgba(var(--fg),0.03)', scaleMargins: { top: 0.08, bottom: showVol ? 0.18 : 0.04 } },
+      timeScale: { borderColor: 'rgba(var(--fg),0.03)', timeVisible: true, fixLeftEdge: true, rightOffset: 3 },
     });
 
     areaRef.current = chart.addSeries(AreaSeries, {
@@ -218,22 +218,22 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
             {/* Chart type toggle */}
             {isUS && candles.length > 0 && (
-              <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,.08)' }}>
+              <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(var(--fg),.08)' }}>
                 {(['area', 'candle'] as const).map(m => (
                   <button key={m} onClick={() => setMode(m)}
-                    style={{ padding: '5px 10px', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, transition: 'all .15s', background: mode === m ? '#00c853' : 'transparent', color: mode === m ? '#04060d' : 'rgba(255,255,255,.4)' }}>
+                    style={{ padding: '5px 10px', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, transition: 'all .15s', background: mode === m ? '#00c853' : 'transparent', color: mode === m ? 'var(--color-bg)' : 'rgba(var(--fg),.4)' }}>
                     <i className={`fa-solid ${m === 'area' ? 'fa-chart-area' : 'fa-chart-candlestick'}`} />
                   </button>
                 ))}
               </div>
             )}
             {/* Timeframe */}
-            <div style={{ display: 'flex', borderRadius: 10, padding: 2, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
+            <div style={{ display: 'flex', borderRadius: 10, padding: 2, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.07)' }}>
               {TFS.map(t => (
                 <button key={t} onClick={() => setTf(t)}
                   style={{ padding: '5px 10px', fontSize: 10, fontWeight: 700, borderRadius: 8, border: 'none', cursor: 'pointer', transition: 'all .15s',
                     background: tf === t ? '#00e676' : 'transparent',
-                    color: tf === t ? '#04060d' : 'var(--color-muted)' }}>
+                    color: tf === t ? 'var(--color-bg)' : 'var(--color-muted)' }}>
                   {t}
                 </button>
               ))}
@@ -250,7 +250,7 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
       {/* Chart canvas */}
       <div style={{ position: 'relative', flex: 1 }}>
         {isLoading && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, background: 'rgba(8,13,24,.7)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, background: 'rgba(var(--surf),.7)', backdropFilter: 'blur(4px)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #00e676', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
               <span style={{ fontSize: 10, color: 'var(--color-muted)' }}>Loading {symbol} data…</span>
@@ -269,10 +269,10 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
               <line x1="8" y1="38" x2="40" y2="38" stroke="rgba(0,230,118,0.4)" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <div style={{ textAlign: 'center' }}>
-              <p style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '-0.01em' }}>
+              <p style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700, color: 'rgba(var(--fg),0.45)', letterSpacing: '-0.01em' }}>
                 No stocks to display
               </p>
-              <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.22)', lineHeight: 1.5, maxWidth: 220 }}>
+              <p style={{ margin: 0, fontSize: 11, color: 'rgba(var(--fg),0.22)', lineHeight: 1.5, maxWidth: 220 }}>
                 Search for a stock above or add one to your watchlist to get started
               </p>
             </div>
@@ -296,10 +296,10 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
 
       {/* Footer with Full Chart CTA */}
       {symbol && (
-        <div style={{ padding: '8px 18px', borderTop: '1px solid rgba(255,255,255,.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,.01)' }}>
+        <div style={{ padding: '8px 18px', borderTop: '1px solid rgba(var(--fg),.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(var(--fg),.01)' }}>
           <span style={{ fontSize: 10, color: 'var(--color-muted)', opacity: .5 }}>
             <i className="fa-solid fa-circle-info" style={{ marginRight: 4 }} />
-            Click <strong style={{ color: 'rgba(255,255,255,.4)' }}>Full Chart</strong> for candlesticks, EMA, RSI, Bollinger Bands &amp; drawing tools
+            Click <strong style={{ color: 'rgba(var(--fg),.4)' }}>Full Chart</strong> for candlesticks, EMA, RSI, Bollinger Bands &amp; drawing tools
           </span>
           <Link to={`/technicals/${symbol}`}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: '#00e676', textDecoration: 'none', opacity: .8 }}>

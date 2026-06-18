@@ -52,11 +52,11 @@ function Toast({ toast }: { toast: ToastState }) {
   const bg =
     toast.type === 'success' ? 'rgba(0,230,118,.12)' :
     toast.type === 'error'   ? 'rgba(255,82,82,.12)'  :
-                               'rgba(255,255,255,.08)';
+                               'rgba(var(--fg),.08)';
   const border =
     toast.type === 'success' ? 'rgba(0,230,118,.3)' :
     toast.type === 'error'   ? 'rgba(255,82,82,.3)'  :
-                               'rgba(255,255,255,.15)';
+                               'rgba(var(--fg),.15)';
   const color =
     toast.type === 'success' ? 'var(--color-green)' :
     toast.type === 'error'   ? 'var(--color-red)'    :
@@ -114,7 +114,7 @@ function ToggleRow({
         style={{
           flexShrink: 0, width: 44, height: 24, borderRadius: 12, border: 'none',
           cursor: locked ? 'not-allowed' : 'pointer', position: 'relative', transition: 'background .2s',
-          background: value ? 'var(--color-green)' : 'rgba(255,255,255,.1)',
+          background: value ? 'var(--color-green)' : 'rgba(var(--fg),.1)',
           opacity: locked ? 0.7 : 1,
         }}
       >
@@ -151,13 +151,13 @@ function Field({
         disabled={disabled}
         style={{
           width: '100%', padding: '10px 14px', boxSizing: 'border-box',
-          background: disabled ? 'rgba(255,255,255,.02)' : 'rgba(255,255,255,.05)',
-          border: `1px solid ${disabled ? 'rgba(255,255,255,.06)' : 'var(--color-border)'}`,
+          background: disabled ? 'rgba(var(--fg),.02)' : 'rgba(var(--fg),.05)',
+          border: `1px solid ${disabled ? 'rgba(var(--fg),.06)' : 'var(--color-border)'}`,
           borderRadius: 10, fontSize: 14, color: disabled ? 'var(--color-muted)' : 'var(--color-text)',
           outline: 'none', cursor: disabled ? 'not-allowed' : 'text', transition: 'border-color .15s',
         }}
         onFocus={e => { if (!disabled) e.target.style.borderColor = 'rgba(0,230,118,.45)'; }}
-        onBlur={e => { e.target.style.borderColor = disabled ? 'rgba(255,255,255,.06)' : 'var(--color-border)'; }}
+        onBlur={e => { e.target.style.borderColor = disabled ? 'rgba(var(--fg),.06)' : 'var(--color-border)'; }}
       />
       {hint && <p style={{ margin: '5px 0 0', fontSize: 11, color: 'var(--color-muted)' }}>{hint}</p>}
     </div>
@@ -361,8 +361,8 @@ export default function Settings() {
                         <span key={b.label} style={{
                           display: 'inline-flex', alignItems: 'center', gap: 5,
                           padding: '4px 11px', borderRadius: 999, fontSize: 11, fontWeight: 600,
-                          background: b.ok ? 'rgba(0,230,118,.08)' : 'rgba(255,255,255,.04)',
-                          border: `1px solid ${b.ok ? 'rgba(0,230,118,.2)' : 'rgba(255,255,255,.08)'}`,
+                          background: b.ok ? 'rgba(0,230,118,.08)' : 'rgba(var(--fg),.04)',
+                          border: `1px solid ${b.ok ? 'rgba(0,230,118,.2)' : 'rgba(var(--fg),.08)'}`,
                           color: b.ok ? 'var(--color-green)' : 'var(--color-muted)',
                         }}>
                           <i className={`fa-solid ${b.ok ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ fontSize: 9 }} />
@@ -407,7 +407,7 @@ export default function Settings() {
                       <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>Password strength</span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: strength.color }}>{strength.label}</span>
                     </div>
-                    <div style={{ height: 4, borderRadius: 4, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
+                    <div style={{ height: 4, borderRadius: 4, background: 'rgba(var(--fg),.08)', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${strength.pct}%`, background: strength.color, borderRadius: 4, transition: 'width .3s, background .3s' }} />
                     </div>
                   </div>
@@ -452,7 +452,7 @@ export default function Settings() {
                   </p>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 12, background: 'var(--color-bg3)', border: '1px solid var(--color-border)' }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: user.twoFactorEnabled ? 'rgba(0,230,118,.1)' : 'rgba(255,255,255,.06)', flexShrink: 0 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: user.twoFactorEnabled ? 'rgba(0,230,118,.1)' : 'rgba(var(--fg),.06)', flexShrink: 0 }}>
                       <i className={`fa-solid ${user.twoFactorEnabled ? 'fa-lock' : 'fa-lock-open'}`} style={{ fontSize: 16, color: user.twoFactorEnabled ? 'var(--color-green)' : 'var(--color-muted)' }} />
                     </div>
                     <div style={{ flex: 1 }}>
@@ -468,7 +468,7 @@ export default function Settings() {
                         <i className="fa-solid fa-circle-check" style={{ fontSize: 9 }} /> 2FA Active
                       </span>
                     ) : (
-                      <button style={{ padding: '7px 16px', borderRadius: 9, fontSize: 12, fontWeight: 700, background: 'rgba(255,255,255,.07)', border: '1px solid var(--color-border)', color: 'var(--color-text)', cursor: 'pointer' }}>
+                      <button style={{ padding: '7px 16px', borderRadius: 9, fontSize: 12, fontWeight: 700, background: 'rgba(var(--fg),.07)', border: '1px solid var(--color-border)', color: 'var(--color-text)', cursor: 'pointer' }}>
                         Set up 2FA
                       </button>
                     )}
@@ -565,7 +565,7 @@ export default function Settings() {
                         onClick={() => { setCurrency(c); setLSStr('pref_currency', c); }}
                         style={{
                           flex: 1, padding: '12px 0', borderRadius: 12, border: `1px solid ${currency === c ? 'rgba(0,230,118,.4)' : 'var(--color-border)'}`,
-                          background: currency === c ? 'rgba(0,230,118,.1)' : 'rgba(255,255,255,.03)',
+                          background: currency === c ? 'rgba(0,230,118,.1)' : 'rgba(var(--fg),.03)',
                           color: currency === c ? 'var(--color-green)' : 'var(--color-text2)',
                           fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all .15s',
                         }}

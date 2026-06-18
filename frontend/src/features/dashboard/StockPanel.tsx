@@ -79,13 +79,13 @@ export default function StockPanel({ stocks: externalStocks, isUS }: Props) {
 
           return (
             <button key={s.symbol} onClick={() => selectSymbol(s.symbol)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.03)', transition: 'background 120ms' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.035)')}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(var(--fg),.03)', transition: 'background 120ms' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.035)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-              <span style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,.2)', width: 14, textAlign: 'right', flexShrink: 0 }}>{i + 1}</span>
+              <span style={{ fontSize: 9, fontWeight: 600, color: 'rgba(var(--fg),.2)', width: 14, textAlign: 'right', flexShrink: 0 }}>{i + 1}</span>
 
-              <div style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(255,255,255,.05)', border: `1px solid ${pos ? 'rgba(0,230,118,.18)' : neg ? 'rgba(255,82,82,.15)' : 'rgba(255,255,255,.05)'}` }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(var(--fg),.05)', border: `1px solid ${pos ? 'rgba(0,230,118,.18)' : neg ? 'rgba(255,82,82,.15)' : 'rgba(var(--fg),.05)'}` }}>
                 <span style={{ fontSize: 7, fontWeight: 900, color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)', letterSpacing: '-.02em' }}>{s.symbol.slice(0, 4)}</span>
               </div>
 
@@ -111,8 +111,8 @@ export default function StockPanel({ stocks: externalStocks, isUS }: Props) {
         })}
       </div>
 
-      <div style={{ padding: '7px 14px', borderTop: '1px solid rgba(255,255,255,.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,.2)' }}>{allStocks.filter(s => (s.price ?? 0) > 0).length} securities · {isUS ? 'US' : 'JSE'}</span>
+      <div style={{ padding: '7px 14px', borderTop: '1px solid rgba(var(--fg),.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <span style={{ fontSize: 9, color: 'rgba(var(--fg),.2)' }}>{allStocks.filter(s => (s.price ?? 0) > 0).length} securities · {isUS ? 'US' : 'JSE'}</span>
         <span style={{ fontSize: 9, color: activeTab.color, fontWeight: 700 }}>
           <i className={`fa-solid ${activeTab.icon}`} style={{ marginRight: 4, fontSize: 8 }} />
           {activeTab.label}

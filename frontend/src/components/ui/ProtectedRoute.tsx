@@ -42,7 +42,7 @@ function UpgradeWall({ requiredTier, featureName, userTier, signedIn }: {
       {/* Overlay — fixed + viewport-centered so it's always visible without scrolling */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, pointerEvents: 'none' }}>
         <div style={{
-          background: 'var(--color-bg2, #0d1117)',
+          background: 'var(--color-bg2, var(--color-bg2))',
           border: `1px solid ${color}30`,
           borderRadius: 24,
           padding: '32px 28px',
@@ -124,7 +124,7 @@ function UpgradeWall({ requiredTier, featureName, userTier, signedIn }: {
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 width: '100%', padding: '13px 0', borderRadius: 13,
-                background: color, color: '#04060d',
+                background: color, color: 'var(--color-bg)',
                 fontSize: 14, fontWeight: 800, textDecoration: 'none',
                 boxShadow: `0 4px 24px ${color}40`,
                 transition: 'box-shadow 180ms, transform 180ms',
@@ -148,7 +148,7 @@ function UpgradeWall({ requiredTier, featureName, userTier, signedIn }: {
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   width: '100%', padding: '13px 0', borderRadius: 13,
-                  background: color, color: '#04060d',
+                  background: color, color: 'var(--color-bg)',
                   fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer',
                   boxShadow: `0 4px 24px ${color}40`,
                   transition: 'box-shadow 180ms, transform 180ms',
@@ -162,8 +162,8 @@ function UpgradeWall({ requiredTier, featureName, userTier, signedIn }: {
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   width: '100%', padding: '11px 0', borderRadius: 13,
-                  background: 'transparent', color: 'rgba(255,255,255,.45)',
-                  fontSize: 13, fontWeight: 600, border: '1px solid rgba(255,255,255,.1)', cursor: 'pointer',
+                  background: 'transparent', color: 'rgba(var(--fg),.45)',
+                  fontSize: 13, fontWeight: 600, border: '1px solid rgba(var(--fg),.1)', cursor: 'pointer',
                 }}
               >
                 Already have an account? Sign In

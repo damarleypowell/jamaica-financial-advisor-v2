@@ -801,13 +801,13 @@ function saveProgress(p: Record<string, boolean>) {
 function DiagramBalanceSheet() {
   return (
     <svg viewBox="0 0 320 160" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
-      <rect width="320" height="160" fill="rgba(255,255,255,.02)" rx="8" />
+      <rect width="320" height="160" fill="rgba(var(--fg),.02)" rx="8" />
       {/* Left: Assets */}
       <rect x="10" y="20" width="130" height="30" fill="rgba(0,230,118,.15)" rx="4" />
       <text x="75" y="40" textAnchor="middle" fill="#00e676" fontSize="10" fontFamily="Inter" fontWeight="700">Current Assets</text>
       <rect x="10" y="58" width="130" height="70" fill="rgba(0,230,118,.08)" rx="4" />
       <text x="75" y="97" textAnchor="middle" fill="rgba(0,230,118,.8)" fontSize="10" fontFamily="Inter">Non-Current Assets</text>
-      <text x="75" y="140" textAnchor="middle" fill="rgba(255,255,255,.4)" fontSize="9" fontFamily="Inter">ASSETS</text>
+      <text x="75" y="140" textAnchor="middle" fill="rgba(var(--fg),.4)" fontSize="9" fontFamily="Inter">ASSETS</text>
       {/* Right: Liabilities + Equity */}
       <rect x="180" y="20" width="130" height="30" fill="rgba(255,82,82,.15)" rx="4" />
       <text x="245" y="40" textAnchor="middle" fill="#ff5252" fontSize="10" fontFamily="Inter" fontWeight="700">Current Liabilities</text>
@@ -815,9 +815,9 @@ function DiagramBalanceSheet() {
       <text x="245" y="82" textAnchor="middle" fill="rgba(255,82,82,.8)" fontSize="10" fontFamily="Inter">Long-Term Debt</text>
       <rect x="180" y="106" width="130" height="22" fill="rgba(64,196,255,.15)" rx="4" />
       <text x="245" y="121" textAnchor="middle" fill="#40c4ff" fontSize="10" fontFamily="Inter" fontWeight="700">Shareholders' Equity</text>
-      <text x="245" y="140" textAnchor="middle" fill="rgba(255,255,255,.4)" fontSize="9" fontFamily="Inter">LIABILITIES + EQUITY</text>
+      <text x="245" y="140" textAnchor="middle" fill="rgba(var(--fg),.4)" fontSize="9" fontFamily="Inter">LIABILITIES + EQUITY</text>
       {/* = sign */}
-      <text x="160" y="90" textAnchor="middle" fill="rgba(255,255,255,.5)" fontSize="18" fontFamily="Inter">=</text>
+      <text x="160" y="90" textAnchor="middle" fill="rgba(var(--fg),.5)" fontSize="18" fontFamily="Inter">=</text>
     </svg>
   );
 }
@@ -831,16 +831,16 @@ function DiagramExchanges() {
   ];
   return (
     <svg viewBox="0 0 320 175" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
-      <rect width="320" height="175" fill="rgba(255,255,255,.02)" rx="8" />
+      <rect width="320" height="175" fill="rgba(var(--fg),.02)" rx="8" />
       {exchanges.map(e => (
         <g key={e.name}>
           <rect x={e.x} y={e.y} width="118" height="58" fill={`${e.color}12`} stroke={`${e.color}40`} strokeWidth="1" rx="6" />
           <text x={e.x + 59} y={e.y + 18} textAnchor="middle" fill={e.color} fontSize="13" fontFamily="Inter" fontWeight="800">{e.name}</text>
-          <text x={e.x + 59} y={e.y + 33} textAnchor="middle" fill="rgba(255,255,255,.55)" fontSize="8" fontFamily="Inter">{e.country}</text>
-          <text x={e.x + 59} y={e.y + 46} textAnchor="middle" fill="rgba(255,255,255,.35)" fontSize="8" fontFamily="Inter">{e.currency} · {e.listings} listed</text>
+          <text x={e.x + 59} y={e.y + 33} textAnchor="middle" fill="rgba(var(--fg),.55)" fontSize="8" fontFamily="Inter">{e.country}</text>
+          <text x={e.x + 59} y={e.y + 46} textAnchor="middle" fill="rgba(var(--fg),.35)" fontSize="8" fontFamily="Inter">{e.currency} · {e.listings} listed</text>
         </g>
       ))}
-      <text x="160" y="168" textAnchor="middle" fill="rgba(255,255,255,.25)" fontSize="8" fontFamily="Inter">Caribbean exchanges — each has unique listing requirements & trading hours</text>
+      <text x="160" y="168" textAnchor="middle" fill="rgba(var(--fg),.25)" fontSize="8" fontFamily="Inter">Caribbean exchanges — each has unique listing requirements & trading hours</text>
     </svg>
   );
 }
@@ -857,17 +857,17 @@ function DiagramIncomeStatement() {
   ];
   return (
     <svg viewBox="0 0 320 175" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
-      <rect width="320" height="175" fill="rgba(255,255,255,.02)" rx="8" />
+      <rect width="320" height="175" fill="rgba(var(--fg),.02)" rx="8" />
       {items.map((item, i) => (
         <g key={i}>
-          <text x="5" y={14 + i * 23} fill="rgba(255,255,255,.55)" fontSize="8" fontFamily="Inter">{item.label}</text>
+          <text x="5" y={14 + i * 23} fill="rgba(var(--fg),.55)" fontSize="8" fontFamily="Inter">{item.label}</text>
           <rect x="155" y={5 + i * 23} width={item.w} height="14" fill={`${item.color}25`} stroke={`${item.color}50`} strokeWidth="0.5" rx="2" />
           <text x={155 + item.w + 5} y={15 + i * 23} fill={item.color} fontSize="8" fontFamily="Inter" fontWeight="700">
             {item.value > 0 ? `J$${item.value}B` : `J$${Math.abs(item.value)}B`}
           </text>
         </g>
       ))}
-      <text x="160" y="168" textAnchor="middle" fill="rgba(255,255,255,.25)" fontSize="7" fontFamily="Inter">Illustrative GraceKennedy 2022 figures (approximate, in billions JMD)</text>
+      <text x="160" y="168" textAnchor="middle" fill="rgba(var(--fg),.25)" fontSize="7" fontFamily="Inter">Illustrative GraceKennedy 2022 figures (approximate, in billions JMD)</text>
     </svg>
   );
 }
@@ -877,7 +877,7 @@ function DiagramQuote() {
     <svg viewBox="0 0 320 170" style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block', margin: '0 auto' }}>
       <rect width="320" height="170" fill="rgba(0,0,0,.2)" rx="8" stroke="rgba(0,230,118,.2)" strokeWidth="1" />
       <text x="12" y="22" fill="#00e676" fontSize="14" fontFamily="Inter" fontWeight="800">GK</text>
-      <text x="50" y="22" fill="rgba(255,255,255,.5)" fontSize="10" fontFamily="Inter">GraceKennedy Ltd · JSE</text>
+      <text x="50" y="22" fill="rgba(var(--fg),.5)" fontSize="10" fontFamily="Inter">GraceKennedy Ltd · JSE</text>
       <text x="12" y="48" fill="#fff" fontSize="24" fontFamily="Inter" fontWeight="800">J$75.50</text>
       <text x="140" y="48" fill="#00e676" fontSize="11" fontFamily="Inter" fontWeight="700">▲ +2.03%</text>
       {[
@@ -886,11 +886,11 @@ function DiagramQuote() {
         ['52W Low', 'J$58.50'], ['Bid', 'J$75.20'], ['Ask', 'J$75.80'],
       ].map(([label, val], i) => (
         <g key={label}>
-          <text x={12 + (i % 3) * 104} y={72 + Math.floor(i / 3) * 28} fill="rgba(255,255,255,.35)" fontSize="8" fontFamily="Inter">{label}</text>
-          <text x={12 + (i % 3) * 104} y={86 + Math.floor(i / 3) * 28} fill="rgba(255,255,255,.85)" fontSize="10" fontFamily="Inter" fontWeight="600">{val}</text>
+          <text x={12 + (i % 3) * 104} y={72 + Math.floor(i / 3) * 28} fill="rgba(var(--fg),.35)" fontSize="8" fontFamily="Inter">{label}</text>
+          <text x={12 + (i % 3) * 104} y={86 + Math.floor(i / 3) * 28} fill="rgba(var(--fg),.85)" fontSize="10" fontFamily="Inter" fontWeight="600">{val}</text>
         </g>
       ))}
-      <text x="160" y="162" textAnchor="middle" fill="rgba(255,255,255,.2)" fontSize="7" fontFamily="Inter">Spread = Ask – Bid = J$0.60 · Settlement T+2</text>
+      <text x="160" y="162" textAnchor="middle" fill="rgba(var(--fg),.2)" fontSize="7" fontFamily="Inter">Spread = Ask – Bid = J$0.60 · Settlement T+2</text>
     </svg>
   );
 }
@@ -934,7 +934,7 @@ const moduleTypeIcon = (t: Module['type']) => {
 const moduleTypeColor = (t: Module['type']) => {
   if (t === 'quiz') return '#ffd740';
   if (t === 'exercise') return '#ce93d8';
-  return 'rgba(255,255,255,.5)';
+  return 'rgba(var(--fg),.5)';
 };
 
 const calloutStyle = (type: Callout['type']): { border: string; bg: string; icon: string; iconColor: string } => ({
@@ -984,12 +984,12 @@ function LiveExercisePanel({ mode }: { mode: 'quote' | 'technical' }) {
   }
 
   if (isLoading) return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 0', color: 'rgba(255,255,255,.4)', fontSize: 13 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 0', color: 'rgba(var(--fg),.4)', fontSize: 13 }}>
       <Wifi size={16} style={{ animation: 'pulse 1.5s infinite' }} /> Fetching live JSE market data…
     </div>
   );
   if (error || !stock) return (
-    <div style={{ padding: '16px', background: 'rgba(255,82,82,.06)', border: '1px solid rgba(255,82,82,.2)', borderRadius: 10, fontSize: 13, color: 'rgba(255,255,255,.5)' }}>
+    <div style={{ padding: '16px', background: 'rgba(255,82,82,.06)', border: '1px solid rgba(255,82,82,.2)', borderRadius: 10, fontSize: 13, color: 'rgba(var(--fg),.5)' }}>
       Live data unavailable. Markets may be closed or the API is unreachable. Try again during JSE trading hours (9:30 AM – 1:30 PM Jamaica time).
     </div>
   );
@@ -1036,15 +1036,15 @@ function LiveExercisePanel({ mode }: { mode: 'quote' | 'technical' }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <Wifi size={13} color="#00e676" />
           <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#00e676' }}>Live JSE Data</span>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', marginLeft: 'auto' }}>Updates every 30s</span>
+          <span style={{ fontSize: 11, color: 'rgba(var(--fg),.3)', marginLeft: 'auto' }}>Updates every 30s</span>
         </div>
         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff' }}>
-          {stock.name ?? stock.symbol} <span style={{ color: 'rgba(255,255,255,.4)', fontWeight: 400 }}>({stock.symbol})</span>
+          {stock.name ?? stock.symbol} <span style={{ color: 'rgba(var(--fg),.4)', fontWeight: 400 }}>({stock.symbol})</span>
           <span style={{ marginLeft: 12, color: pctChange >= 0 ? '#00e676' : '#ff5252', fontSize: 13 }}>
             J${stock.price.toFixed(2)} &nbsp;{pctChange >= 0 ? '▲' : '▼'} {Math.abs(pctChange).toFixed(2)}%
           </span>
         </p>
-        <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(255,255,255,.45)' }}>
+        <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(var(--fg),.45)' }}>
           Prev Close J${stock.prevClose.toFixed(2)}
           {stock.high52 ? ` · 52W H J$${stock.high52.toFixed(2)}` : ''}
           {stock.low52 ? ` · 52W L J$${stock.low52.toFixed(2)}` : ''}
@@ -1057,8 +1057,8 @@ function LiveExercisePanel({ mode }: { mode: 'quote' | 'technical' }) {
         const isRevealed = revealed.has(i);
         return (
           <div key={i} style={{ marginBottom: 14 }}>
-            <div style={{ background: 'rgba(255,255,255,.03)', border: `1px solid ${grade ? grade.color + '40' : 'rgba(255,255,255,.08)'}`, borderRadius: 12, padding: '14px 16px', transition: 'border-color .3s' }}>
-              <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.85)', lineHeight: 1.5 }}>
+            <div style={{ background: 'rgba(var(--fg),.03)', border: `1px solid ${grade ? grade.color + '40' : 'rgba(var(--fg),.08)'}`, borderRadius: 12, padding: '14px 16px', transition: 'border-color .3s' }}>
+              <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: 'rgba(var(--fg),.85)', lineHeight: 1.5 }}>
                 <span style={{ color: '#00e676', fontWeight: 800, marginRight: 6 }}>Q{i + 1}.</span>{step.instruction}
               </p>
               {!grade && (
@@ -1068,13 +1068,13 @@ function LiveExercisePanel({ mode }: { mode: 'quote' | 'technical' }) {
                     onChange={e => setUserAnswers(prev => ({ ...prev, [i]: e.target.value }))}
                     placeholder="Type your answer here…"
                     rows={3}
-                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 8, padding: '10px 12px', color: 'rgba(255,255,255,.85)', fontSize: 13, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit' }}
+                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.12)', borderRadius: 8, padding: '10px 12px', color: 'rgba(var(--fg),.85)', fontSize: 13, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit' }}
                   />
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    <button onClick={() => gradeStep(i, step.answer)} disabled={!(userAnswers[i] ?? '').trim()} style={{ padding: '7px 18px', borderRadius: 8, background: (userAnswers[i] ?? '').trim() ? 'rgba(0,230,118,.15)' : 'rgba(255,255,255,.04)', border: `1px solid ${(userAnswers[i] ?? '').trim() ? 'rgba(0,230,118,.35)' : 'rgba(255,255,255,.08)'}`, color: (userAnswers[i] ?? '').trim() ? '#00e676' : 'rgba(255,255,255,.25)', fontSize: 11, fontWeight: 700, cursor: (userAnswers[i] ?? '').trim() ? 'pointer' : 'not-allowed' }}>
+                    <button onClick={() => gradeStep(i, step.answer)} disabled={!(userAnswers[i] ?? '').trim()} style={{ padding: '7px 18px', borderRadius: 8, background: (userAnswers[i] ?? '').trim() ? 'rgba(0,230,118,.15)' : 'rgba(var(--fg),.04)', border: `1px solid ${(userAnswers[i] ?? '').trim() ? 'rgba(0,230,118,.35)' : 'rgba(var(--fg),.08)'}`, color: (userAnswers[i] ?? '').trim() ? '#00e676' : 'rgba(var(--fg),.25)', fontSize: 11, fontWeight: 700, cursor: (userAnswers[i] ?? '').trim() ? 'pointer' : 'not-allowed' }}>
                       Submit &amp; Grade
                     </button>
-                    <button onClick={() => setRevealed(prev => new Set([...prev, i]))} style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', color: 'rgba(255,255,255,.35)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                    <button onClick={() => setRevealed(prev => new Set([...prev, i]))} style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.08)', color: 'rgba(var(--fg),.35)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                       Skip — Reveal Answer
                     </button>
                   </div>
@@ -1085,20 +1085,20 @@ function LiveExercisePanel({ mode }: { mode: 'quote' | 'technical' }) {
                   <span style={{ fontSize: 18 }}>{grade.label === 'Excellent' ? '🎯' : grade.label === 'Partial Credit' ? '📝' : '💡'}</span>
                   <div>
                     <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: grade.color }}>{grade.label} — {Math.round(grade.score * 100)}%</p>
-                    <p style={{ margin: '1px 0 0', fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{grade.feedback}</p>
+                    <p style={{ margin: '1px 0 0', fontSize: 11, color: 'rgba(var(--fg),.5)' }}>{grade.feedback}</p>
                   </div>
                 </div>
               )}
               {grade && userAnswers[i] && (
-                <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
-                  <p style={{ margin: '0 0 3px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.3)' }}>Your Answer</p>
-                  <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.6)', lineHeight: 1.6 }}>{userAnswers[i]}</p>
+                <div style={{ background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.07)', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
+                  <p style={{ margin: '0 0 3px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(var(--fg),.3)' }}>Your Answer</p>
+                  <p style={{ margin: 0, fontSize: 12, color: 'rgba(var(--fg),.6)', lineHeight: 1.6 }}>{userAnswers[i]}</p>
                 </div>
               )}
               {isRevealed && (
                 <div style={{ background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.2)', borderRadius: 8, padding: '10px 14px' }}>
                   <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(0,230,118,.6)' }}>Model Answer</p>
-                  <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.75)', lineHeight: 1.65 }}>{step.answer}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: 'rgba(var(--fg),.75)', lineHeight: 1.65 }}>{step.answer}</p>
                 </div>
               )}
             </div>
@@ -1161,10 +1161,10 @@ function ModuleViewer({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0, minHeight: '100%' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'rgba(var(--fg),.06)', border: '1px solid rgba(var(--fg),.1)', color: 'rgba(var(--fg),.6)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
           <ChevronLeft size={13} /> Back to roadmap
         </button>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)' }}>Module {moduleIndex + 1} of {totalModules}</span>
+        <span style={{ fontSize: 11, color: 'rgba(var(--fg),.3)' }}>Module {moduleIndex + 1} of {totalModules}</span>
         {isComplete && (
           <span style={{ ...pill, background: 'rgba(0,230,118,.12)', color: '#00e676', border: '1px solid rgba(0,230,118,.25)', marginLeft: 'auto' }}>
             <CheckCircle size={10} /> Completed
@@ -1179,7 +1179,7 @@ function ModuleViewer({
           <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: moduleTypeColor(module.type) }}>
             {module.type === 'quiz' ? 'Knowledge Check' : module.type === 'exercise' ? 'Hands-On Exercise' : 'Lesson'}
           </span>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 10, color: 'rgba(var(--fg),.25)', display: 'flex', alignItems: 'center', gap: 4 }}>
             <Clock size={9} /> {module.duration} min
           </span>
         </div>
@@ -1190,17 +1190,17 @@ function ModuleViewer({
       {content.paragraphs && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
           {content.paragraphs.map((p, i) => (
-            <p key={i} style={{ margin: 0, fontSize: 14, color: i === 0 ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.75)', lineHeight: 1.85, fontWeight: i === 0 ? 500 : 400 }}>{p}</p>
+            <p key={i} style={{ margin: 0, fontSize: 14, color: i === 0 ? 'rgba(var(--fg),.9)' : 'rgba(var(--fg),.75)', lineHeight: 1.85, fontWeight: i === 0 ? 500 : 400 }}>{p}</p>
           ))}
         </div>
       )}
 
       {/* Diagram */}
       {content.diagramKey && (
-        <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 14, padding: '20px 16px', marginBottom: 24 }}>
+        <div style={{ background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.08)', borderRadius: 14, padding: '20px 16px', marginBottom: 24 }}>
           <DiagramRenderer diagramKey={content.diagramKey} />
           {content.diagramCaption && (
-            <p style={{ margin: '12px 0 0', fontSize: 11, color: 'rgba(255,255,255,.35)', textAlign: 'center', lineHeight: 1.5 }}>{content.diagramCaption}</p>
+            <p style={{ margin: '12px 0 0', fontSize: 11, color: 'rgba(var(--fg),.35)', textAlign: 'center', lineHeight: 1.5 }}>{content.diagramCaption}</p>
           )}
         </div>
       )}
@@ -1211,7 +1211,7 @@ function ModuleViewer({
         return (
           <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 12, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <span style={{ fontSize: 14, flexShrink: 0 }}>{s.icon}</span>
-            <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,.8)', lineHeight: 1.6 }}>{c.text}</p>
+            <p style={{ margin: 0, fontSize: 13, color: 'rgba(var(--fg),.8)', lineHeight: 1.6 }}>{c.text}</p>
           </div>
         );
       })}
@@ -1219,12 +1219,12 @@ function ModuleViewer({
       {/* Key Terms */}
       {content.keyTerms && content.keyTerms.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(255,255,255,.35)' }}>Key Terms</p>
+          <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(var(--fg),.35)' }}>Key Terms</p>
           <div style={{ display: 'grid', gap: 8 }}>
             {content.keyTerms.map(t => (
-              <div key={t.term} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10, padding: '10px 14px' }}>
+              <div key={t.term} style={{ background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.07)', borderRadius: 10, padding: '10px 14px' }}>
                 <span style={{ fontSize: 12, fontWeight: 800, color: '#00e676' }}>{t.term}</span>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', marginLeft: 8 }}>— {t.def}</span>
+                <span style={{ fontSize: 12, color: 'rgba(var(--fg),.55)', marginLeft: 8 }}>— {t.def}</span>
               </div>
             ))}
           </div>
@@ -1239,15 +1239,15 @@ function ModuleViewer({
           ) : (<>
           <div style={{ background: 'rgba(206,147,216,.06)', border: '1px solid rgba(206,147,216,.2)', borderRadius: 14, padding: '16px 18px', marginBottom: 16 }}>
             <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#ce93d8' }}>Scenario</p>
-            <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,.8)', lineHeight: 1.7 }}>{content.exercise.scenario}</p>
+            <p style={{ margin: 0, fontSize: 13, color: 'rgba(var(--fg),.8)', lineHeight: 1.7 }}>{content.exercise.scenario}</p>
           </div>
           {content.exercise.steps.map((step, i) => {
             const grade = grades[i];
             const revealed = revealedSteps.has(i);
             return (
               <div key={i} style={{ marginBottom: 14 }}>
-                <div style={{ background: 'rgba(255,255,255,.03)', border: `1px solid ${grade ? grade.color + '40' : 'rgba(255,255,255,.08)'}`, borderRadius: 12, padding: '14px 16px', transition: 'border-color .3s' }}>
-                  <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.85)', lineHeight: 1.5 }}>
+                <div style={{ background: 'rgba(var(--fg),.03)', border: `1px solid ${grade ? grade.color + '40' : 'rgba(var(--fg),.08)'}`, borderRadius: 12, padding: '14px 16px', transition: 'border-color .3s' }}>
+                  <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: 'rgba(var(--fg),.85)', lineHeight: 1.5 }}>
                     <span style={{ color: '#ce93d8', fontWeight: 800, marginRight: 6 }}>Q{i + 1}.</span>{step.instruction}
                   </p>
 
@@ -1259,19 +1259,19 @@ function ModuleViewer({
                         onChange={e => setUserAnswers(prev => ({ ...prev, [i]: e.target.value }))}
                         placeholder="Type your answer here…"
                         rows={3}
-                        style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 8, padding: '10px 12px', color: 'rgba(255,255,255,.85)', fontSize: 13, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit' }}
+                        style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.12)', borderRadius: 8, padding: '10px 12px', color: 'rgba(var(--fg),.85)', fontSize: 13, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit' }}
                       />
                       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                         <button
                           onClick={() => gradeAnswer(i, step.answer)}
                           disabled={!(userAnswers[i] ?? '').trim()}
-                          style={{ padding: '7px 18px', borderRadius: 8, background: (userAnswers[i] ?? '').trim() ? 'rgba(206,147,216,.2)' : 'rgba(255,255,255,.05)', border: `1px solid ${(userAnswers[i] ?? '').trim() ? 'rgba(206,147,216,.4)' : 'rgba(255,255,255,.1)'}`, color: (userAnswers[i] ?? '').trim() ? '#ce93d8' : 'rgba(255,255,255,.3)', fontSize: 11, fontWeight: 700, cursor: (userAnswers[i] ?? '').trim() ? 'pointer' : 'not-allowed', transition: 'all .2s' }}
+                          style={{ padding: '7px 18px', borderRadius: 8, background: (userAnswers[i] ?? '').trim() ? 'rgba(206,147,216,.2)' : 'rgba(var(--fg),.05)', border: `1px solid ${(userAnswers[i] ?? '').trim() ? 'rgba(206,147,216,.4)' : 'rgba(var(--fg),.1)'}`, color: (userAnswers[i] ?? '').trim() ? '#ce93d8' : 'rgba(var(--fg),.3)', fontSize: 11, fontWeight: 700, cursor: (userAnswers[i] ?? '').trim() ? 'pointer' : 'not-allowed', transition: 'all .2s' }}
                         >
                           Submit &amp; Grade
                         </button>
                         <button
                           onClick={() => revealStep(i)}
-                          style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', color: 'rgba(255,255,255,.35)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+                          style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.08)', color: 'rgba(var(--fg),.35)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                         >
                           Skip — Reveal Answer
                         </button>
@@ -1285,16 +1285,16 @@ function ModuleViewer({
                       <span style={{ fontSize: 18 }}>{grade.label === 'Excellent' ? '🎯' : grade.label === 'Partial Credit' ? '📝' : '💡'}</span>
                       <div>
                         <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: grade.color }}>{grade.label} — {Math.round(grade.score * 100)}%</p>
-                        <p style={{ margin: '1px 0 0', fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{grade.feedback}</p>
+                        <p style={{ margin: '1px 0 0', fontSize: 11, color: 'rgba(var(--fg),.5)' }}>{grade.feedback}</p>
                       </div>
                     </div>
                   )}
 
                   {/* User's answer (shown after grading) */}
                   {grade && userAnswers[i] && (
-                    <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
-                      <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.3)' }}>Your Answer</p>
-                      <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.6)', lineHeight: 1.6 }}>{userAnswers[i]}</p>
+                    <div style={{ background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.07)', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(var(--fg),.3)' }}>Your Answer</p>
+                      <p style={{ margin: 0, fontSize: 12, color: 'rgba(var(--fg),.6)', lineHeight: 1.6 }}>{userAnswers[i]}</p>
                     </div>
                   )}
 
@@ -1302,7 +1302,7 @@ function ModuleViewer({
                   {revealed && (
                     <div style={{ background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.2)', borderRadius: 8, padding: '10px 14px' }}>
                       <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(0,230,118,.6)' }}>Model Answer</p>
-                      <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.75)', lineHeight: 1.65 }}>{step.answer}</p>
+                      <p style={{ margin: 0, fontSize: 12, color: 'rgba(var(--fg),.75)', lineHeight: 1.65 }}>{step.answer}</p>
                     </div>
                   )}
                 </div>
@@ -1321,7 +1321,7 @@ function ModuleViewer({
               <Award size={20} color={quizScore >= content.quiz.length * 0.8 ? '#00e676' : '#ffd740'} />
               <div>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#fff' }}>{quizScore}/{content.quiz.length} correct — {Math.round(quizScore / content.quiz.length * 100)}%</p>
-                <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{quizScore >= content.quiz.length * 0.8 ? 'Excellent work!' : 'Review the explanations below and try again.'}</p>
+                <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(var(--fg),.5)' }}>{quizScore >= content.quiz.length * 0.8 ? 'Excellent work!' : 'Review the explanations below and try again.'}</p>
               </div>
             </div>
           )}
@@ -1329,15 +1329,15 @@ function ModuleViewer({
             const answered = quizAnswers[qi] !== undefined;
             const correct = quizAnswers[qi] === q.correct;
             return (
-              <div key={qi} style={{ marginBottom: 16, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: '16px 18px' }}>
+              <div key={qi} style={{ marginBottom: 16, background: 'rgba(var(--fg),.02)', border: '1px solid rgba(var(--fg),.07)', borderRadius: 14, padding: '16px 18px' }}>
                 <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#fff', lineHeight: 1.5 }}>
                   <span style={{ color: '#ffd740', fontWeight: 800, marginRight: 6 }}>Q{qi + 1}.</span>{q.q}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {q.options.map((opt, oi) => {
-                    let bg = 'rgba(255,255,255,.04)';
-                    let border = 'rgba(255,255,255,.08)';
-                    let color = 'rgba(255,255,255,.75)';
+                    let bg = 'rgba(var(--fg),.04)';
+                    let border = 'rgba(var(--fg),.08)';
+                    let color = 'rgba(var(--fg),.75)';
                     if (answered) {
                       if (oi === q.correct) { bg = 'rgba(0,230,118,.1)'; border = 'rgba(0,230,118,.35)'; color = '#00e676'; }
                       else if (oi === quizAnswers[qi] && !correct) { bg = 'rgba(255,82,82,.1)'; border = 'rgba(255,82,82,.35)'; color = '#ff5252'; }
@@ -1352,7 +1352,7 @@ function ModuleViewer({
                 </div>
                 {answered && (
                   <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(64,196,255,.06)', border: '1px solid rgba(64,196,255,.2)', borderRadius: 8 }}>
-                    <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,.65)', lineHeight: 1.6 }}><span style={{ color: '#40c4ff', fontWeight: 700 }}>Explanation: </span>{q.explanation}</p>
+                    <p style={{ margin: 0, fontSize: 11, color: 'rgba(var(--fg),.65)', lineHeight: 1.6 }}><span style={{ color: '#40c4ff', fontWeight: 700 }}>Explanation: </span>{q.explanation}</p>
                   </div>
                 )}
               </div>
@@ -1364,18 +1364,18 @@ function ModuleViewer({
       {/* External Links */}
       {content.links && content.links.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(255,255,255,.35)' }}>Further Reading</p>
+          <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(var(--fg),.35)' }}>Further Reading</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {content.links.map(link => (
               <a key={link.url} href={link.url} target="_blank" rel="noreferrer"
-                style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', textDecoration: 'none', transition: 'border-color .15s' }}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', borderRadius: 10, background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.07)', textDecoration: 'none', transition: 'border-color .15s' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(64,196,255,.3)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,.07)')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(var(--fg),.07)')}
               >
                 <ExternalLink size={13} color="#40c4ff" style={{ flexShrink: 0, marginTop: 1 }} />
                 <div>
                   <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#40c4ff' }}>{link.title}</p>
-                  <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,.45)' }}>{link.description}</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(var(--fg),.45)' }}>{link.description}</p>
                 </div>
               </a>
             ))}
@@ -1386,17 +1386,17 @@ function ModuleViewer({
       {/* Citations */}
       {content.citations && content.citations.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(255,255,255,.25)' }}>Sources</p>
+          <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(var(--fg),.25)' }}>Sources</p>
           {content.citations.map((c, i) => (
-            <p key={i} style={{ margin: '0 0 4px', fontSize: 10, color: 'rgba(255,255,255,.3)', lineHeight: 1.5 }}>• {c}</p>
+            <p key={i} style={{ margin: '0 0 4px', fontSize: 10, color: 'rgba(var(--fg),.3)', lineHeight: 1.5 }}>• {c}</p>
           ))}
         </div>
       )}
 
       {/* Footer nav */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,.07)', flexWrap: 'wrap', marginTop: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 16, borderTop: '1px solid rgba(var(--fg),.07)', flexWrap: 'wrap', marginTop: 'auto' }}>
         <button onClick={onPrev ?? undefined} disabled={!onPrev}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)', color: onPrev ? 'rgba(255,255,255,.6)' : 'rgba(255,255,255,.2)', fontSize: 12, fontWeight: 600, cursor: onPrev ? 'pointer' : 'not-allowed' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(var(--fg),.05)', border: '1px solid rgba(var(--fg),.1)', color: onPrev ? 'rgba(var(--fg),.6)' : 'rgba(var(--fg),.2)', fontSize: 12, fontWeight: 600, cursor: onPrev ? 'pointer' : 'not-allowed' }}>
           <ChevronLeft size={13} /> Previous
         </button>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -1404,7 +1404,7 @@ function ModuleViewer({
             <button
               onClick={onComplete}
               disabled={module.type === 'exercise' ? !allStepsRevealed : module.type === 'quiz' ? !allQuizAnswered : false}
-              style={{ padding: '9px 20px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 12, fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: (module.type === 'exercise' && !allStepsRevealed) || (module.type === 'quiz' && !allQuizAnswered) ? 0.4 : 1 }}>
+              style={{ padding: '9px 20px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 12, fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: (module.type === 'exercise' && !allStepsRevealed) || (module.type === 'quiz' && !allQuizAnswered) ? 0.4 : 1 }}>
               <CheckCircle size={13} /> Mark Complete
             </button>
           )}
@@ -1434,24 +1434,24 @@ function CourseRoadmap({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
       {/* Back */}
-      <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)', fontSize: 11, fontWeight: 600, cursor: 'pointer', marginBottom: 20, width: 'fit-content' }}>
+      <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'rgba(var(--fg),.06)', border: '1px solid rgba(var(--fg),.1)', color: 'rgba(var(--fg),.6)', fontSize: 11, fontWeight: 600, cursor: 'pointer', marginBottom: 20, width: 'fit-content' }}>
         <ChevronLeft size={13} /> All Courses
       </button>
 
       {/* Course header */}
-      <div style={{ background: `linear-gradient(135deg, ${course.color}0a 0%, transparent 60%), rgba(255,255,255,.02)`, border: `1px solid ${course.color}25`, borderRadius: 18, padding: '24px 22px', marginBottom: 24 }}>
+      <div style={{ background: `linear-gradient(135deg, ${course.color}0a 0%, transparent 60%), rgba(var(--fg),.02)`, border: `1px solid ${course.color}25`, borderRadius: 18, padding: '24px 22px', marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
           <span style={{ ...pill, ...levelStyle(course.level) }}>{course.level}</span>
           {course.tag && <span style={{ ...pill, background: `${course.color}18`, color: course.color, border: `1px solid ${course.color}35` }}>{course.tag}</span>}
-          <span style={{ ...pill, background: 'transparent', color: 'rgba(255,255,255,.35)', border: 'none', gap: 4 }}>
+          <span style={{ ...pill, background: 'transparent', color: 'rgba(var(--fg),.35)', border: 'none', gap: 4 }}>
             <Clock size={9} /> {course.estimatedHours}h estimated
           </span>
         </div>
         <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: '#fff' }}>{course.title}</h1>
-        <p style={{ margin: '0 0 16px', fontSize: 13, color: 'rgba(255,255,255,.55)', lineHeight: 1.6 }}>{course.description}</p>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: 'rgba(var(--fg),.55)', lineHeight: 1.6 }}>{course.description}</p>
         {/* Progress bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ flex: 1, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
+          <div style={{ flex: 1, height: 6, borderRadius: 99, background: 'rgba(var(--fg),.07)', overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${pct}%`, background: course.color, borderRadius: 99, transition: 'width .5s cubic-bezier(.4,0,.2,1)' }} />
           </div>
           <span style={{ fontSize: 12, fontWeight: 700, color: course.color, flexShrink: 0 }}>{pct}% complete</span>
@@ -1459,7 +1459,7 @@ function CourseRoadmap({
       </div>
 
       {/* Module list */}
-      <p style={{ margin: '0 0 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(255,255,255,.35)' }}>
+      <p style={{ margin: '0 0 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(var(--fg),.35)' }}>
         Course Curriculum — {course.modules.length} modules
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1470,16 +1470,16 @@ function CourseRoadmap({
             <button key={mod.id} onClick={() => onSelectModule(idx)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
-                borderRadius: 14, background: done ? `${course.color}08` : 'rgba(255,255,255,.03)',
-                border: `1px solid ${done ? course.color + '30' : 'rgba(255,255,255,.07)'}`,
+                borderRadius: 14, background: done ? `${course.color}08` : 'rgba(var(--fg),.03)',
+                border: `1px solid ${done ? course.color + '30' : 'rgba(var(--fg),.07)'}`,
                 cursor: 'pointer', textAlign: 'left', transition: 'all .15s',
               }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = course.color + '40'; (e.currentTarget as HTMLElement).style.transform = 'translateX(3px)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = done ? course.color + '30' : 'rgba(255,255,255,.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = done ? course.color + '30' : 'rgba(var(--fg),.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
             >
               {/* Step number / check */}
-              <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: done ? course.color + '20' : 'rgba(255,255,255,.05)', border: `1px solid ${done ? course.color + '40' : 'rgba(255,255,255,.1)'}` }}>
-                {done ? <CheckCircle size={14} color={course.color} /> : <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,.4)' }}>{idx + 1}</span>}
+              <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: done ? course.color + '20' : 'rgba(var(--fg),.05)', border: `1px solid ${done ? course.color + '40' : 'rgba(var(--fg),.1)'}` }}>
+                {done ? <CheckCircle size={14} color={course.color} /> : <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(var(--fg),.4)' }}>{idx + 1}</span>}
               </div>
               {/* Info */}
               <div style={{ flex: 1 }}>
@@ -1488,11 +1488,11 @@ function CourseRoadmap({
                   <span style={{ fontSize: 10, fontWeight: 700, color: tc, textTransform: 'uppercase', letterSpacing: '.06em' }}>
                     {mod.type === 'quiz' ? 'Quiz' : mod.type === 'exercise' ? 'Exercise' : 'Lesson'}
                   </span>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <span style={{ fontSize: 10, color: 'rgba(var(--fg),.25)', display: 'flex', alignItems: 'center', gap: 3 }}>
                     <Clock size={8} />{mod.duration}m
                   </span>
                 </div>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: done ? 600 : 500, color: done ? '#fff' : 'rgba(255,255,255,.8)' }}>{mod.title}</p>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: done ? 600 : 500, color: done ? '#fff' : 'rgba(var(--fg),.8)' }}>{mod.title}</p>
               </div>
               <Play size={14} color={course.color} opacity={0.6} />
             </button>
@@ -1517,8 +1517,8 @@ function CourseCard({ course, progress, onClick }: {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        background: hov ? `${course.color}0a` : 'rgba(255,255,255,.025)',
-        border: `1px solid ${hov ? course.color + '40' : 'rgba(255,255,255,.07)'}`,
+        background: hov ? `${course.color}0a` : 'rgba(var(--fg),.025)',
+        border: `1px solid ${hov ? course.color + '40' : 'rgba(var(--fg),.07)'}`,
         borderRadius: 20, padding: '22px 20px', cursor: 'pointer',
         transition: 'all .2s', transform: hov ? 'translateY(-3px)' : 'none',
         boxShadow: hov ? `0 12px 40px ${course.color}12` : 'none',
@@ -1534,19 +1534,19 @@ function CourseCard({ course, progress, onClick }: {
       {/* Title */}
       <div>
         <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{course.title}</h3>
-        <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,.4)' }}>{course.subtitle}</p>
+        <p style={{ margin: 0, fontSize: 11, color: 'rgba(var(--fg),.4)' }}>{course.subtitle}</p>
       </div>
       {/* Description */}
-      <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,.55)', lineHeight: 1.65, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{course.description}</p>
+      <p style={{ margin: 0, fontSize: 12, color: 'rgba(var(--fg),.55)', lineHeight: 1.65, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{course.description}</p>
       {/* Stats */}
-      <div style={{ display: 'flex', gap: 14, fontSize: 11, color: 'rgba(255,255,255,.35)' }}>
+      <div style={{ display: 'flex', gap: 14, fontSize: 11, color: 'rgba(var(--fg),.35)' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><BookOpen size={10} /> {course.modules.length} modules</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={10} /> {course.estimatedHours}h</span>
       </div>
       {/* Progress */}
       {pct > 0 && (
         <div>
-          <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,.07)', overflow: 'hidden', marginBottom: 4 }}>
+          <div style={{ height: 4, borderRadius: 99, background: 'rgba(var(--fg),.07)', overflow: 'hidden', marginBottom: 4 }}>
             <div style={{ height: '100%', width: `${pct}%`, background: course.color, borderRadius: 99 }} />
           </div>
           <span style={{ fontSize: 10, color: course.color, fontWeight: 700 }}>{pct}% complete</span>
@@ -1625,23 +1625,23 @@ export default function Learn() {
             <Award size={22} color="#00e676" />
             Learning Hub
           </h1>
-          <p style={{ margin: '5px 0 0', fontSize: 13, color: 'rgba(255,255,255,.45)' }}>
+          <p style={{ margin: '5px 0 0', fontSize: 13, color: 'rgba(var(--fg),.45)' }}>
             Full courses on Caribbean &amp; US investing — lessons, exercises, quizzes, and real-world analysis.
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.08)', borderRadius: 12 }}>
           <Zap size={13} color="#00e676" />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>{totalCompleted}/{totalModules} modules done</span>
+          <span style={{ fontSize: 11, color: 'rgba(var(--fg),.5)', fontWeight: 600 }}>{totalCompleted}/{totalModules} modules done</span>
         </div>
       </div>
 
       {/* Overall progress */}
-      <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: '14px 18px' }}>
+      <div style={{ background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.07)', borderRadius: 14, padding: '14px 18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.7)' }}>Overall Progress</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(var(--fg),.7)' }}>Overall Progress</span>
           <span style={{ fontSize: 12, fontWeight: 800, color: '#00e676' }}>{overallPct}%</span>
         </div>
-        <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
+        <div style={{ height: 6, borderRadius: 99, background: 'rgba(var(--fg),.07)', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${overallPct}%`, background: 'linear-gradient(90deg, #00e676, #40c4ff)', borderRadius: 99, transition: 'width .6s cubic-bezier(.4,0,.2,1)' }} />
         </div>
       </div>
@@ -1688,17 +1688,17 @@ export default function Learn() {
 function GlossaryRow({ term, definition }: { term: string; definition: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 12, overflow: 'hidden', transition: 'border-color .15s' }}>
+    <div style={{ background: 'rgba(var(--fg),.025)', border: '1px solid rgba(var(--fg),.07)', borderRadius: 12, overflow: 'hidden', transition: 'border-color .15s' }}>
       <button onClick={() => setOpen(o => !o)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'transparent', border: 'none', cursor: 'pointer', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Zap size={11} color="#00e676" />
           <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', textAlign: 'left' }}>{term}</span>
         </div>
-        {open ? <ChevronRight size={13} color="rgba(255,255,255,.35)" style={{ transform: 'rotate(90deg)' }} /> : <ChevronRight size={13} color="rgba(255,255,255,.35)" />}
+        {open ? <ChevronRight size={13} color="rgba(var(--fg),.35)" style={{ transform: 'rotate(90deg)' }} /> : <ChevronRight size={13} color="rgba(var(--fg),.35)" />}
       </button>
       {open && (
-        <div style={{ padding: '0 16px 14px', borderTop: '1px solid rgba(255,255,255,.06)' }}>
-          <p style={{ margin: '10px 0 0', fontSize: 12, color: 'rgba(255,255,255,.6)', lineHeight: 1.65 }}>{definition}</p>
+        <div style={{ padding: '0 16px 14px', borderTop: '1px solid rgba(var(--fg),.06)' }}>
+          <p style={{ margin: '10px 0 0', fontSize: 12, color: 'rgba(var(--fg),.6)', lineHeight: 1.65 }}>{definition}</p>
         </div>
       )}
     </div>

@@ -15,13 +15,13 @@ function Field({ label, value, onChange, prefix, suffix, placeholder }: {
   return (
     <div>
       <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-muted)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.1em' }}>{label}</label>
-      <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 10, overflow: 'hidden', transition: 'border-color .15s' }}
+      <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 10, overflow: 'hidden', transition: 'border-color .15s' }}
         onFocusCapture={e => (e.currentTarget.style.borderColor = 'rgba(0,230,118,.4)')}
         onBlurCapture={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}>
-        {prefix && <span style={{ padding: '0 10px', fontSize: 12, color: 'var(--color-muted)', borderRight: '1px solid var(--color-border)', height: '100%', display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,.02)' }}>{prefix}</span>}
+        {prefix && <span style={{ padding: '0 10px', fontSize: 12, color: 'var(--color-muted)', borderRight: '1px solid var(--color-border)', height: '100%', display: 'flex', alignItems: 'center', background: 'rgba(var(--fg),.02)' }}>{prefix}</span>}
         <input type="number" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder ?? '0'}
           style={{ flex: 1, padding: '9px 12px', background: 'transparent', border: 'none', fontSize: 13, color: 'var(--color-text)', outline: 'none', fontFamily: 'var(--font-mono)' }} />
-        {suffix && <span style={{ padding: '0 10px', fontSize: 12, color: 'var(--color-muted)', borderLeft: '1px solid var(--color-border)', background: 'rgba(255,255,255,.02)' }}>{suffix}</span>}
+        {suffix && <span style={{ padding: '0 10px', fontSize: 12, color: 'var(--color-muted)', borderLeft: '1px solid var(--color-border)', background: 'rgba(var(--fg),.02)' }}>{suffix}</span>}
       </div>
     </div>
   );
@@ -29,7 +29,7 @@ function Field({ label, value, onChange, prefix, suffix, placeholder }: {
 
 function ResultRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 10, background: highlight ? 'rgba(0,230,118,.08)' : 'rgba(255,255,255,.03)', border: `1px solid ${highlight ? 'rgba(0,230,118,.2)' : 'rgba(255,255,255,.05)'}` }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 10, background: highlight ? 'rgba(0,230,118,.08)' : 'rgba(var(--fg),.03)', border: `1px solid ${highlight ? 'rgba(0,230,118,.2)' : 'rgba(var(--fg),.05)'}` }}>
       <span style={{ fontSize: 12, color: highlight ? 'var(--color-green)' : 'var(--color-text2)', fontWeight: 600 }}>{label}</span>
       <span style={{ fontSize: 14, fontWeight: 800, color: highlight ? 'var(--color-green)' : 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{value}</span>
     </div>
@@ -58,7 +58,7 @@ function CompoundCalc() {
       <div>
         <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-muted)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.1em' }}>Compounding Frequency</label>
         <select value={freq} onChange={e => setFreq(e.target.value)}
-          style={{ width: '100%', padding: '9px 12px', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 13, color: 'var(--color-text)', outline: 'none' }}>
+          style={{ width: '100%', padding: '9px 12px', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 13, color: 'var(--color-text)', outline: 'none' }}>
           {[['1','Annually'],['4','Quarterly'],['12','Monthly'],['52','Weekly'],['365','Daily']].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
         </select>
       </div>
@@ -211,7 +211,7 @@ function PortfolioOptCalc() {
   const weights = result?.max_sharpe_weights ?? result?.optimized_weights;
 
   const inputStyle: React.CSSProperties = {
-    flex: 1, padding: '8px 10px', background: 'rgba(255,255,255,.05)',
+    flex: 1, padding: '8px 10px', background: 'rgba(var(--fg),.05)',
     border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12,
     color: 'var(--color-text)', outline: 'none', fontFamily: 'var(--font-mono)',
     boxSizing: 'border-box',
@@ -267,9 +267,9 @@ function PortfolioOptCalc() {
       </div>
 
       <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
-        style={{ padding: '11px', borderRadius: 12, background: 'var(--color-green)', border: 'none', fontSize: 13, fontWeight: 800, color: '#04060d', cursor: mutation.isPending ? 'not-allowed' : 'pointer', opacity: mutation.isPending ? .7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'opacity .15s' }}>
+        style={{ padding: '11px', borderRadius: 12, background: 'var(--color-green)', border: 'none', fontSize: 13, fontWeight: 800, color: 'var(--color-bg)', cursor: mutation.isPending ? 'not-allowed' : 'pointer', opacity: mutation.isPending ? .7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'opacity .15s' }}>
         {mutation.isPending ? (
-          <><div style={{ width: 14, height: 14, border: '2px solid rgba(0,0,0,.25)', borderTopColor: '#04060d', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Optimizing...</>
+          <><div style={{ width: 14, height: 14, border: '2px solid rgba(0,0,0,.25)', borderTopColor: 'var(--color-bg)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Optimizing...</>
         ) : (
           <><i className="fa-solid fa-wand-magic-sparkles" style={{ fontSize: 12 }} /> Run Markowitz Optimization</>
         )}
@@ -287,7 +287,7 @@ function PortfolioOptCalc() {
           </div>
           {mutation.error.message !== 'Enter at least 2 symbols' && (
             <button onClick={() => mutation.mutate()}
-              style={{ alignSelf: 'flex-start', padding: '6px 16px', borderRadius: 8, background: 'var(--color-green)', color: '#04060d', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+              style={{ alignSelf: 'flex-start', padding: '6px 16px', borderRadius: 8, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
               Retry
             </button>
           )}
@@ -311,7 +311,7 @@ function PortfolioOptCalc() {
                 { label: 'Volatility', value: result.expected_volatility !== undefined ? `${(result.expected_volatility * 100).toFixed(2)}%` : '—', color: 'var(--color-red)' },
                 { label: 'Sharpe Ratio', value: result.sharpe_ratio !== undefined ? result.sharpe_ratio.toFixed(3) : '—', color: 'var(--color-blue)' },
               ].map(m => (
-                <div key={m.label} style={{ padding: '10px 12px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 10, textAlign: 'center' }}>
+                <div key={m.label} style={{ padding: '10px 12px', background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.06)', borderRadius: 10, textAlign: 'center' }}>
                   <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{m.label}</p>
                   <p style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 800, fontFamily: 'var(--font-mono)', color: m.color }}>{m.value}</p>
                 </div>
@@ -326,7 +326,7 @@ function PortfolioOptCalc() {
               {Object.entries(weights).sort((a, b) => b[1] - a[1]).map(([sym, w]) => (
                 <div key={sym} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-mono)', width: 60, flexShrink: 0 }}>{sym}</span>
-                  <div style={{ flex: 1, height: 8, background: 'rgba(255,255,255,.06)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ flex: 1, height: 8, background: 'rgba(var(--fg),.06)', borderRadius: 99, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${(w * 100).toFixed(1)}%`, background: 'var(--color-green)', borderRadius: 99, transition: 'width .6s ease' }} />
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-green)', width: 52, textAlign: 'right', flexShrink: 0 }}>{(w * 100).toFixed(1)}%</span>
@@ -365,7 +365,7 @@ export default function Calculators() {
               style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'all .15s',
                 background: calc === c.key ? 'rgba(0,230,118,.1)' : 'transparent',
                 outline: calc === c.key ? '1px solid rgba(0,230,118,.2)' : 'none' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: calc === c.key ? 'rgba(0,230,118,.15)' : 'rgba(255,255,255,.05)' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: calc === c.key ? 'rgba(0,230,118,.15)' : 'rgba(var(--fg),.05)' }}>
                 <i className={c.icon} style={{ fontSize: 12, color: calc === c.key ? 'var(--color-green)' : 'var(--color-muted)' }} />
               </div>
               <div>

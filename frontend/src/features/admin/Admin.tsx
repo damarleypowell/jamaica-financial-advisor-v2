@@ -167,7 +167,7 @@ function MemDonut({ pct }: { pct: number }) {
   const color = pct > 85 ? '#ff5252' : pct > 65 ? '#ffd740' : '#00e676';
   return (
     <svg width={72} height={72} viewBox="0 0 72 72">
-      <circle cx={36} cy={36} r={r} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth={8} />
+      <circle cx={36} cy={36} r={r} fill="none" stroke="rgba(var(--fg),.06)" strokeWidth={8} />
       <circle cx={36} cy={36} r={r} fill="none" stroke={color} strokeWidth={8}
         strokeDasharray={`${dash} ${c - dash}`} strokeLinecap="round"
         transform="rotate(-90 36 36)" style={{ transition: 'stroke-dasharray 600ms ease' }} />
@@ -202,7 +202,7 @@ function UserPanel({ user, onClose, onUpdate }: {
             <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--color-muted)' }}>{user.email}</p>
             <p style={{ margin: '2px 0 0', fontSize: 9, fontFamily: MONO, color: 'var(--color-muted)', opacity: .5 }}>{user.id}</p>
           </div>
-          <button onClick={onClose} style={{ border: 'none', background: 'rgba(255,255,255,.07)', borderRadius: 8, width: 30, height: 30, cursor: 'pointer', color: 'var(--color-muted)', fontSize: 14 }}>×</button>
+          <button onClick={onClose} style={{ border: 'none', background: 'rgba(var(--fg),.07)', borderRadius: 8, width: 30, height: 30, cursor: 'pointer', color: 'var(--color-muted)', fontSize: 14 }}>×</button>
         </div>
 
         {/* Status row */}
@@ -221,7 +221,7 @@ function UserPanel({ user, onClose, onUpdate }: {
             { label: 'Txns', value: user._count?.transactions ?? 0 },
             { label: 'Chats', value: user._count?.chatHistory ?? 0 },
           ].map(s => (
-            <div key={s.label} style={{ background: 'rgba(255,255,255,.04)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+            <div key={s.label} style={{ background: 'rgba(var(--fg),.04)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
               <p style={{ margin: 0, fontSize: 18, fontWeight: 900, fontFamily: MONO, color: 'var(--color-text)' }}>{s.value}</p>
               <p style={{ margin: 0, fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)' }}>{s.label}</p>
             </div>
@@ -235,7 +235,7 @@ function UserPanel({ user, onClose, onUpdate }: {
             { label: 'Risk Profile', value: user.riskProfile || '—' },
             { label: 'Onboarding', value: user.onboardingCompleted ? 'Complete' : 'Incomplete' },
           ].map(r => (
-            <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,.03)' }}>
+            <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: 'rgba(var(--fg),.03)' }}>
               <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>{r.label}</span>
               <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text)', fontFamily: MONO }}>{r.value}</span>
             </div>
@@ -269,7 +269,7 @@ function UserPanel({ user, onClose, onUpdate }: {
           </div>
 
           <button onClick={() => onUpdate(user.id, { subscriptionTier: tier, kycStatus: kyc })}
-            style={{ padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#00e676', color: '#0a1628', fontFamily: SYNE, transition: 'opacity 150ms' }}
+            style={{ padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#00e676', color: 'var(--color-bg2)', fontFamily: SYNE, transition: 'opacity 150ms' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '.85'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
           >
@@ -444,7 +444,7 @@ export default function Admin() {
   ];
 
   const INPUT = {
-    background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)',
+    background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)',
     borderRadius: 9, color: 'var(--color-text)', outline: 'none',
     fontSize: 12, padding: '8px 12px', width: '100%',
   } as React.CSSProperties;
@@ -481,10 +481,10 @@ export default function Admin() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 3, padding: '4px', borderRadius: 12, background: 'rgba(255,255,255,.03)', border: '1px solid var(--color-border)', width: 'fit-content', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 3, padding: '4px', borderRadius: 12, background: 'rgba(var(--fg),.03)', border: '1px solid var(--color-border)', width: 'fit-content', flexWrap: 'wrap' }}>
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', transition: 'all 150ms', fontFamily: SYNE, background: tab === t.key ? '#ce93d8' : 'transparent', color: tab === t.key ? '#0a1628' : 'var(--color-muted)', boxShadow: tab === t.key ? '0 2px 12px rgba(206,147,216,.35)' : 'none' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', transition: 'all 150ms', fontFamily: SYNE, background: tab === t.key ? '#ce93d8' : 'transparent', color: tab === t.key ? 'var(--color-bg2)' : 'var(--color-muted)', boxShadow: tab === t.key ? '0 2px 12px rgba(206,147,216,.35)' : 'none' }}>
               <i className={`fa-solid ${t.icon}`} style={{ fontSize: 10 }} />{t.label}
             </button>
           ))}
@@ -538,7 +538,7 @@ export default function Admin() {
                     <div style={{ overflowX: 'auto' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                          <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                          <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                             {['Name', 'Email', 'Tier', 'KYC', 'Joined'].map((h, i) => (
                               <th key={h} style={{ padding: '9px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', textAlign: i > 0 ? 'right' : 'left' }}>{h}</th>
                             ))}
@@ -546,8 +546,8 @@ export default function Admin() {
                         </thead>
                         <tbody>
                           {(dash?.recentUsers ?? []).map(u => (
-                            <tr key={u.id} onClick={() => setSelectedUser(u)} style={{ borderBottom: '1px solid rgba(255,255,255,.025)', cursor: 'pointer' }}
-                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.02)'; }}
+                            <tr key={u.id} onClick={() => setSelectedUser(u)} style={{ borderBottom: '1px solid rgba(var(--fg),.025)', cursor: 'pointer' }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),.02)'; }}
                               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}>
                               <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>{u.name || 'Anonymous'}</td>
                               <td style={{ padding: '10px 16px', textAlign: 'right', fontSize: 11, color: 'var(--color-muted)' }}>{u.email}</td>
@@ -592,7 +592,7 @@ export default function Admin() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                  <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                     {['Name', 'Email', 'Tier', 'KYC', 'Status', 'Joined', 'Actions'].map((h, i) => (
                       <th key={h} style={{ padding: '9px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', textAlign: i === 0 || i === 6 ? 'left' : 'center', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
@@ -602,8 +602,8 @@ export default function Admin() {
                   {!usersData?.users?.length ? (
                     <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', fontSize: 12, color: 'var(--color-muted)' }}>No users found</td></tr>
                   ) : usersData.users.map(u => (
-                    <tr key={u.id} onClick={() => setSelectedUser(u)} style={{ borderBottom: '1px solid rgba(255,255,255,.025)', cursor: 'pointer' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.02)'; }}
+                    <tr key={u.id} onClick={() => setSelectedUser(u)} style={{ borderBottom: '1px solid rgba(var(--fg),.025)', cursor: 'pointer' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),.02)'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}>
                       <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap' }}>{u.name || 'Anonymous'}</td>
                       <td style={{ padding: '10px 16px', textAlign: 'center', fontSize: 11, color: 'var(--color-muted)' }}>{u.email}</td>
@@ -657,7 +657,7 @@ export default function Admin() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                  <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                     {['Symbol', 'User', 'Side', 'Type', 'Qty', 'Price', 'Status', 'Time'].map((h, i) => (
                       <th key={h} style={{ padding: '9px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', textAlign: i === 0 || i === 1 ? 'left' : 'center' }}>{h}</th>
                     ))}
@@ -669,8 +669,8 @@ export default function Admin() {
                   ) : ordersData.orders.map(o => {
                     const isBuy = o.side?.toLowerCase() === 'buy';
                     return (
-                      <tr key={o.id} style={{ borderBottom: '1px solid rgba(255,255,255,.025)' }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.02)'; }}
+                      <tr key={o.id} style={{ borderBottom: '1px solid rgba(var(--fg),.025)' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),.02)'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}>
                         <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 700, fontFamily: MONO, color: 'var(--color-text)' }}>{o.symbol}</td>
                         <td style={{ padding: '10px 16px', fontSize: 10, color: 'var(--color-muted)' }}>{o.user?.email || o.userId?.slice(0, 8) + '…'}</td>
@@ -754,7 +754,7 @@ export default function Admin() {
                   {(secEvents?.events ?? []).map(ev => {
                     const c = SEV_COLORS[ev.severity] || '#78909c';
                     return (
-                      <div key={ev.id} style={{ padding: '10px 20px', borderBottom: '1px solid rgba(255,255,255,.025)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <div key={ev.id} style={{ padding: '10px 20px', borderBottom: '1px solid rgba(var(--fg),.025)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                         <div style={{ width: 6, height: 6, borderRadius: '50%', background: c, marginTop: 5, flexShrink: 0 }} />
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
@@ -819,7 +819,7 @@ export default function Admin() {
                   {Object.entries(sysHealth.services).map(([name, status]) => {
                     const ok = status === true || status === 'ok' || status === 'connected';
                     return (
-                      <div key={name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,.03)', border: '1px solid var(--color-border)' }}>
+                      <div key={name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: 'rgba(var(--fg),.03)', border: '1px solid var(--color-border)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span style={{ width: 6, height: 6, borderRadius: '50%', background: ok ? '#00e676' : '#ff5252', display: 'block' }} />
                           <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)', textTransform: 'capitalize' }}>{name}</span>
@@ -871,7 +871,7 @@ export default function Admin() {
                 </div>
                 <button onClick={() => { if (broadcastSubject && broadcastBody) sendBroadcast.mutate(); }}
                   disabled={!broadcastSubject || !broadcastBody || sendBroadcast.isPending}
-                  style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#ce93d8', color: '#0a1628', fontFamily: SYNE, opacity: (!broadcastSubject || !broadcastBody || sendBroadcast.isPending) ? .5 : 1, transition: 'opacity 150ms' }}>
+                  style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#ce93d8', color: 'var(--color-bg2)', fontFamily: SYNE, opacity: (!broadcastSubject || !broadcastBody || sendBroadcast.isPending) ? .5 : 1, transition: 'opacity 150ms' }}>
                   {sendBroadcast.isPending ? 'Sending…' : sendBroadcast.isSuccess ? 'Sent ✓' : 'Send Broadcast'}
                 </button>
               </div>
@@ -881,7 +881,7 @@ export default function Admin() {
               <SectionCard title="Broadcast History">
                 <div style={{ padding: '8px 0' }}>
                   {(broadcastsData?.broadcasts ?? []).map((b: Broadcast & { title?: string; message?: string }) => (
-                    <div key={b.id} style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,.025)' }}>
+                    <div key={b.id} style={{ padding: '14px 20px', borderBottom: '1px solid rgba(var(--fg),.025)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', fontFamily: SYNE }}>{b.title ?? b.subject}</span>
                         <span style={{ fontSize: 9, fontFamily: MONO, color: 'var(--color-muted)' }}>{fmtDate(b.sentAt)}</span>
@@ -904,7 +904,7 @@ export default function Admin() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                  <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                     {['User', 'Action', 'IP', 'Details', 'Time'].map((h, i) => (
                       <th key={h} style={{ padding: '9px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', textAlign: i === 0 || i === 1 ? 'left' : 'center' }}>{h}</th>
                     ))}
@@ -914,8 +914,8 @@ export default function Admin() {
                   {!(auditData?.entries?.length) ? (
                     <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', fontSize: 12, color: 'var(--color-muted)' }}>No audit entries</td></tr>
                   ) : auditData.entries.map(a => (
-                    <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,.025)' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.02)'; }}
+                    <tr key={a.id} style={{ borderBottom: '1px solid rgba(var(--fg),.025)' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),.02)'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}>
                       <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--color-muted)' }}>{a.user?.email || '—'}</td>
                       <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 700, fontFamily: MONO, color: 'var(--color-text)' }}>{a.action}</td>

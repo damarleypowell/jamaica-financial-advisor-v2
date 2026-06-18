@@ -186,7 +186,7 @@ export default function AIChat() {
             display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 99,
             fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)',
             color: (usage.used / (usage.limit as number)) >= 0.8 ? '#ffd740' : 'var(--color-text2)',
-            background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)',
+            background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)',
           }}>
             <i className="fa-solid fa-bolt" style={{ fontSize: 9, color: 'var(--color-green)' }} />
             {Math.max(0, (usage.limit as number) - usage.used)} left today
@@ -196,7 +196,7 @@ export default function AIChat() {
           <button onClick={clearChat} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8,
             fontSize: 11, fontWeight: 600, color: 'var(--color-muted)',
-            background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', cursor: 'pointer',
+            background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', cursor: 'pointer',
             transition: 'all 150ms',
           }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--color-text)'; }}
@@ -280,7 +280,7 @@ export default function AIChat() {
               lineHeight: 1.6, minHeight: 52, maxHeight: 140, boxSizing: 'border-box',
             }}
           />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', borderTop: '1px solid rgba(255,255,255,.04)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', borderTop: '1px solid rgba(var(--fg),.04)' }}>
             <span style={{ fontSize: 10, color: 'var(--color-muted)' }}>
               {charCount > 0 ? `${charCount} chars` : 'Educational purposes only — not financial advice'}
             </span>
@@ -291,7 +291,7 @@ export default function AIChat() {
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '7px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 700, transition: 'all 180ms',
-                background: input.trim() ? 'var(--color-green)' : 'rgba(255,255,255,.06)',
+                background: input.trim() ? 'var(--color-green)' : 'rgba(var(--fg),.06)',
                 color: input.trim() ? 'var(--color-bg)' : 'var(--color-muted)',
                 boxShadow: input.trim() ? '0 2px 12px rgba(0,230,118,.3)' : 'none',
                 opacity: chatMut.isPending ? .6 : 1,

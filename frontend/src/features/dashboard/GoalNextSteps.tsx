@@ -50,7 +50,7 @@ export default function GoalNextSteps() {
 
   return (
     <div style={{ position: 'relative', background: 'linear-gradient(135deg, rgba(0,230,118,.07), rgba(64,196,255,.04))', border: '1px solid rgba(0,230,118,.2)', borderRadius: 18, padding: '18px 20px' }}>
-      <button onClick={dismiss} aria-label="Dismiss" style={{ position: 'absolute', top: 12, right: 12, width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}>
+      <button onClick={dismiss} aria-label="Dismiss" style={{ position: 'absolute', top: 12, right: 12, width: 26, height: 26, borderRadius: 7, background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}>
         <i className="fa-solid fa-xmark" style={{ fontSize: 11 }} />
       </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>

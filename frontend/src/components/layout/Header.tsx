@@ -17,10 +17,10 @@ function SearchResults({ results, width, onSelect }: SearchResultsProps) {
   return (
     <div style={{
       position: 'absolute', top: 'calc(100% + 10px)', right: 0, width,
-      background: 'var(--color-bg3)', border: '1px solid rgba(255,255,255,.1)',
+      background: 'var(--color-bg3)', border: '1px solid rgba(var(--fg),.1)',
       borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,.8)', zIndex: 60, overflow: 'hidden',
     }} className="animate-fade-in">
-      <div style={{ padding: '8px 14px 6px', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
+      <div style={{ padding: '8px 14px 6px', borderBottom: '1px solid rgba(var(--fg),.05)' }}>
         <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.1em' }}>
           {results.length} result{results.length !== 1 ? 's' : ''}
         </p>
@@ -31,7 +31,7 @@ function SearchResults({ results, width, onSelect }: SearchResultsProps) {
           <button key={s.symbol}
             onClick={() => onSelect(s.symbol)}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 120ms' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.04)')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.04)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
             <div style={{
               width: 34, height: 34, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -124,8 +124,8 @@ function AuthSection({ user, isAuthenticated, openAuthModal, logout }: {
           {initials}
         </button>
         {open && (
-          <div className="animate-fade-in" style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: 248, background: 'var(--color-bg3)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 14, boxShadow: '0 20px 60px rgba(0,0,0,.6)', overflow: 'hidden', zIndex: 60 }}>
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+          <div className="animate-fade-in" style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: 248, background: 'var(--color-bg3)', border: '1px solid rgba(var(--fg),.1)', borderRadius: 14, boxShadow: '0 20px 60px rgba(0,0,0,.6)', overflow: 'hidden', zIndex: 60 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(var(--fg),.06)' }}>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'var(--color-text)' }}>{user?.name || 'Investor'}</p>
               {user?.email && <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>}
               <span style={{ display: 'inline-flex', marginTop: 8, padding: '2px 9px', borderRadius: 99, fontSize: 9, fontWeight: 800, letterSpacing: '.08em', background: tb.bg, border: `1px solid ${tb.border}`, color: tb.color }}>{tier} PLAN</span>
@@ -134,14 +134,14 @@ function AuthSection({ user, isAuthenticated, openAuthModal, logout }: {
               {items.map(it => (
                 <button key={it.to} onClick={() => goto(it.to)}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '9px 10px', borderRadius: 9, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--color-text2)', fontSize: 13, fontWeight: 500 }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.05)')}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.05)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                   <i className={`fa-solid ${it.icon}`} style={{ fontSize: 12, width: 16, textAlign: 'center', color: it.color ?? 'var(--color-muted)' }} />
                   {it.label}
                 </button>
               ))}
             </div>
-            <div style={{ padding: 6, borderTop: '1px solid rgba(255,255,255,.06)' }}>
+            <div style={{ padding: 6, borderTop: '1px solid rgba(var(--fg),.06)' }}>
               <button onClick={() => { setOpen(false); logout(); }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '9px 10px', borderRadius: 9, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#ff5252', fontSize: 13, fontWeight: 600 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,82,82,.08)')}
@@ -160,14 +160,14 @@ function AuthSection({ user, isAuthenticated, openAuthModal, logout }: {
     <div style={{ display: 'flex', gap: 8 }}>
       <button
         onClick={() => openAuthModal('login')}
-        style={{ padding: '7px 16px', fontSize: 13, fontWeight: 600, color: 'var(--color-text2)', border: '1px solid rgba(255,255,255,.09)', borderRadius: 10, transition: 'all 150ms', background: 'transparent', cursor: 'pointer' }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+        style={{ padding: '7px 16px', fontSize: 13, fontWeight: 600, color: 'var(--color-text2)', border: '1px solid rgba(var(--fg),.09)', borderRadius: 10, transition: 'all 150ms', background: 'transparent', cursor: 'pointer' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--fg),.05)'; e.currentTarget.style.color = 'var(--color-text)'; }}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text2)'; }}>
         Log In
       </button>
       <button
         onClick={() => openAuthModal('signup')}
-        style={{ padding: '7px 16px', fontSize: 13, fontWeight: 700, color: '#04060d', background: 'var(--color-green)', border: 'none', borderRadius: 10, transition: 'all 180ms', boxShadow: '0 2px 16px rgba(0,230,118,.3)', cursor: 'pointer' }}
+        style={{ padding: '7px 16px', fontSize: 13, fontWeight: 700, color: 'var(--color-bg)', background: 'var(--color-green)', border: 'none', borderRadius: 10, transition: 'all 180ms', boxShadow: '0 2px 16px rgba(0,230,118,.3)', cursor: 'pointer' }}
         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(0,230,118,.45)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px rgba(0,230,118,.3)'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
         Sign Up
@@ -256,8 +256,8 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
             </button>
             {mSearchOpen && (
               <div style={{ position: 'fixed', top: 64, left: 12, right: 12, zIndex: 60 }}>
-                <div style={{ background: 'var(--color-bg3)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,.8)', overflow: 'hidden' }}>
-                  <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', display: 'flex', gap: 10, alignItems: 'center' }}>
+                <div style={{ background: 'var(--color-bg3)', border: '1px solid rgba(var(--fg),.1)', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,.8)', overflow: 'hidden' }}>
+                  <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(var(--fg),.05)', display: 'flex', gap: 10, alignItems: 'center' }}>
                     <i className="fa-solid fa-magnifying-glass" style={{ fontSize: 14, color: 'var(--color-muted)' }} />
                     <input autoFocus value={sq} onChange={e => setSq(e.target.value)} placeholder="Search stocks..."
                       style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 15, color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }} />
@@ -267,7 +267,7 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
                     const pos = (s.pctChange ?? 0) >= 0;
                     return (
                       <button key={s.symbol} onClick={() => { navigate(`/technicals/${s.symbol}`); setMSearchOpen(false); setSq(''); }}
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(var(--fg),.03)' }}>
                         <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: pos ? 'rgba(0,230,118,.1)' : 'rgba(255,82,82,.1)', flexShrink: 0 }}>
                           <span style={{ fontSize: 9, fontWeight: 900, color: pos ? '#00e676' : '#ff5252', fontFamily: 'var(--font-mono)' }}>{s.symbol.slice(0, 3)}</span>
                         </div>
@@ -296,7 +296,7 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
             </button>
           ) : (
             <button onClick={() => openAuthModal('signup')}
-              style={{ padding: '7px 15px', borderRadius: 10, background: 'var(--color-green)', color: '#04060d', fontSize: 12.5, fontWeight: 800, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 2px 12px rgba(0,230,118,.3)' }}>
+              style={{ padding: '7px 15px', borderRadius: 10, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 12.5, fontWeight: 800, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 2px 12px rgba(0,230,118,.3)' }}>
               Sign Up
             </button>
           )}
@@ -306,12 +306,12 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
       {/* ── Desktop header (hidden on mobile) ────────────────────────── */}
       <header className="hidden lg:flex" style={{
         position: 'fixed', top: 32, left: 0, right: 0, height: 56,
-        background: 'rgba(7,11,20,0.96)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        background: 'rgba(var(--surf),0.96)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+        borderBottom: '1px solid rgba(var(--fg),0.05)',
         zIndex: 40, alignItems: 'center', padding: '0 20px', gap: 12,
       }}>
         <button onClick={onToggleSidebar} aria-label="menu"
-          style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: sidebarOpen ? 'rgba(255,255,255,.08)' : 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms', flexShrink: 0 }}>
+          style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: sidebarOpen ? 'rgba(var(--fg),.08)' : 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms', flexShrink: 0 }}>
           <i className={sidebarOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'} style={{ fontSize: 15, color: 'var(--color-text2)' }} />
         </button>
 
@@ -328,7 +328,7 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
           </div>
         </Link>
 
-        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,.08)', flexShrink: 0 }} />
+        <div style={{ width: 1, height: 20, background: 'rgba(var(--fg),.08)', flexShrink: 0 }} />
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1 }}>{page.title}</p>
           {page.sub && <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)', lineHeight: 1, marginTop: 2 }}>{page.sub}</p>}
@@ -339,12 +339,12 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
         <div data-tour="search" ref={sRef} style={{ position: 'relative', flexShrink: 0 }}>
           <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--color-muted)', pointerEvents: 'none', zIndex: 1 }} />
           <input value={sq} onChange={e => { setSq(e.target.value); setSOpen(true); }} onFocus={() => setSOpen(true)} placeholder="Search stocks..."
-            style={{ height: 36, width: 230, paddingLeft: 34, paddingRight: 50, background: sOpen ? 'rgba(0,230,118,.05)' : 'rgba(255,255,255,.05)', border: `1px solid ${sOpen ? 'rgba(0,230,118,.35)' : 'rgba(255,255,255,.07)'}`, borderRadius: 10, fontSize: 13, color: 'var(--color-text)', outline: 'none', transition: 'all 180ms', fontFamily: 'var(--font-sans)' }} />
-          <kbd style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 9, color: 'var(--color-muted)', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 5, padding: '2px 5px', fontFamily: 'var(--font-mono)' }}>⌘K</kbd>
+            style={{ height: 36, width: 230, paddingLeft: 34, paddingRight: 50, background: sOpen ? 'rgba(0,230,118,.05)' : 'rgba(var(--fg),.05)', border: `1px solid ${sOpen ? 'rgba(0,230,118,.35)' : 'rgba(var(--fg),.07)'}`, borderRadius: 10, fontSize: 13, color: 'var(--color-text)', outline: 'none', transition: 'all 180ms', fontFamily: 'var(--font-sans)' }} />
+          <kbd style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 9, color: 'var(--color-muted)', background: 'rgba(var(--fg),.05)', border: '1px solid rgba(var(--fg),.08)', borderRadius: 5, padding: '2px 5px', fontFamily: 'var(--font-mono)' }}>⌘K</kbd>
           {sOpen && <SearchResults results={results} width={310} onSelect={handleSelectResult} />}
         </div>
 
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: isConn ? 'rgba(0,230,118,.08)' : 'rgba(255,255,255,.04)', border: `1px solid ${isConn ? 'rgba(0,230,118,.22)' : 'rgba(255,255,255,.07)'}`, color: isConn ? '#00e676' : 'var(--color-muted)', flexShrink: 0 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: isConn ? 'rgba(0,230,118,.08)' : 'rgba(var(--fg),.04)', border: `1px solid ${isConn ? 'rgba(0,230,118,.22)' : 'rgba(var(--fg),.07)'}`, color: isConn ? '#00e676' : 'var(--color-muted)', flexShrink: 0 }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: isConn ? '#00e676' : 'var(--color-muted)', display: 'inline-block', boxShadow: isConn ? '0 0 6px rgba(0,230,118,.6)' : 'none' }} />
           {isConn ? 'Live' : 'Offline'}
         </div>

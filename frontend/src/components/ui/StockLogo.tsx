@@ -76,7 +76,7 @@ export default function StockLogo({ symbol, isUS = false, size = 36, radius = 10
       <div style={{
         width: size, height: size, borderRadius: radius, flexShrink: 0,
         background: '#fff',
-        border: '1px solid rgba(255,255,255,.1)',
+        border: '1px solid rgba(var(--fg),.1)',
         overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>

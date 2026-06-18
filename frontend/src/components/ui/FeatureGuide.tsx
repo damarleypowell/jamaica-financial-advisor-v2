@@ -198,7 +198,7 @@ export default function FeatureGuide() {
       `}</style>
 
       <div style={{
-        background: 'rgba(6,10,18,.97)',
+        background: 'rgba(var(--surf),.97)',
         border: '1px solid rgba(0,230,118,.25)',
         borderRadius: 20,
         boxShadow: '0 8px 48px rgba(0,0,0,.7), 0 0 0 1px rgba(0,230,118,.08)',
@@ -207,7 +207,7 @@ export default function FeatureGuide() {
         {/* Header */}
         <div style={{
           padding: '14px 16px 12px',
-          borderBottom: '1px solid rgba(255,255,255,.05)',
+          borderBottom: '1px solid rgba(var(--fg),.05)',
           display: 'flex', alignItems: 'center', gap: 12,
           background: 'linear-gradient(135deg, rgba(0,230,118,.08) 0%, transparent 60%)',
         }}>
@@ -262,10 +262,10 @@ export default function FeatureGuide() {
           <button
             onClick={handleDismiss}
             style={{
-              width: 32, height: 32, borderRadius: 9, border: '1px solid rgba(255,255,255,.07)',
-              background: 'rgba(255,255,255,.04)', cursor: 'pointer',
+              width: 32, height: 32, borderRadius: 9, border: '1px solid rgba(var(--fg),.07)',
+              background: 'rgba(var(--fg),.04)', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'rgba(255,255,255,.4)', transition: 'all .15s', flexShrink: 0,
+              color: 'rgba(var(--fg),.4)', transition: 'all .15s', flexShrink: 0,
             }}>
             <i className="fa-solid fa-xmark" style={{ fontSize: 12 }} />
           </button>
@@ -273,14 +273,14 @@ export default function FeatureGuide() {
 
         {/* Body */}
         <div style={{ padding: '14px 16px' }}>
-          <p style={{ margin: '0 0 12px', fontSize: 13, color: 'rgba(255,255,255,.7)', lineHeight: 1.65 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 13, color: 'rgba(var(--fg),.7)', lineHeight: 1.65 }}>
             {guide.intro}
           </p>
 
           {/* Quick tips */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {guide.tips.map((tip, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'rgba(255,255,255,.45)' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'rgba(var(--fg),.45)' }}>
                 <span style={{ color: '#00e676', fontSize: 10, marginTop: 2, flexShrink: 0 }}>▸</span>
                 {tip}
               </div>
@@ -309,8 +309,8 @@ export default function FeatureGuide() {
             onClick={handleDismiss}
             style={{
               flex: 1, padding: '10px 0', borderRadius: 12,
-              background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)',
-              color: 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 600,
+              background: 'rgba(var(--fg),.05)', border: '1px solid rgba(var(--fg),.08)',
+              color: 'rgba(var(--fg),.5)', fontSize: 12, fontWeight: 600,
               cursor: 'pointer', transition: 'all .15s',
             }}>
             Got it, thanks

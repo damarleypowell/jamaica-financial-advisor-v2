@@ -12,7 +12,7 @@ const statusStyle = (s: string): React.CSSProperties => {
   if (s === 'FILLED')    return { background: 'rgba(0,230,118,.1)',  border: '1px solid rgba(0,230,118,.2)',  color: 'var(--color-green)' };
   if (s === 'PENDING' || s === 'OPEN') return { background: 'rgba(255,215,64,.1)', border: '1px solid rgba(255,215,64,.2)', color: 'var(--color-gold)'  };
   if (s === 'CANCELLED' || s === 'REJECTED' || s === 'EXPIRED') return { background: 'rgba(255,82,82,.1)',  border: '1px solid rgba(255,82,82,.2)',  color: 'var(--color-red)'   };
-  return { background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', color: 'var(--color-muted)' };
+  return { background: 'rgba(var(--fg),.05)', border: '1px solid rgba(var(--fg),.08)', color: 'var(--color-muted)' };
 };
 
 export default function Orders() {
@@ -77,7 +77,7 @@ export default function Orders() {
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'all .15s',
-                background: tab === t.key ? 'var(--color-green)' : 'rgba(255,255,255,.04)',
+                background: tab === t.key ? 'var(--color-green)' : 'rgba(var(--fg),.04)',
                 color: tab === t.key ? 'var(--color-bg)' : 'var(--color-muted)' }}>
               <i className={`${t.icon} text-[10px]`} />
               {t.label}
@@ -112,7 +112,7 @@ export default function Orders() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                  <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                     {['Symbol', 'Side', 'Type', 'Qty', 'Price', 'Status', 'Date'].map((h, i) => (
                       <th key={h} style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', textAlign: i === 0 ? 'left' : 'right' }}>{h}</th>
                     ))}
@@ -120,8 +120,8 @@ export default function Orders() {
                 </thead>
                 <tbody>
                   {orders.map(o => (
-                    <tr key={o.id} style={{ borderBottom: '1px solid rgba(255,255,255,.025)' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.025)')}
+                    <tr key={o.id} style={{ borderBottom: '1px solid rgba(var(--fg),.025)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.025)')}
                       onMouseLeave={e => (e.currentTarget.style.background = '')}>
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{o.symbol}</span>
@@ -175,7 +175,7 @@ export default function Orders() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                  <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                     {['Date', 'Symbol', 'Side', 'Qty', 'Price', 'Total', 'Fee'].map((h, i) => (
                       <th key={h} style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', textAlign: i <= 1 ? 'left' : 'right' }}>{h}</th>
                     ))}
@@ -183,8 +183,8 @@ export default function Orders() {
                 </thead>
                 <tbody>
                   {transactions.map(tx => (
-                    <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,.025)' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.025)')}
+                    <tr key={tx.id} style={{ borderBottom: '1px solid rgba(var(--fg),.025)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.025)')}
                       onMouseLeave={e => (e.currentTarget.style.background = '')}>
                       <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--color-muted)' }}>{new Date(tx.createdAt).toLocaleDateString()}</td>
                       <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{tx.symbol}</td>

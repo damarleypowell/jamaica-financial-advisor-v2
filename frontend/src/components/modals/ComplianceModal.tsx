@@ -114,19 +114,19 @@ export default function ComplianceModal() {
                 display: 'flex', alignItems: 'flex-start', gap: 12,
                 padding: '12px 14px', borderRadius: 12, cursor: 'pointer',
                 border: `1px solid ${accepted[key] ? 'rgba(0,230,118,.35)' : 'var(--color-border)'}`,
-                background: accepted[key] ? 'rgba(0,230,118,.06)' : 'rgba(255,255,255,.02)',
+                background: accepted[key] ? 'rgba(0,230,118,.06)' : 'rgba(var(--fg),.02)',
                 transition: 'all 180ms',
               }}>
               <div style={{
                 width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
-                border: `2px solid ${accepted[key] ? '#00e676' : 'rgba(255,255,255,.2)'}`,
+                border: `2px solid ${accepted[key] ? '#00e676' : 'rgba(var(--fg),.2)'}`,
                 background: accepted[key] ? '#00e676' : 'transparent',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'all 180ms',
               }}>
                 {accepted[key] && (
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 6l3 3 5-5" stroke="#04060d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M2 6l3 3 5-5" stroke="var(--color-bg)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
               </div>
@@ -143,8 +143,8 @@ export default function ComplianceModal() {
               fontSize: 14, fontWeight: 800, cursor: allAccepted ? 'pointer' : 'not-allowed',
               background: allAccepted
                 ? 'linear-gradient(135deg, #00e676, #00b248)'
-                : 'rgba(255,255,255,.06)',
-              color: allAccepted ? '#04060d' : 'var(--color-muted)',
+                : 'rgba(var(--fg),.06)',
+              color: allAccepted ? 'var(--color-bg)' : 'var(--color-muted)',
               boxShadow: allAccepted ? '0 4px 20px rgba(0,230,118,.35)' : 'none',
               transition: 'all 200ms',
               opacity: submitting ? 0.7 : 1,

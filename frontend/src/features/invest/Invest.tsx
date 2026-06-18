@@ -114,7 +114,7 @@ export default function Invest() {
       )}
 
       <button onClick={() => navigate('/screener')}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 13, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 13, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
         Browse all listed stocks <i className="fa-solid fa-arrow-right" style={{ fontSize: 11 }} />
       </button>
 

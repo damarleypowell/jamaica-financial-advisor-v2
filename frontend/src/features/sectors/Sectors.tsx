@@ -137,8 +137,8 @@ export default function Sectors() {
                     <span style={{
                       padding: '3px 8px', borderRadius: 99, fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-mono)',
                       color: pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)',
-                      background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(255,255,255,.06)',
-                      border: `1px solid ${pos ? 'rgba(0,230,118,.2)' : neg ? 'rgba(255,82,82,.2)' : 'rgba(255,255,255,.08)'}`,
+                      background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(var(--fg),.06)',
+                      border: `1px solid ${pos ? 'rgba(0,230,118,.2)' : neg ? 'rgba(255,82,82,.2)' : 'rgba(var(--fg),.08)'}`,
                     }}>
                       {pos ? '+' : ''}{sec.avgChange.toFixed(2)}%
                     </span>
@@ -163,14 +163,14 @@ export default function Sectors() {
                   <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--color-text)' }}>{activeSector.name} Sector</h3>
                   <p style={{ margin: '3px 0 0', fontSize: 10, color: 'var(--color-muted)' }}>{sectorStocks.length} securities</p>
                 </div>
-                <button onClick={() => setSelected(null)} style={{ background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 8, padding: '6px 12px', fontSize: 11, color: 'var(--color-text2)', cursor: 'pointer' }}>
+                <button onClick={() => setSelected(null)} style={{ background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 8, padding: '6px 12px', fontSize: 11, color: 'var(--color-text2)', cursor: 'pointer' }}>
                   <i className="fa-solid fa-xmark" style={{ marginRight: 5 }} />Close
                 </button>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                    <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                       {['Symbol', 'Company', 'Price', '$Chg', '%Chg', 'Volume'].map((h, i) => (
                         <th key={h} style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', textAlign: i > 1 ? 'right' : 'left' }}>{h}</th>
                       ))}
@@ -185,8 +185,8 @@ export default function Sectors() {
                       return (
                         <tr key={s.symbol}
                           onClick={() => { selectSymbol(s.symbol); openStockDetail(s.symbol); }}
-                          style={{ borderBottom: '1px solid rgba(255,255,255,.025)', cursor: 'pointer' }}
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.025)'}
+                          style={{ borderBottom: '1px solid rgba(var(--fg),.025)', cursor: 'pointer' }}
+                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),.025)'}
                           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}
                         >
                           <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{s.symbol}</td>

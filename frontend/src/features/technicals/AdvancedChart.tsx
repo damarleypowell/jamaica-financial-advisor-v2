@@ -106,9 +106,9 @@ function MLPanel({ symbol }: { symbol: string }) {
             <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)' }}>Ensemble · Educational only · Not financial advice</p>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 3, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', borderRadius: 10, padding: 3 }}>
+        <div style={{ display: 'flex', gap: 3, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', borderRadius: 10, padding: 3 }}>
           {[5, 10, 20, 30].map(d => (
-            <button key={d} onClick={() => setHorizon(d)} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'all .15s', background: horizon === d ? '#ce93d8' : 'transparent', color: horizon === d ? '#04060d' : 'var(--color-muted)' }}>{d}D</button>
+            <button key={d} onClick={() => setHorizon(d)} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'all .15s', background: horizon === d ? '#ce93d8' : 'transparent', color: horizon === d ? 'var(--color-bg)' : 'var(--color-muted)' }}>{d}D</button>
           ))}
         </div>
       </div>
@@ -122,7 +122,7 @@ function MLPanel({ symbol }: { symbol: string }) {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '24px 0', textAlign: 'center' }}>
             <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 24, color: 'var(--color-muted)', opacity: .4 }} />
             <p style={{ margin: 0, fontSize: 12, color: 'var(--color-muted)' }}>ML service unavailable — Python analytics engine must be running</p>
-            <button onClick={() => refetch()} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,.06)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', cursor: 'pointer' }}>Retry</button>
+            <button onClick={() => refetch()} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(var(--fg),.06)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', cursor: 'pointer' }}>Retry</button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -135,17 +135,17 @@ function MLPanel({ symbol }: { symbol: string }) {
                 </div>
               </div>
               {last && (
-                <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)' }}>
+                <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)' }}>
                   <p style={{ margin: '0 0 4px', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', color: 'var(--color-muted)' }}>{horizon}D Target</p>
                   <p style={{ margin: 0, fontSize: 17, fontWeight: 900, fontFamily: 'var(--font-mono)', color: 'var(--color-text)' }}>${last.price.toFixed(2)}</p>
                   {tPct !== null && <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', color: tPct >= 0 ? '#00e676' : '#ff5252' }}>{tPct >= 0 ? '+' : ''}{tPct.toFixed(2)}%</p>}
                 </div>
               )}
               {conf !== undefined && (
-                <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)' }}>
+                <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)' }}>
                   <p style={{ margin: '0 0 4px', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', color: 'var(--color-muted)' }}>Confidence</p>
                   <p style={{ margin: 0, fontSize: 17, fontWeight: 900, fontFamily: 'var(--font-mono)', color: conf >= 65 ? '#00e676' : conf >= 45 ? '#ffd740' : '#ff5252' }}>{conf.toFixed(0)}%</p>
-                  <div style={{ marginTop: 6, height: 4, borderRadius: 99, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
+                  <div style={{ marginTop: 6, height: 4, borderRadius: 99, background: 'rgba(var(--fg),.07)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${conf}%`, background: conf >= 65 ? '#00e676' : conf >= 45 ? '#ffd740' : '#ff5252', borderRadius: 99, transition: 'width .4s' }} />
                   </div>
                 </div>
@@ -155,7 +155,7 @@ function MLPanel({ symbol }: { symbol: string }) {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                    <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                       {['Day', 'Forecast', 'Lower 68%', 'Upper 68%'].map(h => (
                         <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Day' ? 'left' : 'right', fontSize: 9, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.08em' }}>{h}</th>
                       ))}
@@ -165,8 +165,8 @@ function MLPanel({ symbol }: { symbol: string }) {
                     {pred.slice(0, 10).map((p, i) => {
                       const pct = current > 0 ? ((p.price - current) / current * 100) : 0;
                       return (
-                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,.025)' }}
-                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.025)')}
+                        <tr key={i} style={{ borderBottom: '1px solid rgba(var(--fg),.025)' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.025)')}
                           onMouseLeave={e => (e.currentTarget.style.background = '')}>
                           <td style={{ padding: '8px 12px', fontSize: 11, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>+{p.day}d</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right' }}>
@@ -297,10 +297,10 @@ export default function AdvancedChart() {
 
   const baseChartOpts = {
     layout: { background: { color: 'transparent' }, textColor: 'rgba(148,163,184,.7)', fontSize: 10 },
-    grid: { vertLines: { color: 'rgba(255,255,255,.02)' }, horzLines: { color: 'rgba(255,255,255,.02)' } },
+    grid: { vertLines: { color: 'rgba(var(--fg),.02)' }, horzLines: { color: 'rgba(var(--fg),.02)' } },
     crosshair: { vertLine: { color: 'rgba(0,230,118,.3)', width: 1 as const, style: 2 as const }, horzLine: { color: 'rgba(0,230,118,.3)', width: 1 as const, style: 2 as const } },
-    rightPriceScale: { borderColor: 'rgba(255,255,255,.04)' },
-    timeScale: { borderColor: 'rgba(255,255,255,.04)', timeVisible: true, fixLeftEdge: true },
+    rightPriceScale: { borderColor: 'rgba(var(--fg),.04)' },
+    timeScale: { borderColor: 'rgba(var(--fg),.04)', timeVisible: true, fixLeftEdge: true },
   };
 
   /* ── init main chart (once) ── */
@@ -333,8 +333,8 @@ export default function AdvancedChart() {
   useEffect(() => {
     if (!rsiDivRef.current) return;
     const chart = createChart(rsiDivRef.current, { ...baseChartOpts, width: rsiDivRef.current.clientWidth, height: 110,
-      rightPriceScale: { borderColor: 'rgba(255,255,255,.04)', scaleMargins: { top: 0.1, bottom: 0.1 } },
-      timeScale: { visible: false, borderColor: 'rgba(255,255,255,.04)' } });
+      rightPriceScale: { borderColor: 'rgba(var(--fg),.04)', scaleMargins: { top: 0.1, bottom: 0.1 } },
+      timeScale: { visible: false, borderColor: 'rgba(var(--fg),.04)' } });
     rsiS.current = chart.addSeries(LineSeries, { color: '#ce93d8', lineWidth: 1, priceLineVisible: false, lastValueVisible: true });
     // RSI 70/30 lines
     rsiS.current.createPriceLine({ price: 70, color: 'rgba(255,82,82,.4)', lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: 'OB' });
@@ -443,7 +443,7 @@ export default function AdvancedChart() {
       <div style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 16, padding: '12px 16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
         {/* symbol picker */}
         <div style={{ position: 'relative' }}>
-          <button onClick={() => setSrch(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 12, cursor: 'pointer', minWidth: 200 }}>
+          <button onClick={() => setSrch(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 12, cursor: 'pointer', minWidth: 200 }}>
             <div style={{ width: 32, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: pos ? 'rgba(0,230,118,.12)' : 'rgba(255,82,82,.12)', flexShrink: 0 }}>
               <span style={{ fontSize: 9, fontWeight: 900, color: pos ? '#00e676' : '#ff5252' }}>{symbol.slice(0, 3)}</span>
             </div>
@@ -454,16 +454,16 @@ export default function AdvancedChart() {
             <i className="fa-solid fa-chevron-down" style={{ fontSize: 10, color: 'var(--color-muted)' }} />
           </button>
           {srch && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 8, width: 280, background: 'var(--color-bg3)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,.6)', zIndex: 100, overflow: 'hidden' }}>
-              <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+            <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 8, width: 280, background: 'var(--color-bg3)', border: '1px solid rgba(var(--fg),.1)', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,.6)', zIndex: 100, overflow: 'hidden' }}>
+              <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(var(--fg),.06)' }}>
                 <input autoFocus value={srchQ} onChange={e => setSrchQ(e.target.value)} placeholder="Search symbol or name…"
-                  style={{ width: '100%', padding: '7px 10px', background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 8, fontSize: 12, color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '7px 10px', background: 'rgba(var(--fg),.07)', border: '1px solid rgba(var(--fg),.1)', borderRadius: 8, fontSize: 12, color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div style={{ maxHeight: 280, overflowY: 'auto' }}>
                 {srchResults.map(s => (
                   <button key={s.symbol} onClick={() => { selFn(s.symbol); setSrch(false); setSrchQ(''); }}
                     style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background .1s' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.05)')}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.05)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                     <div style={{ width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: (s.pctChange ?? 0) >= 0 ? 'rgba(0,230,118,.1)' : 'rgba(255,82,82,.1)', flexShrink: 0 }}>
                       <span style={{ fontSize: 8, fontWeight: 800, color: (s.pctChange ?? 0) >= 0 ? '#00e676' : '#ff5252' }}>{s.symbol.slice(0, 3)}</span>
@@ -494,7 +494,7 @@ export default function AdvancedChart() {
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {/* chart mode — hidden in Simple (area only) */}
           {level !== 'simple' && (
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', borderRadius: 10, padding: 3, gap: 2 }}>
+          <div style={{ display: 'flex', background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', borderRadius: 10, padding: 3, gap: 2 }}>
             {([['area', 'fa-chart-area', 'Area'], ['candle', 'fa-chart-candlestick', 'Candles']] as const).map(([key, icon, label]) => (
               <button key={key} onClick={() => setMode(key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, transition: 'all .15s', background: mode === key ? 'var(--color-green)' : 'transparent', color: mode === key ? 'var(--color-bg)' : 'var(--color-muted)' }}>
                 <i className={`fa-solid ${icon}`} style={{ fontSize: 10 }} />{label}
@@ -503,7 +503,7 @@ export default function AdvancedChart() {
           </div>
           )}
           {/* timeframe */}
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)', borderRadius: 10, padding: 3, gap: 2 }}>
+          <div style={{ display: 'flex', background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', borderRadius: 10, padding: 3, gap: 2 }}>
             {TFS.map(t => (
               <button key={t} onClick={() => setTf(t)} style={{ padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'all .15s', background: tf === t ? 'var(--color-green)' : 'transparent', color: tf === t ? 'var(--color-bg)' : 'var(--color-muted)' }}>{t}</button>
             ))}
@@ -529,7 +529,7 @@ export default function AdvancedChart() {
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ fontSize: 10, color: 'var(--color-muted)', fontWeight: 600 }}>Indicators:</span>
           {LEVEL_INDS[level].map(ind => (
-            <button key={ind} onClick={() => toggleInd(ind)} style={{ padding: '4px 11px', borderRadius: 8, border: `1px solid ${inds.has(ind) ? IND_COLORS[ind] : 'var(--color-border)'}`, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', background: inds.has(ind) ? IND_COLORS[ind] + '18' : 'rgba(255,255,255,.04)', color: inds.has(ind) ? IND_COLORS[ind] : 'var(--color-muted)' }}>
+            <button key={ind} onClick={() => toggleInd(ind)} style={{ padding: '4px 11px', borderRadius: 8, border: `1px solid ${inds.has(ind) ? IND_COLORS[ind] : 'var(--color-border)'}`, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', background: inds.has(ind) ? IND_COLORS[ind] + '18' : 'rgba(var(--fg),.04)', color: inds.has(ind) ? IND_COLORS[ind] : 'var(--color-muted)' }}>
               {IND_LABELS[ind]}
             </button>
           ))}
@@ -538,7 +538,7 @@ export default function AdvancedChart() {
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ fontSize: 10, color: 'var(--color-muted)', fontWeight: 600 }}>Draw:</span>
           {([['cursor', 'fa-arrow-pointer', 'Select'], ['hline', 'fa-grip-lines', 'H-Line']] as const).map(([key, icon, label]) => (
-            <button key={key} onClick={() => setDraw(key as DrawMode)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, border: `1px solid ${drawMode === key ? '#ffd740' : 'var(--color-border)'}`, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', background: drawMode === key ? 'rgba(255,215,64,.12)' : 'rgba(255,255,255,.04)', color: drawMode === key ? '#ffd740' : 'var(--color-muted)' }}>
+            <button key={key} onClick={() => setDraw(key as DrawMode)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, border: `1px solid ${drawMode === key ? '#ffd740' : 'var(--color-border)'}`, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', background: drawMode === key ? 'rgba(255,215,64,.12)' : 'rgba(var(--fg),.04)', color: drawMode === key ? '#ffd740' : 'var(--color-muted)' }}>
               <i className={`fa-solid ${icon}`} style={{ fontSize: 9 }} />{label}
             </button>
           ))}
@@ -560,7 +560,7 @@ export default function AdvancedChart() {
       {/* ── main chart pane ── */}
       <div style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 16, overflow: 'hidden', position: 'relative', cursor: drawMode === 'hline' ? 'crosshair' : 'default' }}>
         {isLoading && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(9,14,26,.8)', backdropFilter: 'blur(4px)', zIndex: 10, gap: 10 }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(var(--surf),.8)', backdropFilter: 'blur(4px)', zIndex: 10, gap: 10 }}>
             <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid #00e676', borderTopColor: 'transparent' }} className="animate-spin" />
             <span style={{ fontSize: 12, color: 'var(--color-muted)' }}>Loading chart data…</span>
           </div>

@@ -149,7 +149,7 @@ export default function AppTour() {
   if (!active || !step || authModalOpen) return null;
 
   const isLast = stepIdx === visibleSteps.length - 1;
-  const OVL = 'rgba(3,3,6,.88)';
+  const OVL = 'rgba(var(--surf),.88)';
   const numStr = String(stepIdx + 1).padStart(2, '0');
   const totStr = String(visibleSteps.length).padStart(2, '0');
 
@@ -200,17 +200,17 @@ export default function AppTour() {
       {/* ── Tour card ── */}
       <div style={{
         ...cardPos(rect, vp.w, vp.h),
-        background:'#0B0C10',
+        background:'var(--color-bg2)',
         backgroundImage:GRAIN,
-        border:'1px solid rgba(255,255,255,.07)',
+        border:'1px solid rgba(var(--fg),.07)',
         borderRadius:14,
-        boxShadow:'0 32px 80px rgba(0,0,0,.75), 0 1px 0 rgba(255,255,255,.04) inset',
+        boxShadow:'0 32px 80px rgba(0,0,0,.75), 0 1px 0 rgba(var(--fg),.04) inset',
         overflow:'hidden',
         animation:'tourIn .38s cubic-bezier(.22,1,.36,1)',
       }}>
 
         {/* Amber progress line — hairline, not chunky */}
-        <div style={{ height:1.5, background:'rgba(255,255,255,.04)' }}>
+        <div style={{ height:1.5, background:'rgba(var(--fg),.04)' }}>
           <div style={{
             height:'100%',
             width:`${((stepIdx+1)/visibleSteps.length)*100}%`,
@@ -277,7 +277,7 @@ export default function AppTour() {
                     width: i === stepIdx ? 16 : 5,
                     height: 5,
                     borderRadius: 99,
-                    background: i === stepIdx ? A : i < stepIdx ? A_DIM : 'rgba(255,255,255,.14)',
+                    background: i === stepIdx ? A : i < stepIdx ? A_DIM : 'rgba(var(--fg),.14)',
                     border: 'none', padding: 0, cursor: 'pointer',
                     transition: 'all .3s cubic-bezier(.4,0,.2,1)',
                     opacity: i === stepIdx ? 1 : undefined,

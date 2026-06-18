@@ -94,7 +94,7 @@ export default function USStocks() {
             <div style={{ position: 'relative' }}>
               <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--color-muted)' }} />
               <input value={search} onChange={e => setSearch(e.target.value.toUpperCase())} placeholder="Search symbols (e.g. AAPL, MSFT)..."
-                style={{ width: '100%', height: 38, paddingLeft: 36, paddingRight: 12, borderRadius: 9, fontSize: 12, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', height: 38, paddingLeft: 36, paddingRight: 12, borderRadius: 9, fontSize: 12, background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }}
                 onFocus={e => (e.target as HTMLElement).style.borderColor = 'rgba(0,230,118,.4)'}
                 onBlur={e => (e.target as HTMLElement).style.borderColor = 'var(--color-border)'}
               />
@@ -103,7 +103,7 @@ export default function USStocks() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 10 }}>
                 {POPULAR.map(sym => (
                   <button key={sym} onClick={() => setOrderSymbol(sym)}
-                    style={{ padding: '3px 9px', borderRadius: 7, fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', cursor: 'pointer' }}>
+                    style={{ padding: '3px 9px', borderRadius: 7, fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)', cursor: 'pointer' }}>
                     {sym}
                   </button>
                 ))}
@@ -121,7 +121,7 @@ export default function USStocks() {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                    <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                       {['Symbol', 'Company', 'Price', '$Chg', '%Chg', 'Volume', 'Mkt Cap', ''].map((h, i) => (
                         <th key={h} style={{ padding: '10px 14px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', textAlign: i > 1 ? 'right' : 'left', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
@@ -135,8 +135,8 @@ export default function USStocks() {
                       const cc = pos ? '#00e676' : neg ? '#ff5252' : 'var(--color-muted)';
                       return (
                         <tr key={s.symbol}
-                          style={{ borderBottom: '1px solid rgba(255,255,255,.025)', cursor: 'pointer' }}
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.025)'}
+                          style={{ borderBottom: '1px solid rgba(var(--fg),.025)', cursor: 'pointer' }}
+                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),.025)'}
                           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}
                         >
                           <td style={{ padding: '10px 14px' }}>
@@ -185,7 +185,7 @@ export default function USStocks() {
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', marginBottom: 6 }}>Symbol</label>
             <input value={orderSymbol} onChange={e => setOrderSymbol(e.target.value.toUpperCase())} placeholder="e.g. AAPL"
-              style={{ width: '100%', height: 38, padding: '0 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,.05)', border: `1px solid ${orderSymbol ? 'rgba(0,230,118,.3)' : 'var(--color-border)'}`, color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', height: 38, padding: '0 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'rgba(var(--fg),.05)', border: `1px solid ${orderSymbol ? 'rgba(0,230,118,.3)' : 'var(--color-border)'}`, color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
 
           {/* Side */}
@@ -194,7 +194,7 @@ export default function USStocks() {
             <div style={{ display: 'flex', gap: 6 }}>
               {(['buy', 'sell'] as const).map(s => (
                 <button key={s} onClick={() => setOrderSide(s)}
-                  style={{ flex: 1, height: 36, borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid', transition: 'all 150ms', background: orderSide === s ? (s === 'buy' ? '#00e676' : '#ff5252') : 'rgba(255,255,255,.04)', color: orderSide === s ? 'var(--color-bg)' : 'var(--color-text2)', borderColor: orderSide === s ? (s === 'buy' ? '#00e676' : '#ff5252') : 'var(--color-border)', textTransform: 'capitalize' }}>
+                  style={{ flex: 1, height: 36, borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid', transition: 'all 150ms', background: orderSide === s ? (s === 'buy' ? '#00e676' : '#ff5252') : 'rgba(var(--fg),.04)', color: orderSide === s ? 'var(--color-bg)' : 'var(--color-text2)', borderColor: orderSide === s ? (s === 'buy' ? '#00e676' : '#ff5252') : 'var(--color-border)', textTransform: 'capitalize' }}>
                   {s === 'buy' ? '▲ Buy' : '▼ Sell'}
                 </button>
               ))}
@@ -205,7 +205,7 @@ export default function USStocks() {
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', marginBottom: 6 }}>Quantity</label>
             <input value={orderQty} onChange={e => setOrderQty(e.target.value)} type="number" min="1" step="1"
-              style={{ width: '100%', height: 38, padding: '0 12px', borderRadius: 9, fontSize: 13, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', height: 38, padding: '0 12px', borderRadius: 9, fontSize: 13, fontFamily: 'var(--font-mono)', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
 
           {/* Order type */}
@@ -222,12 +222,12 @@ export default function USStocks() {
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)', marginBottom: 6 }}>Limit Price (USD)</label>
               <input value={limitPrice} onChange={e => setLimitPrice(e.target.value)} type="number" min="0" step="0.01" placeholder="0.00"
-                style={{ width: '100%', height: 38, padding: '0 12px', borderRadius: 9, fontSize: 13, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }} />
+                style={{ width: '100%', height: 38, padding: '0 12px', borderRadius: 9, fontSize: 13, fontFamily: 'var(--font-mono)', background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' }} />
             </div>
           )}
 
           {selected?.price && (
-            <div style={{ padding: '10px 12px', borderRadius: 9, background: 'rgba(255,255,255,.03)', marginBottom: 14, fontSize: 11, color: 'var(--color-muted)' }}>
+            <div style={{ padding: '10px 12px', borderRadius: 9, background: 'rgba(var(--fg),.03)', marginBottom: 14, fontSize: 11, color: 'var(--color-muted)' }}>
               Est. value: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--color-text)' }}>
                 ${((selected.price ?? 0) * parseInt(orderQty || '0')).toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>

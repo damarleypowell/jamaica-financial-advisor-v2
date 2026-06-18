@@ -79,7 +79,7 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--color-border)', flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,.05)' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(var(--fg),.05)' }}>
             <i className="fa-solid fa-table-list" style={{ fontSize: 12, color: 'var(--color-muted)' }} />
           </div>
           <div>
@@ -92,9 +92,9 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
             <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: 'var(--color-muted)', pointerEvents: 'none' }} />
             <input
               value={q} onChange={e => setQ(e.target.value)} placeholder={isUS ? 'Search US symbol…' : 'Search JSE symbol…'}
-              style={{ height: 32, width: 200, paddingLeft: 30, paddingRight: q ? 28 : 10, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 11, color: 'var(--color-text)', outline: 'none', transition: 'all 150ms', boxSizing: 'border-box' }}
-              onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,.18)'; e.target.style.background = 'rgba(255,255,255,.07)'; }}
-              onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.background = 'rgba(255,255,255,.05)'; }}
+              style={{ height: 32, width: 200, paddingLeft: 30, paddingRight: q ? 28 : 10, background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', borderRadius: 10, fontSize: 11, color: 'var(--color-text)', outline: 'none', transition: 'all 150ms', boxSizing: 'border-box' }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(var(--fg),.18)'; e.target.style.background = 'rgba(var(--fg),.07)'; }}
+              onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.background = 'rgba(var(--fg),.05)'; }}
             />
             {q && (
               <button onClick={() => setQ('')} style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
@@ -104,7 +104,7 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
           </div>
           {isUS && (
             <Link to="/technicals"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'var(--color-text2)', fontSize: 11, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(var(--fg),.06)', border: '1px solid rgba(var(--fg),.1)', color: 'var(--color-text2)', fontSize: 11, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
               <i className="fa-solid fa-chart-candlestick" style={{ fontSize: 10 }} />
               Advanced Chart
             </Link>
@@ -116,7 +116,7 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+            <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
               {COLS.map(col => (
                 <th key={col.key} onClick={() => handleSort(col.key)}
                   style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none', textAlign: col.right ? 'right' : 'left', color: sf === col.key ? '#00e676' : 'var(--color-muted)', transition: 'color 120ms', whiteSpace: 'nowrap' }}>
@@ -139,8 +139,8 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
               return (
                 <tr key={s.symbol}
                   onClick={() => { selectSymbol(s.symbol); openStockDetail(s.symbol); }}
-                  style={{ borderBottom: '1px solid rgba(255,255,255,.022)', cursor: 'pointer', transition: 'background 100ms' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}
+                  style={{ borderBottom: '1px solid rgba(var(--fg),.022)', cursor: 'pointer', transition: 'background 100ms' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.03)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}
                 >
                   <td style={{ padding: '11px 16px' }}>
@@ -159,7 +159,7 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
                     {(s.dollarChange ?? 0) >= 0 ? '+' : ''}${fmt2(s.dollarChange ?? 0)}
                   </td>
                   <td style={{ padding: '11px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 800, background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(255,255,255,.04)', color: chgColor(s.pctChange) }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 800, background: pos ? 'rgba(0,230,118,.1)' : neg ? 'rgba(255,82,82,.1)' : 'rgba(var(--fg),.04)', color: chgColor(s.pctChange) }}>
                       {pos ? <i className="fa-solid fa-caret-up" style={{ fontSize: 8 }} /> : neg ? <i className="fa-solid fa-caret-down" style={{ fontSize: 8 }} /> : null}
                       {pos ? '+' : ''}{(s.pctChange ?? 0).toFixed(2)}%
                     </span>
@@ -177,7 +177,7 @@ export default function StockTable({ stocks: externalStocks, title, isUS, defaul
       {/* Show more / less footer */}
       {hidden > 0 && !q && (
         <button onClick={() => setShowAll(v => !v)}
-          style={{ width: '100%', padding: '12px 20px', background: 'rgba(255,255,255,.02)', border: 'none', borderTop: '1px solid rgba(255,255,255,.04)', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--color-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          style={{ width: '100%', padding: '12px 20px', background: 'rgba(var(--fg),.02)', border: 'none', borderTop: '1px solid rgba(var(--fg),.04)', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--color-text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           <i className={`fa-solid fa-chevron-${showAll ? 'up' : 'down'}`} style={{ fontSize: 9 }} />
           {showAll ? 'Show less' : `Show ${hidden} more ${isUS ? 'US stocks' : 'JSE stocks'}`}
         </button>

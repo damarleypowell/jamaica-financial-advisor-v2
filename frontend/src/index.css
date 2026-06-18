@@ -10,14 +10,14 @@
   --color-purple:  #ce93d8;
   --color-cyan:    #18ffff;
 
-  --color-bg:      #04060d;
-  --color-bg2:     #080d18;
-  --color-bg3:     #0c1422;
+  --color-bg:      var(--color-bg);
+  --color-bg2:     var(--color-bg2);
+  --color-bg3:     var(--color-bg3);
   --color-bg4:     #111e33;
   --color-surface: #172240;
 
-  --color-border:  rgba(255,255,255,0.055);
-  --color-border2: rgba(255,255,255,0.11);
+  --color-border:  rgba(var(--fg),0.055);
+  --color-border2: rgba(var(--fg),0.11);
 
   /* Aliases used in StockDetailModal/older components */
   --color-green2:   #00b248;
@@ -49,6 +49,11 @@
   --nav-bottom-h: 72px;
 }
 
+/* Theme-flipping RGB tokens for inline rgba(...) overlays so they follow the theme.
+   --fg   = foreground "ink"  (white on dark, near-black on light)
+   --surf = translucent surface base (deep near-black on dark, white on light) */
+:root { --fg: 255, 255, 255; --surf: 8, 13, 24; }
+
 /* ── US Stocks responsive layout (mobile-first: list stacks above the order panel) ── */
 .us-layout { display: grid; grid-template-columns: 1fr; gap: 16px; }
 .us-order  { position: static; }
@@ -69,6 +74,8 @@
   --color-text:    #111827;
   --color-text2:   #374151;
   --color-muted:   #6b7280;
+  --fg: 17, 24, 39;
+  --surf: 255, 255, 255;
 }
 [data-theme="light"] body { background: var(--color-bg); color: var(--color-text); }
 [data-theme="light"] .card { background: #fff; border-color: rgba(0,0,0,.08); }
@@ -99,8 +106,8 @@ body {
 /* ── Scrollbar ─────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+::-webkit-scrollbar-thumb { background: rgba(var(--fg),0.07); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--fg),0.14); }
 
 /* ── Keyframes ─────────────────────────────────────────────────────── */
 @keyframes fadeIn     { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
@@ -128,7 +135,7 @@ body {
 .animate-pulse-dot  { animation: pulse 1.8s ease-in-out infinite; }
 .animate-ticker     { animation: ticker 55s linear infinite; }
 .animate-ticker:hover { animation-play-state: paused; }
-.animate-shimmer    { background:linear-gradient(90deg,transparent 25%,rgba(255,255,255,.04) 50%,transparent 75%); background-size:400px 100%; animation:shimmer 1.6s linear infinite; }
+.animate-shimmer    { background:linear-gradient(90deg,transparent 25%,rgba(var(--fg),.04) 50%,transparent 75%); background-size:400px 100%; animation:shimmer 1.6s linear infinite; }
 .animate-glow       { animation: glow 2.5s ease-in-out infinite; }
 .animate-float      { animation: float 3s ease-in-out infinite; }
 
@@ -159,7 +166,7 @@ body {
   cursor: pointer;
 }
 .card-interactive:hover {
-  border-color: rgba(255,255,255,.1);
+  border-color: rgba(var(--fg),.1);
   box-shadow: 0 6px 32px rgba(0,0,0,.4);
   transform: translateY(-1px);
 }
@@ -170,13 +177,13 @@ body {
 
 /* ── Glass ─────────────────────────────────────────────────────────── */
 .glass {
-  background: rgba(8,13,24,0.88);
+  background: rgba(var(--surf),0.88);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   border: 1px solid var(--color-border);
 }
 .glass-light {
-  background: rgba(12,20,34,0.75);
+  background: rgba(var(--surf),0.75);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--color-border);
@@ -193,7 +200,7 @@ body {
   content:'';
   position:absolute;
   inset:0;
-  background:linear-gradient(90deg,transparent 25%,rgba(255,255,255,.032) 50%,transparent 75%);
+  background:linear-gradient(90deg,transparent 25%,rgba(var(--fg),.032) 50%,transparent 75%);
   background-size:400% 100%;
   animation:shimmer 1.6s linear infinite;
 }
@@ -211,7 +218,7 @@ body {
 .badge-red    { color:var(--color-red);    background:rgba(255,82,82,.09);  border-color:rgba(255,82,82,.24);  }
 .badge-gold   { color:var(--color-gold);   background:rgba(255,215,64,.09); border-color:rgba(255,215,64,.24); }
 .badge-blue   { color:var(--color-blue);   background:rgba(64,196,255,.09); border-color:rgba(64,196,255,.24); }
-.badge-muted  { color:var(--color-muted);  background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.08); }
+.badge-muted  { color:var(--color-muted);  background:rgba(var(--fg),.04); border-color:rgba(var(--fg),.08); }
 .badge-sm { padding: 2px 7px; font-size: 10px; }
 
 /* ── Dot indicators ────────────────────────────────────────────────── */
@@ -233,7 +240,7 @@ button { cursor: pointer; border: none; background: transparent; }
 .input-base {
   height: 44px;
   padding: 0 14px;
-  background: rgba(255,255,255,.05);
+  background: rgba(var(--fg),.05);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text);
@@ -269,7 +276,7 @@ button { cursor: pointer; border: none; background: transparent; }
 }
 .btn-primary {
   background: var(--color-green);
-  color: #04060d;
+  color: var(--color-bg);
   box-shadow: 0 2px 16px rgba(0,230,118,.3);
 }
 .btn-primary:hover {
@@ -279,12 +286,12 @@ button { cursor: pointer; border: none; background: transparent; }
 }
 .btn-primary:active { transform: translateY(0); box-shadow: 0 1px 8px rgba(0,230,118,.25); }
 .btn-ghost {
-  background: rgba(255,255,255,.05);
+  background: rgba(var(--fg),.05);
   color: var(--color-text2);
   border: 1px solid var(--color-border);
 }
 .btn-ghost:hover {
-  background: rgba(255,255,255,.09);
+  background: rgba(var(--fg),.09);
   color: var(--color-text);
   border-color: var(--color-border2);
 }
@@ -382,8 +389,8 @@ a { text-decoration: none; color: inherit; }
 /* ── Backdrop lines (subtle grid texture) ──────────────────────────── */
 .bg-grid {
   background-image:
-    linear-gradient(rgba(255,255,255,.016) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.016) 1px, transparent 1px);
+    linear-gradient(rgba(var(--fg),.016) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--fg),.016) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -393,10 +400,10 @@ a { text-decoration: none; color: inherit; }
 /* ── Glass background Tailwind-compatible vars ─────────────────────── */
 /* bg-glass / hover:bg-glass works via these theme entries */
 /* Injected as actual CSS instead since blur requires backdrop-filter */
-.bg-glass  { background: rgba(8,13,24,0.88); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); }
-.bg-glass2 { background: rgba(12,20,34,0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-.hover\:bg-glass:hover  { background: rgba(8,13,24,0.88); }
-.hover\:bg-glass2:hover { background: rgba(12,20,34,0.85); }
+.bg-glass  { background: rgba(var(--surf),0.88); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); }
+.bg-glass2 { background: rgba(var(--surf),0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.hover\:bg-glass:hover  { background: rgba(var(--surf),0.88); }
+.hover\:bg-glass2:hover { background: rgba(var(--surf),0.85); }
 
 /* ── Ticker ─────────────────────────────────────────────────────────── */
 .ticker-item {
@@ -475,10 +482,10 @@ a { text-decoration: none; color: inherit; }
   right: 0;
   height: var(--nav-bottom-h);
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: rgba(4,6,13,.97);
+  background: rgba(var(--surf),.97);
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
-  border-top: 1px solid rgba(255,255,255,.07);
+  border-top: 1px solid rgba(var(--fg),.07);
   z-index: 40;
   display: flex;
   align-items: center;
@@ -943,7 +950,7 @@ a { text-decoration: none; color: inherit; }
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 800;
-  color: #04060d;
+  color: var(--color-bg);
   transition: transform 120ms, box-shadow 120ms;
 }
 .onboarding-cta:active { transform: scale(.97); }
@@ -982,7 +989,7 @@ a { text-decoration: none; color: inherit; }
 .quick-action-btn:active { transform: scale(.97); }
 .quick-action-btn--primary {
   background: var(--color-green);
-  color: #04060d;
+  color: var(--color-bg);
   box-shadow: 0 4px 20px rgba(0,230,118,.3);
 }
 .quick-action-btn--secondary {

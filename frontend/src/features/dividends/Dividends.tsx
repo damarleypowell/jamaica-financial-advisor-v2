@@ -118,7 +118,7 @@ export default function Dividends() {
           <div style={{ position: 'relative', marginLeft: 'auto' }}>
             <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: 'var(--color-muted)' }} />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search symbol..."
-              style={{ width: 200, height: 32, paddingLeft: 30, paddingRight: 10, borderRadius: 9, fontSize: 11, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none' }}
+              style={{ width: 200, height: 32, paddingLeft: 30, paddingRight: 10, borderRadius: 9, fontSize: 11, background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)', outline: 'none' }}
               onFocus={e => (e.target as HTMLElement).style.borderColor = 'rgba(0,230,118,.4)'}
               onBlur={e => (e.target as HTMLElement).style.borderColor = 'var(--color-border)'}
             />
@@ -138,7 +138,7 @@ export default function Dividends() {
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                <tr style={{ borderBottom: '1px solid rgba(var(--fg),.04)' }}>
                   {([['symbol', 'Symbol', false], ['companyName', 'Company', false], ['exDividendDate', 'Ex-Date', true], ['paymentDate', 'Pay Date', true], ['dividendAmount', 'Amount', true], ['yield', 'Yield', true]] as [SortField | string, string, boolean][]).map(([key, label, right]) => (
                     <th key={key} onClick={() => handleSort(key as SortField)}
                       style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', textAlign: right ? 'right' : 'left', cursor: 'pointer', color: sortField === key ? 'var(--color-green)' : 'var(--color-muted)', whiteSpace: 'nowrap' }}>
@@ -152,8 +152,8 @@ export default function Dividends() {
                   const upcoming = isUpcoming(d.exDividendDate);
                   return (
                     <tr key={`${d.symbol}-${i}`}
-                      style={{ borderBottom: '1px solid rgba(255,255,255,.025)' }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.025)'}
+                      style={{ borderBottom: '1px solid rgba(var(--fg),.025)' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),.025)'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}
                     >
                       <td style={{ padding: '10px 16px' }}>

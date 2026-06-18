@@ -133,7 +133,7 @@ function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; u
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
       {/* Logo block */}
-      <div style={{ padding: '18px 16px 12px', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
+      <div style={{ padding: '18px 16px 12px', borderBottom: '1px solid rgba(var(--fg),.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 34, height: 34, borderRadius: 10, flexShrink: 0,
@@ -157,7 +157,7 @@ function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; u
           <div style={{
             display: 'flex', alignItems: 'center', gap: 9, marginTop: 14,
             padding: '8px 10px', borderRadius: 10,
-            background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.05)',
+            background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.05)',
           }}>
             <div style={{
               width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
@@ -196,10 +196,10 @@ function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; u
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: '10px 12px 14px', borderTop: '1px solid rgba(255,255,255,.05)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ padding: '10px 12px 14px', borderTop: '1px solid rgba(var(--fg),.05)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {/* Market status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: mktOpen ? '#00e676' : isConn ? '#ffd740' : 'rgba(255,255,255,.15)', boxShadow: mktOpen ? '0 0 8px rgba(0,230,118,.6)' : 'none' }} className={mktOpen ? 'animate-pulse-dot' : ''} />
+          <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: mktOpen ? '#00e676' : isConn ? '#ffd740' : 'rgba(var(--fg),.15)', boxShadow: mktOpen ? '0 0 8px rgba(0,230,118,.6)' : 'none' }} className={mktOpen ? 'animate-pulse-dot' : ''} />
           <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: mktOpen ? '#00e676' : 'var(--color-text2)', lineHeight: 1 }}>{mktOpen ? 'Markets Open' : 'Markets Closed'}</p>
             <p style={{ margin: '2px 0 0', fontSize: 9, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>{jamTime} JAM</p>
@@ -211,9 +211,9 @@ function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; u
         <div style={{ display: 'flex', gap: 6 }}>
           {/* Light/Dark toggle */}
           <button onClick={toggleTheme}
-            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 9, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'var(--color-muted)', transition: 'all .15s' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.08)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.04)'; }}>
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 9, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.07)', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'var(--color-muted)', transition: 'all .15s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),.08)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),.04)'; }}>
             <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`} style={{ fontSize: 11 }} />
             {theme === 'dark' ? 'Light' : 'Dark'}
           </button>
@@ -255,8 +255,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
           left: 0,
           bottom: 0,
           width: SIDEBAR_W,
-          background: '#060a12',
-          borderRight: '1px solid rgba(255,255,255,.05)',
+          background: 'var(--color-bg2)',
+          borderRight: '1px solid rgba(var(--fg),.05)',
           zIndex: 35,
           flexDirection: 'column',
           overflow: 'hidden',
@@ -281,8 +281,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         )}
         <aside style={{
           position: 'fixed', top: 0, left: 0, bottom: 0, width: 280,
-          background: '#060a12',
-          borderRight: '1px solid rgba(255,255,255,.06)',
+          background: 'var(--color-bg2)',
+          borderRight: '1px solid rgba(var(--fg),.06)',
           zIndex: 50, display: 'flex', flexDirection: 'column', overflow: 'hidden',
           transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 260ms cubic-bezier(.4,0,.2,1)',
@@ -295,7 +295,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
           }}>
             <button onClick={onClose} style={{
               width: 32, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.07)', cursor: 'pointer',
+              background: 'rgba(var(--fg),.05)', border: '1px solid rgba(var(--fg),.07)', cursor: 'pointer',
             }}>
               <i className="fa-solid fa-xmark" style={{ fontSize: 13, color: 'var(--color-muted)' }} />
             </button>
@@ -308,8 +308,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       <nav data-tour="bottom-nav" className="lg:hidden" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        background: 'rgba(6,10,18,.98)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
-        borderTop: '1px solid rgba(255,255,255,.06)', zIndex: 40,
+        background: 'rgba(var(--surf),.98)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
+        borderTop: '1px solid rgba(var(--fg),.06)', zIndex: 40,
         display: 'flex', alignItems: 'stretch',
       }}>
         {MOBILE_NAV.map(item => (
@@ -337,13 +337,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                 }}>
                   <i className={item.icon} style={{
                     fontSize: 16, transition: 'all 160ms',
-                    color: isActive ? 'var(--color-green)' : 'rgba(255,255,255,.35)',
+                    color: isActive ? 'var(--color-green)' : 'rgba(var(--fg),.35)',
                     filter: isActive ? 'drop-shadow(0 0 6px rgba(0,230,118,.6))' : 'none',
                   }} />
                 </div>
                 <span style={{
                   fontSize: 9, fontWeight: 700, letterSpacing: '.03em',
-                  color: isActive ? 'var(--color-green)' : 'rgba(255,255,255,.28)',
+                  color: isActive ? 'var(--color-green)' : 'rgba(var(--fg),.28)',
                   transition: 'color 160ms',
                 }}>
                   {item.label}

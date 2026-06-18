@@ -91,13 +91,13 @@ function MoodStrip({ news }: { news: NewsItem[] }) {
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, fontSize: 11, fontWeight: 700 }}>
           <span style={{ color: '#00e676' }}>{posPct}%</span>
-          <span style={{ color: 'rgba(255,255,255,.3)' }}>{neutPct}%</span>
+          <span style={{ color: 'rgba(var(--fg),.3)' }}>{neutPct}%</span>
           <span style={{ color: '#ff5252' }}>{negPct}%</span>
         </div>
       </div>
-      <div style={{ height: 5, borderRadius: 999, overflow: 'hidden', display: 'flex', gap: 1, background: 'rgba(255,255,255,.04)' }}>
+      <div style={{ height: 5, borderRadius: 999, overflow: 'hidden', display: 'flex', gap: 1, background: 'rgba(var(--fg),.04)' }}>
         <div style={{ width: `${posPct}%`, background: '#00e676' }} />
-        <div style={{ width: `${neutPct}%`, background: 'rgba(255,255,255,.08)' }} />
+        <div style={{ width: `${neutPct}%`, background: 'rgba(var(--fg),.08)' }} />
         <div style={{ width: `${negPct}%`, background: '#ff5252' }} />
       </div>
       {topics.length > 0 && (
@@ -156,7 +156,7 @@ function NewsRow({ item }: { item: NewsItem }) {
   return (
     <a href={item.url} target="_blank" rel="noopener noreferrer"
       style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '14px 16px', background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 13, textDecoration: 'none', transition: 'border-color .15s, transform .15s', height: '100%', boxSizing: 'border-box' }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.16)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(var(--fg),.16)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = ''; }}>
       <p style={{ margin: 0, fontSize: 14, fontWeight: 700, lineHeight: 1.42, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{item.title}</p>
       <div style={{ marginTop: 'auto' }}><Meta item={item} /></div>
@@ -225,7 +225,7 @@ export default function News() {
                 background: tab === t.key ? 'rgba(0,230,118,.12)' : 'transparent',
                 color: tab === t.key ? '#00e676' : 'var(--color-text2)' }}>
               {t.label}
-              <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '1px 6px', borderRadius: 999, background: tab === t.key ? 'rgba(0,230,118,.16)' : 'rgba(255,255,255,.05)', color: tab === t.key ? '#00e676' : 'var(--color-muted)' }}>{t.count}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '1px 6px', borderRadius: 999, background: tab === t.key ? 'rgba(0,230,118,.16)' : 'rgba(var(--fg),.05)', color: tab === t.key ? '#00e676' : 'var(--color-muted)' }}>{t.count}</span>
             </button>
           ))}
         </div>
@@ -246,7 +246,7 @@ export default function News() {
         <div style={{ display: 'flex', gap: 4, overflowX: 'auto' }}>
           {SENT_TABS.map(t => (
             <button key={t.key} onClick={() => setFilter(t.key)}
-              style={{ padding: '8px 13px', borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .15s', border: '1px solid', borderColor: filter === t.key ? 'transparent' : 'var(--color-border)', background: filter === t.key ? '#00e676' : 'var(--color-bg2)', color: filter === t.key ? '#04060d' : 'var(--color-muted)' }}>
+              style={{ padding: '8px 13px', borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .15s', border: '1px solid', borderColor: filter === t.key ? 'transparent' : 'var(--color-border)', background: filter === t.key ? '#00e676' : 'var(--color-bg2)', color: filter === t.key ? 'var(--color-bg)' : 'var(--color-muted)' }}>
               {t.label}
             </button>
           ))}

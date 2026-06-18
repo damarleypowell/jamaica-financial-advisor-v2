@@ -110,15 +110,15 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
               <span style={{ fontSize: 12, color: 'rgba(0,230,118,.7)', fontFamily: SANS, fontWeight: 600, letterSpacing: '.05em', textTransform: 'uppercase' }}>
                 {greet()},
               </span>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,.8)', fontFamily: SANS, fontWeight: 700 }}>{firstName}</span>
-              <span style={{ width: 1, height: 12, background: 'rgba(255,255,255,.1)', display: 'inline-block' }} />
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,.28)', fontFamily: MONO }}>{jamTime} · JA</span>
+              <span style={{ fontSize: 12, color: 'rgba(var(--fg),.8)', fontFamily: SANS, fontWeight: 700 }}>{firstName}</span>
+              <span style={{ width: 1, height: 12, background: 'rgba(var(--fg),.1)', display: 'inline-block' }} />
+              <span style={{ fontSize: 11, color: 'rgba(var(--fg),.28)', fontFamily: MONO }}>{jamTime} · JA</span>
             </div>
 
             {goal && (
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6, padding: '4px 10px', borderRadius: 8, background: 'rgba(64,196,255,.08)', border: '1px solid rgba(64,196,255,.18)', maxWidth: 'fit-content' }}>
                 <i className="fa-solid fa-bullseye" style={{ fontSize: 10, color: '#40c4ff' }} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.55)', fontFamily: SANS }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(var(--fg),.55)', fontFamily: SANS }}>
                   Your goal: <span style={{ color: '#40c4ff' }}>{goal}</span>
                 </span>
               </div>
@@ -128,7 +128,7 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
               {jse > 0 ? (
                 <>
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: INTER, marginBottom: 4 }}>{marketLabel}</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(var(--fg),.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: INTER, marginBottom: 4 }}>{marketLabel}</div>
                     <div style={{ fontSize: 36, fontWeight: 800, fontFamily: INTER, letterSpacing: '-0.03em', lineHeight: 1, color: '#fff' }}>
                       <Counter value={jse} decimals={0} />
                     </div>
@@ -144,13 +144,13 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
                         {pos ? '+' : ''}{jseΔ.toFixed(2)}%
                       </span>
                     </div>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,.25)', fontFamily: SANS }}>today</span>
+                    <span style={{ fontSize: 10, color: 'rgba(var(--fg),.25)', fontFamily: SANS }}>today</span>
                   </div>
                 </>
               ) : (
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: INTER, marginBottom: 8 }}>{marketLabel}</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, fontFamily: INTER, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(var(--fg),.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: INTER, marginBottom: 8 }}>{marketLabel}</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, fontFamily: INTER, color: 'rgba(var(--fg),.85)', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
                     {total > 0 ? `${total} Securities` : 'Connecting to market…'}
                   </div>
                   {total > 0 && <div style={{ fontSize: 12, color: 'rgba(0,230,118,.6)', fontFamily: MONO, marginTop: 6 }}>Real-time market data</div>}
@@ -164,14 +164,14 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 480 }}>
               <div style={{ display: 'flex', gap: 3, height: 6, borderRadius: 99, overflow: 'hidden' }}>
                 {advCount > 0 && <div style={{ flex: advCount, background: '#00e676', borderRadius: '99px 0 0 99px', transition: 'flex .6s ease', boxShadow: '0 0 8px rgba(0,230,118,.5)' }} />}
-                {flat > 0 && <div style={{ flex: flat, background: 'rgba(255,255,255,.1)', transition: 'flex .6s ease' }} />}
+                {flat > 0 && <div style={{ flex: flat, background: 'rgba(var(--fg),.1)', transition: 'flex .6s ease' }} />}
                 {decCount > 0 && <div style={{ flex: decCount, background: '#ff5252', borderRadius: '0 99px 99px 0', transition: 'flex .6s ease' }} />}
               </div>
               <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
                 {advCount > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#00e676', fontFamily: MONO }}>↑ {advCount} up</span>}
-                {flat > 0 && <span style={{ fontSize: 11, color: 'rgba(255,255,255,.28)', fontFamily: MONO }}>{flat} flat</span>}
+                {flat > 0 && <span style={{ fontSize: 11, color: 'rgba(var(--fg),.28)', fontFamily: MONO }}>{flat} flat</span>}
                 {decCount > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#ff5252', fontFamily: MONO }}>↓ {decCount} down</span>}
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.2)', fontFamily: SANS, marginLeft: 'auto' }}>{total} securities</span>
+                <span style={{ fontSize: 10, color: 'rgba(var(--fg),.2)', fontFamily: SANS, marginLeft: 'auto' }}>{total} securities</span>
               </div>
             </div>
           )}
@@ -182,27 +182,27 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
           {/* Status pill */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 99,
-            background: mktOpen ? 'rgba(0,230,118,.12)' : 'rgba(255,255,255,.05)',
-            border: `1px solid ${mktOpen ? 'rgba(0,230,118,.3)' : 'rgba(255,255,255,.08)'}`,
+            background: mktOpen ? 'rgba(0,230,118,.12)' : 'rgba(var(--fg),.05)',
+            border: `1px solid ${mktOpen ? 'rgba(0,230,118,.3)' : 'rgba(var(--fg),.08)'}`,
             boxShadow: mktOpen ? '0 0 24px rgba(0,230,118,.15)' : 'none',
           }}>
             <span style={{
               width: 8, height: 8, borderRadius: '50%', display: 'block',
-              background: mktOpen ? '#00e676' : isConn ? '#ffd740' : 'rgba(255,255,255,.2)',
+              background: mktOpen ? '#00e676' : isConn ? '#ffd740' : 'rgba(var(--fg),.2)',
               boxShadow: mktOpen ? '0 0 10px rgba(0,230,118,.8)' : 'none',
             }} className={mktOpen ? 'animate-pulse-dot' : ''} />
-            <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.08em', fontFamily: SANS, color: mktOpen ? '#00e676' : 'rgba(255,255,255,.4)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.08em', fontFamily: SANS, color: mktOpen ? '#00e676' : 'rgba(var(--fg),.4)', textTransform: 'uppercase' }}>
               {mktOpen ? 'Market Open' : 'Closed'}
             </span>
           </div>
-          <span style={{ fontSize: 9.5, fontWeight: 600, color: 'rgba(255,255,255,.28)', letterSpacing: '.04em', marginTop: -4 }}>
+          <span style={{ fontSize: 9.5, fontWeight: 600, color: 'rgba(var(--fg),.28)', letterSpacing: '.04em', marginTop: -4 }}>
             Quotes may be delayed
           </span>
 
           {volume > 0 && (
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.28)', letterSpacing: '.1em', textTransform: 'uppercase', fontFamily: SANS }}>Volume</div>
-              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: INTER, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(var(--fg),.28)', letterSpacing: '.1em', textTransform: 'uppercase', fontFamily: SANS }}>Volume</div>
+              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: INTER, color: 'rgba(var(--fg),.85)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
                 {fmtVol(volume)}
               </div>
             </div>
@@ -221,8 +221,8 @@ function KPITile({ label, value, sub, icon, accent, delay = 0 }: {
   return (
     <div style={{
       position: 'relative', overflow: 'hidden', borderRadius: 16,
-      background: `linear-gradient(145deg, ${accent}08 0%, transparent 60%), #080d18`,
-      border: `1px solid ${hov ? accent + '30' : 'rgba(255,255,255,.055)'}`,
+      background: `linear-gradient(145deg, ${accent}08 0%, transparent 60%), var(--color-bg2)`,
+      border: `1px solid ${hov ? accent + '30' : 'rgba(var(--fg),.055)'}`,
       padding: '20px 22px',
       transition: 'border-color .2s, box-shadow .2s, transform .2s',
       boxShadow: hov ? `0 8px 32px rgba(0,0,0,.4), 0 0 0 1px ${accent}14` : '0 2px 12px rgba(0,0,0,.3)',
@@ -238,7 +238,7 @@ function KPITile({ label, value, sub, icon, accent, delay = 0 }: {
       <Grain />
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.3)', textTransform: 'uppercase', letterSpacing: '.1em', fontFamily: SANS }}>{label}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(var(--fg),.3)', textTransform: 'uppercase', letterSpacing: '.1em', fontFamily: SANS }}>{label}</span>
           <div style={{ width: 30, height: 30, borderRadius: 9, background: accent + '14', border: `1px solid ${accent}28`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <i className={`fa-solid ${icon}`} style={{ fontSize: 11, color: accent }} />
           </div>
@@ -256,9 +256,9 @@ function SectionLabel({ children, count, right }: { children: React.ReactNode; c
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ width: 3, height: 14, borderRadius: 99, background: '#00e676' }} />
-        <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,.55)', textTransform: 'uppercase', letterSpacing: '.12em', fontFamily: SANS }}>{children}</span>
+        <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(var(--fg),.55)', textTransform: 'uppercase', letterSpacing: '.12em', fontFamily: SANS }}>{children}</span>
         {count !== undefined && (
-          <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.2)', fontFamily: MONO }}>{count}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(var(--fg),.2)', fontFamily: MONO }}>{count}</span>
         )}
       </div>
       {right}
@@ -283,8 +283,8 @@ function MoverCard({ s, isSelected, onSelect, moverTab }: {
       style={{
         flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8,
         padding: '12px 14px', borderRadius: 14, minWidth: 120, cursor: 'pointer', textAlign: 'left',
-        background: isSelected ? chgColor + '14' : hov ? chgColor + '09' : 'rgba(255,255,255,.025)',
-        border: `1px solid ${active ? chgColor + '40' : 'rgba(255,255,255,.05)'}`,
+        background: isSelected ? chgColor + '14' : hov ? chgColor + '09' : 'rgba(var(--fg),.025)',
+        border: `1px solid ${active ? chgColor + '40' : 'rgba(var(--fg),.05)'}`,
         transition: 'all .15s',
         boxShadow: isSelected ? `0 4px 20px ${chgColor}18` : 'none',
         position: 'relative', overflow: 'hidden',
@@ -296,11 +296,11 @@ function MoverCard({ s, isSelected, onSelect, moverTab }: {
           {pos ? '+' : ''}{(s.pctChange ?? 0).toFixed(2)}%
         </span>
       </div>
-      <span style={{ fontSize: 16, fontWeight: 800, fontFamily: INTER, color: 'rgba(255,255,255,.9)', letterSpacing: '-0.01em' }}>
+      <span style={{ fontSize: 16, fontWeight: 800, fontFamily: INTER, color: 'rgba(var(--fg),.9)', letterSpacing: '-0.01em' }}>
         ${fmt(s.price)}
       </span>
       {s.volume != null && (
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,.22)', fontFamily: MONO }}>
+        <span style={{ fontSize: 9, color: 'rgba(var(--fg),.22)', fontFamily: MONO }}>
           Vol: {fmtVol(s.volume)}
         </span>
       )}
@@ -318,7 +318,7 @@ function NewUserWelcome({ firstName, navigate }: { firstName: string; navigate: 
   return (
     <div style={{
       position: 'relative', overflow: 'hidden', borderRadius: 24,
-      background: 'linear-gradient(135deg, #04100a, #061208)',
+      background: 'linear-gradient(135deg, var(--color-bg2), var(--color-bg2))',
       border: '1px solid rgba(0,230,118,.18)',
       boxShadow: '0 0 60px rgba(0,230,118,.07)',
       padding: '32px 28px',
@@ -332,7 +332,7 @@ function NewUserWelcome({ firstName, navigate }: { firstName: string; navigate: 
         <p style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>
           Welcome to Gotham, {firstName}.
         </p>
-        <p style={{ margin: '0 0 28px', fontSize: 13, color: 'rgba(255,255,255,.45)', lineHeight: 1.6, maxWidth: 400 }}>
+        <p style={{ margin: '0 0 28px', fontSize: 13, color: 'rgba(var(--fg),.45)', lineHeight: 1.6, maxWidth: 400 }}>
           You're starting as a <strong style={{ color: '#78909c' }}>🌱 Seed</strong>. Complete your first 3 missions to reach <strong style={{ color: '#66bb6a' }}>🌿 Sapling</strong> and start building real wealth.
         </p>
 
@@ -342,21 +342,21 @@ function NewUserWelcome({ firstName, navigate }: { firstName: string; navigate: 
             <div key={s.n} style={{
               display: 'flex', alignItems: 'center', gap: 14,
               padding: '12px 14px', borderRadius: 14,
-              background: i === 0 ? 'rgba(0,230,118,.07)' : 'rgba(255,255,255,.03)',
-              border: `1px solid ${i === 0 ? 'rgba(0,230,118,.2)' : 'rgba(255,255,255,.06)'}`,
+              background: i === 0 ? 'rgba(0,230,118,.07)' : 'rgba(var(--fg),.03)',
+              border: `1px solid ${i === 0 ? 'rgba(0,230,118,.2)' : 'rgba(var(--fg),.06)'}`,
               animation: `popIn .4s ${i * 80}ms ease-out both`,
             }}>
               <div style={{
                 width: 34, height: 34, borderRadius: 11, flexShrink: 0,
-                background: i === 0 ? 'rgba(0,230,118,.15)' : 'rgba(255,255,255,.05)',
-                border: `1.5px solid ${i === 0 ? 'rgba(0,230,118,.35)' : 'rgba(255,255,255,.08)'}`,
+                background: i === 0 ? 'rgba(0,230,118,.15)' : 'rgba(var(--fg),.05)',
+                border: `1.5px solid ${i === 0 ? 'rgba(0,230,118,.35)' : 'rgba(var(--fg),.08)'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <i className={`fa-solid ${s.icon}`} style={{ fontSize: 13, color: i === 0 ? '#00e676' : 'rgba(255,255,255,.3)' }} />
+                <i className={`fa-solid ${s.icon}`} style={{ fontSize: 13, color: i === 0 ? '#00e676' : 'rgba(var(--fg),.3)' }} />
               </div>
               <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: i === 0 ? '#fff' : 'rgba(255,255,255,.4)' }}>{s.label}</p>
-                <p style={{ margin: '1px 0 0', fontSize: 10, color: 'rgba(255,255,255,.25)' }}>{s.sub}</p>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: i === 0 ? '#fff' : 'rgba(var(--fg),.4)' }}>{s.label}</p>
+                <p style={{ margin: '1px 0 0', fontSize: 10, color: 'rgba(var(--fg),.25)' }}>{s.sub}</p>
               </div>
               {i === 0 && <span style={{ fontSize: 9, fontWeight: 800, color: '#00e676', background: 'rgba(0,230,118,.12)', padding: '3px 8px', borderRadius: 99, border: '1px solid rgba(0,230,118,.2)' }}>START</span>}
               {i > 0 && <span style={{ fontSize: 16, opacity: .25 }}>🔒</span>}
@@ -389,7 +389,7 @@ function PaywallBlock({ feature, tier }: { feature: string; tier: string }) {
         <i className="fa-solid fa-lock" style={{ fontSize: 20, color: '#00c853' }} />
       </div>
       <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 800, color: '#fff' }}>{feature}</p>
-      <p style={{ margin: '0 0 18px', fontSize: 12, color: 'rgba(255,255,255,.45)' }}>Requires a <strong style={{ color: '#00c853' }}>{tier}</strong> plan or higher</p>
+      <p style={{ margin: '0 0 18px', fontSize: 12, color: 'rgba(var(--fg),.45)' }}>Requires a <strong style={{ color: '#00c853' }}>{tier}</strong> plan or higher</p>
       <a href="/subscription" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 22px', borderRadius: 10, background: '#00c853', color: '#000', fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>
         <i className="fa-solid fa-arrow-up" style={{ fontSize: 10 }} /> Upgrade Now
       </a>
@@ -405,7 +405,7 @@ const GAME_STYLES = `
   @keyframes barFill { from{width:0} to{width:var(--bar-w)} }
   @keyframes pulseGlow { 0%,100%{box-shadow:0 0 12px var(--glow)} 50%{box-shadow:0 0 28px var(--glow)} }
   .shimmer-box {
-    background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%);
+    background: linear-gradient(90deg, rgba(var(--fg),.04) 25%, rgba(var(--fg),.09) 50%, rgba(var(--fg),.04) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.4s infinite;
     border-radius: 12px;
@@ -428,7 +428,7 @@ function WealthSkeleton() {
   return (
     <>
       <style>{GAME_STYLES}</style>
-      <div style={{ borderRadius: 24, background: '#07100d', border: '1px solid rgba(255,255,255,.06)', padding: '28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ borderRadius: 24, background: 'var(--color-bg2)', border: '1px solid rgba(var(--fg),.06)', padding: '28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div className="shimmer-box" style={{ height: 12, width: '40%' }} />
         <div className="shimmer-box" style={{ height: 44, width: '70%' }} />
         <div style={{ display: 'flex', gap: 8 }}>
@@ -438,14 +438,14 @@ function WealthSkeleton() {
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="wealth-score-grid">
-        <div style={{ borderRadius: 20, background: '#07100d', border: '1px solid rgba(255,255,255,.06)', padding: '22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ borderRadius: 20, background: 'var(--color-bg2)', border: '1px solid rgba(var(--fg),.06)', padding: '22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div className="shimmer-box" style={{ height: 10, width: '50%' }} />
           <div className="shimmer-box" style={{ height: 8, borderRadius: 99 }} />
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {[80, 110, 90, 120].map(w => <div key={w} className="shimmer-box" style={{ height: 22, width: w }} />)}
           </div>
         </div>
-        <div style={{ borderRadius: 20, background: '#080d18', border: '1px solid rgba(255,255,255,.06)', padding: '22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ borderRadius: 20, background: 'var(--color-bg2)', border: '1px solid rgba(var(--fg),.06)', padding: '22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[1,2,3].map(i => <div key={i} className="shimmer-box" style={{ height: 52 }} />)}
         </div>
       </div>
@@ -471,8 +471,8 @@ function MissionButton({ m, navigate }: { m: Mission; navigate: (p: string) => v
     <button onClick={handleClick} style={{
       position: 'relative', display: 'flex', alignItems: 'center', gap: 10,
       padding: '11px 13px', borderRadius: 14,
-      border: `1px solid ${pressed ? 'rgba(0,230,118,.4)' : 'rgba(255,255,255,.07)'}`,
-      background: pressed ? 'rgba(0,230,118,.1)' : 'rgba(255,255,255,.03)',
+      border: `1px solid ${pressed ? 'rgba(0,230,118,.4)' : 'rgba(var(--fg),.07)'}`,
+      background: pressed ? 'rgba(0,230,118,.1)' : 'rgba(var(--fg),.03)',
       cursor: 'pointer', textAlign: 'left', width: '100%',
       transform: pressed ? 'scale(.97)' : 'scale(1)',
       transition: 'all .12s cubic-bezier(.4,0,.2,1)',
@@ -497,7 +497,7 @@ function MissionButton({ m, navigate }: { m: Mission; navigate: (p: string) => v
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
         <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{m.label}</p>
-        <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,.35)', lineHeight: 1.3 }}>{m.sub}</p>
+        <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(var(--fg),.35)', lineHeight: 1.3 }}>{m.sub}</p>
       </div>
       <span style={{ fontSize: 10, fontWeight: 800, color: '#00e676', background: 'rgba(0,230,118,.1)', padding: '2px 7px', borderRadius: 99, flexShrink: 0, border: '1px solid rgba(0,230,118,.2)' }}>+{m.pts}</span>
     </button>
@@ -526,7 +526,7 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
         {/* ── Score + rank panel ── */}
         <div style={{
           position: 'relative', overflow: 'hidden', borderRadius: 20,
-          background: 'linear-gradient(145deg, #070e0a, #050c08)',
+          background: 'linear-gradient(145deg, var(--color-bg2), var(--color-bg2))',
           border: `1px solid ${rank.color}25`,
           padding: '20px',
           '--glow': `${rank.color}40`,
@@ -544,11 +544,11 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
                 fontSize: 22, animation: 'popIn .4s ease-out',
               }}>{rank.emoji}</div>
               <div>
-                <p style={{ margin: 0, fontSize: 9, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase' }}>Current Rank</p>
+                <p style={{ margin: 0, fontSize: 9, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(var(--fg),.3)', textTransform: 'uppercase' }}>Current Rank</p>
                 <p style={{ margin: 0, fontSize: 16, fontWeight: 900, color: rank.color, letterSpacing: '-0.01em' }}>{rank.name}</p>
               </div>
               <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                <p style={{ margin: 0, fontSize: 9, color: 'rgba(255,255,255,.25)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>Score</p>
+                <p style={{ margin: 0, fontSize: 9, color: 'rgba(var(--fg),.25)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>Score</p>
                 <p style={{ margin: 0, fontSize: 24, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>{score}</p>
               </div>
             </div>
@@ -556,12 +556,12 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
             {/* XP bar to next rank */}
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.3)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(var(--fg),.3)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
                   {nextRank ? `Progress to ${nextRank.name} ${nextRank.emoji}` : '🏆 Max Rank Reached'}
                 </span>
                 <span style={{ fontSize: 9, fontWeight: 800, color: rank.color }}>{Math.round(levelProgress)}%</span>
               </div>
-              <div style={{ height: 7, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+              <div style={{ height: 7, borderRadius: 99, background: 'rgba(var(--fg),.06)', overflow: 'hidden' }}>
                 <div style={{
                   height: '100%', borderRadius: 99,
                   background: `linear-gradient(90deg, ${rank.color}cc, ${rank.color})`,
@@ -571,7 +571,7 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
                 }} />
               </div>
               {nextRank && (
-                <p style={{ margin: '6px 0 0', fontSize: 9, color: 'rgba(255,255,255,.25)', fontFamily: SANS }}>
+                <p style={{ margin: '6px 0 0', fontSize: 9, color: 'rgba(var(--fg),.25)', fontFamily: SANS }}>
                   💡 {rank.next}
                 </p>
               )}
@@ -582,9 +582,9 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
               {factors.map(f => (
                 <span key={f.label} style={{
                   fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 99,
-                  background: f.earned ? `${rank.color}14` : 'rgba(255,255,255,.04)',
-                  border: `1px solid ${f.earned ? rank.color + '35' : 'rgba(255,255,255,.07)'}`,
-                  color: f.earned ? rank.color : 'rgba(255,255,255,.2)',
+                  background: f.earned ? `${rank.color}14` : 'rgba(var(--fg),.04)',
+                  border: `1px solid ${f.earned ? rank.color + '35' : 'rgba(var(--fg),.07)'}`,
+                  color: f.earned ? rank.color : 'rgba(var(--fg),.2)',
                   display: 'flex', alignItems: 'center', gap: 4,
                   transition: 'all .2s',
                 }}>
@@ -599,13 +599,13 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
         {/* ── Missions panel ── */}
         <div style={{
           position: 'relative', overflow: 'hidden', borderRadius: 20,
-          background: '#080d18', border: '1px solid rgba(255,255,255,.06)',
+          background: 'var(--color-bg2)', border: '1px solid rgba(var(--fg),.06)',
           padding: '20px', display: 'flex', flexDirection: 'column', gap: 10,
         }}>
           <Grain opacity={0.025} />
           <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 10, height: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ margin: 0, fontSize: 9, fontWeight: 800, letterSpacing: '.13em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase' }}>Missions</p>
+              <p style={{ margin: 0, fontSize: 9, fontWeight: 800, letterSpacing: '.13em', color: 'rgba(var(--fg),.3)', textTransform: 'uppercase' }}>Missions</p>
               <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: 'rgba(255,215,64,.12)', border: '1px solid rgba(255,215,64,.2)', color: '#ffd740' }}>
                 {completedCount}/{missions.length} done
               </span>
@@ -615,7 +615,7 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: 36, animation: 'popIn .5s ease-out' }}>🏆</div>
                 <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#ffd740' }}>All missions done!</p>
-                <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,.35)', textAlign: 'center' }}>You're a Wealth Master. More coming soon.</p>
+                <p style={{ margin: 0, fontSize: 10, color: 'rgba(var(--fg),.35)', textAlign: 'center' }}>You're a Wealth Master. More coming soon.</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -709,7 +709,7 @@ function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, na
   return (
     <div style={{
       position: 'relative', overflow: 'hidden', borderRadius: 20,
-      background: 'linear-gradient(135deg, #05100a 0%, #060d09 100%)',
+      background: 'linear-gradient(135deg, var(--color-bg2) 0%, var(--color-bg2) 100%)',
       border: `1px solid ${accent}22`,
       boxShadow: `0 0 50px ${accent}0d, 0 8px 36px rgba(0,0,0,.5)`,
       padding: '20px 22px',
@@ -720,20 +720,20 @@ function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, na
       <div style={{ position: 'relative', zIndex: 1 }}>
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', fontFamily: SANS }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(var(--fg),.4)', textTransform: 'uppercase', fontFamily: SANS }}>
             <i className="fa-solid fa-chart-pie" style={{ color: accent, marginRight: 7 }} />Your Portfolio
           </span>
           <button onClick={() => navigate('/portfolio')} style={{
             display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700,
-            color: 'rgba(255,255,255,.4)', cursor: 'pointer', padding: '4px 10px', borderRadius: 8,
-            border: '1px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.03)', fontFamily: SANS,
+            color: 'rgba(var(--fg),.4)', cursor: 'pointer', padding: '4px 10px', borderRadius: 8,
+            border: '1px solid rgba(var(--fg),.08)', background: 'rgba(var(--fg),.03)', fontFamily: SANS,
           }}>View all →</button>
         </div>
 
         <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* donut */}
           <svg viewBox="0 0 140 140" style={{ width: 132, height: 132, flexShrink: 0 }}>
-            <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(255,255,255,.05)" strokeWidth={SW} />
+            <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(var(--fg),.05)" strokeWidth={SW} />
             {arcs.map(s => {
               const len = mounted ? s.full : 0;
               return (
@@ -746,12 +746,12 @@ function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, na
             <text x={70} y={64} textAnchor="middle" fill={accent} fontSize={20} fontWeight={900} fontFamily={MONO}>
               {up ? '+' : ''}{totalGainPct.toFixed(1)}%
             </text>
-            <text x={70} y={80} textAnchor="middle" fill="rgba(255,255,255,.4)" fontSize={8} fontFamily={SANS}>total return</text>
+            <text x={70} y={80} textAnchor="middle" fill="rgba(var(--fg),.4)" fontSize={8} fontFamily={SANS}>total return</text>
           </svg>
 
           {/* value + gain */}
           <div style={{ flex: 1, minWidth: 140 }}>
-            <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Total value</p>
+            <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: 'rgba(var(--fg),.35)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Total value</p>
             <p style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 800, color: '#fff', fontFamily: MONO, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
               J$<Counter value={portfolioValue} decimals={0} />
             </p>
@@ -761,7 +761,7 @@ function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, na
                 {up ? '+' : ''}J${Math.abs(totalGain).toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </span>
             </div>
-            <p style={{ margin: '8px 0 0', fontSize: 10.5, color: 'rgba(255,255,255,.35)', fontFamily: SANS }}>
+            <p style={{ margin: '8px 0 0', fontSize: 10.5, color: 'rgba(var(--fg),.35)', fontFamily: SANS }}>
               across {slices.length} holding{slices.length === 1 ? '' : 's'}
             </p>
           </div>
@@ -775,16 +775,16 @@ function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, na
               <div key={s.symbol} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                 <span style={{ width: 9, height: 9, borderRadius: 3, background: s.color, flexShrink: 0 }} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: MONO, width: 56 }}>{s.symbol}</span>
-                <div style={{ flex: 1, height: 5, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+                <div style={{ flex: 1, height: 5, borderRadius: 99, background: 'rgba(var(--fg),.06)', overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: mounted ? `${s.pct}%` : '0%', background: s.color, borderRadius: 99, transition: 'width .8s cubic-bezier(.22,1,.36,1)' }} />
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.5)', fontFamily: MONO, width: 38, textAlign: 'right' }}>{s.pct.toFixed(0)}%</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(var(--fg),.5)', fontFamily: MONO, width: 38, textAlign: 'right' }}>{s.pct.toFixed(0)}%</span>
                 <span style={{ fontSize: 11, fontWeight: 800, color: sUp ? '#00e676' : '#ff5252', fontFamily: MONO, width: 30, textAlign: 'right' }}>{sUp ? '▲' : '▼'}</span>
               </div>
             );
           })}
           {slices.length > 5 && (
-            <p style={{ margin: '2px 0 0', fontSize: 10.5, color: 'rgba(255,255,255,.3)', fontFamily: SANS }}>+ {slices.length - 5} more holdings</p>
+            <p style={{ margin: '2px 0 0', fontSize: 10.5, color: 'rgba(var(--fg),.3)', fontFamily: SANS }}>+ {slices.length - 5} more holdings</p>
           )}
         </div>
       </div>
@@ -821,14 +821,14 @@ function PortfolioPreviewCard({ mode, navigate, openAuthModal }: {
   return (
     <div style={{
       position: 'relative', overflow: 'hidden', borderRadius: 20,
-      background: 'linear-gradient(135deg, #06100b 0%, #060d09 100%)',
+      background: 'linear-gradient(135deg, #06100b 0%, var(--color-bg2) 100%)',
       border: '1px dashed rgba(0,230,118,.28)', padding: '20px 22px',
     }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(0,230,118,.5) 45%, transparent)' }} />
       <Grain opacity={0.022} />
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', fontFamily: SANS }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(var(--fg),.4)', textTransform: 'uppercase', fontFamily: SANS }}>
             <i className="fa-solid fa-chart-pie" style={{ color: '#00e676', marginRight: 7 }} />Your Portfolio
           </span>
           <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: '.12em', color: '#ffd740', background: 'rgba(255,215,64,.12)', border: '1px solid rgba(255,215,64,.3)', borderRadius: 99, padding: '2px 8px' }}>PREVIEW</span>
@@ -836,7 +836,7 @@ function PortfolioPreviewCard({ mode, navigate, openAuthModal }: {
         <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* sample donut (dimmed to signal it isn't real) */}
           <svg viewBox="0 0 140 140" style={{ width: 132, height: 132, flexShrink: 0, opacity: 0.92 }}>
-            <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(255,255,255,.05)" strokeWidth={SW} />
+            <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(var(--fg),.05)" strokeWidth={SW} />
             {arcs.map(s => {
               const len = mounted ? s.full : 0;
               return (
@@ -846,15 +846,15 @@ function PortfolioPreviewCard({ mode, navigate, openAuthModal }: {
                   style={{ transition: 'stroke-dasharray .8s cubic-bezier(.22,1,.36,1)' }} />
               );
             })}
-            <text x={70} y={66} textAnchor="middle" fill="rgba(255,255,255,.85)" fontSize={12} fontWeight={800} fontFamily={SANS}>Sample</text>
-            <text x={70} y={80} textAnchor="middle" fill="rgba(255,255,255,.35)" fontSize={8} fontFamily={SANS}>4 stocks</text>
+            <text x={70} y={66} textAnchor="middle" fill="rgba(var(--fg),.85)" fontSize={12} fontWeight={800} fontFamily={SANS}>Sample</text>
+            <text x={70} y={80} textAnchor="middle" fill="rgba(var(--fg),.35)" fontSize={8} fontFamily={SANS}>4 stocks</text>
           </svg>
           <div style={{ flex: 1, minWidth: 150 }}>
             <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#fff', fontFamily: SANS, lineHeight: 1.25 }}>{headline}</p>
-            <p style={{ margin: '6px 0 14px', fontSize: 12, color: 'rgba(255,255,255,.5)', fontFamily: SANS, lineHeight: 1.55 }}>{sub}</p>
+            <p style={{ margin: '6px 0 14px', fontSize: 12, color: 'rgba(var(--fg),.5)', fontFamily: SANS, lineHeight: 1.55 }}>{sub}</p>
             <button onClick={onCta} style={{
               display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 12,
-              background: 'linear-gradient(135deg, #00c853, #00e676)', color: '#04060d', fontWeight: 800, fontSize: 13.5,
+              background: 'linear-gradient(135deg, #00c853, #00e676)', color: 'var(--color-bg)', fontWeight: 800, fontSize: 13.5,
               border: 'none', cursor: 'pointer', fontFamily: SANS, boxShadow: '0 6px 22px rgba(0,230,118,.3)',
             }}>{ctaLabel} →</button>
           </div>
@@ -864,8 +864,8 @@ function PortfolioPreviewCard({ mode, navigate, openAuthModal }: {
           {arcs.map(s => (
             <div key={s.symbol} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 9, height: 9, borderRadius: 3, background: s.color }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.55)', fontFamily: MONO }}>{s.symbol}</span>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', fontFamily: MONO }}>{s.pct}%</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(var(--fg),.55)', fontFamily: MONO }}>{s.symbol}</span>
+              <span style={{ fontSize: 10, color: 'rgba(var(--fg),.3)', fontFamily: MONO }}>{s.pct}%</span>
             </div>
           ))}
         </div>
@@ -886,7 +886,7 @@ function WealthHero({ portfolioValue, totalGain, totalGainPct, walletBalance, fi
   return (
     <div style={{
       position: 'relative', overflow: 'hidden', borderRadius: 24,
-      background: 'linear-gradient(135deg, #040e08 0%, #071209 50%, #030b06 100%)',
+      background: 'linear-gradient(135deg, var(--color-bg2) 0%, var(--color-bg2) 50%, var(--color-bg2) 100%)',
       border: '1px solid rgba(0,230,118,.15)',
       boxShadow: '0 0 60px rgba(0,230,118,.07), 0 8px 40px rgba(0,0,0,.6)',
       padding: '28px 28px 24px',
@@ -907,11 +907,11 @@ function WealthHero({ portfolioValue, totalGain, totalGainPct, walletBalance, fi
           </span>
           <a href="/portfolio" onClick={e => { e.preventDefault(); navigate('/portfolio'); }} style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
-            fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.35)',
+            fontSize: 10, fontWeight: 700, color: 'rgba(var(--fg),.35)',
             textDecoration: 'none', letterSpacing: '.04em',
             padding: '4px 10px', borderRadius: 8,
-            border: '1px solid rgba(255,255,255,.07)',
-            background: 'rgba(255,255,255,.03)',
+            border: '1px solid rgba(var(--fg),.07)',
+            background: 'rgba(var(--fg),.03)',
             transition: 'all .15s',
           }}>
             View Portfolio <i className="fa-solid fa-arrow-right" style={{ fontSize: 8 }} />
@@ -920,7 +920,7 @@ function WealthHero({ portfolioValue, totalGain, totalGainPct, walletBalance, fi
 
         {/* Net worth headline */}
         <div style={{ marginBottom: 6 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.28)', letterSpacing: '.1em', textTransform: 'uppercase', fontFamily: SANS }}>Total Wealth</p>
+          <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: 'rgba(var(--fg),.28)', letterSpacing: '.1em', textTransform: 'uppercase', fontFamily: SANS }}>Total Wealth</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
             <div style={{ fontSize: 40, fontWeight: 900, fontFamily: SANS, letterSpacing: '-0.04em', lineHeight: 1, color: '#fff' }}>
               J$<Counter value={totalNet} decimals={2} />
@@ -943,18 +943,18 @@ function WealthHero({ portfolioValue, totalGain, totalGainPct, walletBalance, fi
         </div>
 
         {/* Sub-metrics row */}
-        <div style={{ display: 'flex', gap: 24, marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,.05)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 24, marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(var(--fg),.05)', flexWrap: 'wrap' }}>
           <div>
-            <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.25)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Invested</p>
-            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, fontFamily: MONO, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.01em' }}>J${fmt(portfolioValue)}</p>
+            <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 700, color: 'rgba(var(--fg),.25)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Invested</p>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, fontFamily: MONO, color: 'rgba(var(--fg),.85)', letterSpacing: '-0.01em' }}>J${fmt(portfolioValue)}</p>
           </div>
           <div>
-            <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.25)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Cash</p>
-            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, fontFamily: MONO, color: 'rgba(255,255,255,.85)', letterSpacing: '-0.01em' }}>J${fmt(walletBalance)}</p>
+            <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 700, color: 'rgba(var(--fg),.25)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Cash</p>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, fontFamily: MONO, color: 'rgba(var(--fg),.85)', letterSpacing: '-0.01em' }}>J${fmt(walletBalance)}</p>
           </div>
           {totalGain !== 0 && (
             <div>
-              <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.25)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Total Return</p>
+              <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 700, color: 'rgba(var(--fg),.25)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Total Return</p>
               <p style={{ margin: 0, fontSize: 15, fontWeight: 800, fontFamily: MONO, color: pos ? '#00e676' : '#ff5252', letterSpacing: '-0.01em' }}>
                 {pos ? '+' : ''}J${fmt(Math.abs(totalGain))}
               </p>
@@ -978,8 +978,8 @@ function WealthHero({ portfolioValue, totalGain, totalGainPct, walletBalance, fi
           <button onClick={() => navigate('/planner')} style={{
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
             padding: '11px 16px', borderRadius: 12, cursor: 'pointer',
-            background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)',
-            color: 'rgba(255,255,255,.7)', fontSize: 12, fontWeight: 700, fontFamily: SANS,
+            background: 'rgba(var(--fg),.05)', border: '1px solid rgba(var(--fg),.08)',
+            color: 'rgba(var(--fg),.7)', fontSize: 12, fontWeight: 700, fontFamily: SANS,
             transition: 'all .15s',
           }}>
             <i className="fa-solid fa-bullseye" style={{ fontSize: 11 }} />
@@ -988,8 +988,8 @@ function WealthHero({ portfolioValue, totalGain, totalGainPct, walletBalance, fi
           <button onClick={() => navigate('/chat')} style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
             padding: '11px 14px', borderRadius: 12, cursor: 'pointer',
-            background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)',
-            color: 'rgba(255,255,255,.7)', fontSize: 12, fontWeight: 700, fontFamily: SANS,
+            background: 'rgba(var(--fg),.05)', border: '1px solid rgba(var(--fg),.08)',
+            color: 'rgba(var(--fg),.7)', fontSize: 12, fontWeight: 700, fontFamily: SANS,
             transition: 'all .15s',
           }}>
             <i className="fa-solid fa-robot" style={{ fontSize: 12, color: '#00e676' }} />
@@ -1015,15 +1015,15 @@ function GoalsSection({ portfolioValue, positions }: { portfolioValue: number; p
   return (
     <div style={{
       position: 'relative', overflow: 'hidden', borderRadius: 20,
-      background: 'linear-gradient(145deg, #060d0b, #040a08)',
-      border: '1px solid rgba(255,255,255,.07)',
+      background: 'linear-gradient(145deg, var(--color-bg2), var(--color-bg2))',
+      border: '1px solid rgba(var(--fg),.07)',
       padding: '20px',
     }}>
       <style>{GAME_STYLES}</style>
       <Grain opacity={0.022} />
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <p style={{ margin: 0, fontSize: 9, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase' }}>Long-Term Goals</p>
+          <p style={{ margin: 0, fontSize: 9, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(var(--fg),.3)', textTransform: 'uppercase' }}>Long-Term Goals</p>
           <a href="/planner" style={{ fontSize: 10, fontWeight: 700, color: '#00e676', textDecoration: 'none', letterSpacing: '.04em', opacity: .8 }}>
             Set Custom Goal <i className="fa-solid fa-arrow-right" style={{ fontSize: 8 }} />
           </a>
@@ -1038,8 +1038,8 @@ function GoalsSection({ portfolioValue, positions }: { portfolioValue: number; p
               <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                  background: done ? 'rgba(0,230,118,.15)' : 'rgba(255,255,255,.04)',
-                  border: `1px solid ${done ? 'rgba(0,230,118,.3)' : 'rgba(255,255,255,.07)'}`,
+                  background: done ? 'rgba(0,230,118,.15)' : 'rgba(var(--fg),.04)',
+                  border: `1px solid ${done ? 'rgba(0,230,118,.3)' : 'rgba(var(--fg),.07)'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14,
                 }}>
@@ -1047,12 +1047,12 @@ function GoalsSection({ portfolioValue, positions }: { portfolioValue: number; p
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: done ? '#00e676' : 'rgba(255,255,255,.7)' }}>{m.label}</span>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: done ? '#00e676' : 'rgba(255,255,255,.3)', fontFamily: MONO }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: done ? '#00e676' : 'rgba(var(--fg),.7)' }}>{m.label}</span>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: done ? '#00e676' : 'rgba(var(--fg),.3)', fontFamily: MONO }}>
                       {Math.round(pct)}%
                     </span>
                   </div>
-                  <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+                  <div style={{ height: 5, borderRadius: 99, background: 'rgba(var(--fg),.06)', overflow: 'hidden' }}>
                     <div style={{
                       height: '100%', borderRadius: 99,
                       background: done
@@ -1063,7 +1063,7 @@ function GoalsSection({ portfolioValue, positions }: { portfolioValue: number; p
                       transition: 'width 1.2s cubic-bezier(.4,0,.2,1)',
                     }} />
                   </div>
-                  <p style={{ margin: '3px 0 0', fontSize: 9, color: 'rgba(255,255,255,.2)' }}>{m.desc}</p>
+                  <p style={{ margin: '3px 0 0', fontSize: 9, color: 'rgba(var(--fg),.2)' }}>{m.desc}</p>
                 </div>
               </div>
             );
@@ -1273,7 +1273,7 @@ export default function Dashboard() {
             <span style={{ fontSize: 22 }}>🚀</span>
             <div>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff' }}>You're on the Free plan — limited to JSE preview only</p>
-              <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,.5)' }}>Upgrade to CORE for full JSE + US Markets, charts, portfolio, alerts & more.</p>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(var(--fg),.5)' }}>Upgrade to CORE for full JSE + US Markets, charts, portfolio, alerts & more.</p>
             </div>
           </div>
           <a href="/subscription" style={{ flexShrink: 0, padding: '8px 20px', borderRadius: 10, background: '#00c853', color: '#000', fontSize: 12, fontWeight: 800, textDecoration: 'none', letterSpacing: '.02em' }}>Upgrade — $14.99/mo</a>
@@ -1283,14 +1283,14 @@ export default function Dashboard() {
       {/* ── 0. Market toggle ─────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
 
-        <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
+        <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 14, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.07)' }}>
           {([['us', '🇺🇸 US Markets'], ['caribbean', '🌴 Caribbean']] as const).map(([key, label]) => (
             <button key={key} onClick={() => { if (isFree && key === 'us') { window.location.href = '/subscription'; return; } setMarket(key); }}
               style={{
                 padding: '7px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 700, fontFamily: INTER, transition: 'all .15s',
                 background: market === key ? (key === 'us' ? 'rgba(64,196,255,.15)' : 'rgba(0,230,118,.15)') : 'transparent',
-                color: market === key ? (key === 'us' ? '#40c4ff' : '#00e676') : 'rgba(255,255,255,.35)',
+                color: market === key ? (key === 'us' ? '#40c4ff' : '#00e676') : 'rgba(var(--fg),.35)',
                 boxShadow: market === key ? `0 0 12px ${key === 'us' ? 'rgba(64,196,255,.2)' : 'rgba(0,230,118,.2)'}` : 'none',
               }}>{label}</button>
           ))}
@@ -1302,7 +1302,7 @@ export default function Dashboard() {
             placeholder="Filter US symbol…"
             style={{
               height: 34, paddingLeft: 12, paddingRight: 12, borderRadius: 10,
-              background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)',
+              background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.08)',
               color: '#fff', fontSize: 12, fontFamily: INTER, outline: 'none', width: 160,
             }}
           />
@@ -1360,14 +1360,14 @@ export default function Dashboard() {
       <div className="mobile-hide">
         <SectionLabel count={activeStocks.length}
           right={
-            <div style={{ display: 'flex', gap: 2, padding: '3px', borderRadius: 12, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)' }}>
+            <div style={{ display: 'flex', gap: 2, padding: '3px', borderRadius: 12, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.06)' }}>
               {MOVER_TABS.map(tab => (
                 <button key={tab.key} onClick={() => setMoverTab(tab.key)} style={{
                   display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 9,
                   fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer',
                   fontFamily: SANS, letterSpacing: '.02em',
                   background: moverTab === tab.key ? tab.color + '18' : 'transparent',
-                  color: moverTab === tab.key ? tab.color : 'rgba(255,255,255,.3)',
+                  color: moverTab === tab.key ? tab.color : 'rgba(var(--fg),.3)',
                   transition: 'all .15s',
                   boxShadow: moverTab === tab.key ? `0 0 12px ${tab.glow}` : 'none',
                 }}>
@@ -1383,7 +1383,7 @@ export default function Dashboard() {
 
         <div className="scroll-x" style={{ display: 'flex', gap: 10, paddingBottom: 4 }}>
           {activeStocks.length === 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 4px', color: 'rgba(255,255,255,.2)', fontSize: 12, fontFamily: SANS }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 4px', color: 'rgba(var(--fg),.2)', fontSize: 12, fontFamily: SANS }}>
               <i className="fa-solid fa-satellite-dish" style={{ fontSize: 16, opacity: .3 }} />
               Connecting to live market data…
             </div>
@@ -1416,10 +1416,10 @@ export default function Dashboard() {
           <PaywallBlock feature="Advanced Charts & Real-Time Data" tier="CORE" />
         ) : (
           <div className="dashboard-grid">
-            <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)', background: '#080d18', boxShadow: '0 4px 32px rgba(0,0,0,.4)' }}>
+            <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(var(--fg),.055)', background: 'var(--color-bg2)', boxShadow: '0 4px 32px rgba(0,0,0,.4)' }}>
               <MainChart symbol={selectedSymbol} isUS={market === 'us'} />
             </div>
-            <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.055)', background: '#080d18' }}>
+            <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(var(--fg),.055)', background: 'var(--color-bg2)' }}>
               <StockPanel stocks={market === 'us' ? usStocks : undefined} isUS={market === 'us'} />
             </div>
           </div>

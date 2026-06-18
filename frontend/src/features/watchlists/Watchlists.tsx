@@ -7,10 +7,10 @@ import { useMarketStore } from '../../stores/market';
 import { useUIStore } from '../../stores/ui';
 import type { Watchlist } from '../../types';
 
-const BG       = '#04060d';
-const BG2      = '#080d18';
-const BG3      = '#0c1422';
-const BORDER   = 'rgba(255,255,255,0.055)';
+const BG       = 'var(--color-bg)';
+const BG2      = 'var(--color-bg2)';
+const BG3      = 'var(--color-bg3)';
+const BORDER   = 'rgba(var(--fg),0.055)';
 const TEXT     = '#dde5f0';
 const TEXT2    = '#7a95b0';
 const MUTED    = '#3d5470';
@@ -185,7 +185,7 @@ export default function Watchlists() {
                 placeholder="List name..."
                 style={{
                   flex: 1, padding: '7px 12px',
-                  background: 'rgba(255,255,255,0.04)', border: `1px solid rgba(0,230,118,0.3)`,
+                  background: 'rgba(var(--fg),0.04)', border: `1px solid rgba(0,230,118,0.3)`,
                   borderRadius: 9, fontSize: 12, color: TEXT, outline: 'none',
                   fontFamily: 'Inter, sans-serif',
                 }}
@@ -232,7 +232,7 @@ export default function Watchlists() {
                       cursor: 'pointer', textAlign: 'left', transition: 'all 150ms',
                       background: isActive ? 'rgba(0,230,118,0.08)' : 'transparent',
                     }}
-                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),0.04)'; }}
                     onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
@@ -286,7 +286,7 @@ export default function Watchlists() {
             <div style={{
               width: 64, height: 64, borderRadius: 18,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(255,255,255,0.03)', border: `1px solid ${BORDER}`,
+              background: 'rgba(var(--fg),0.03)', border: `1px solid ${BORDER}`,
             }}>
               <i className="fa-solid fa-eye" style={{ fontSize: 26, color: MUTED, opacity: 0.5 }} />
             </div>
@@ -330,7 +330,7 @@ export default function Watchlists() {
                     placeholder="Add stock..."
                     style={{
                       paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
-                      background: 'rgba(255,255,255,0.05)', border: `1px solid ${BORDER}`,
+                      background: 'rgba(var(--fg),0.05)', border: `1px solid ${BORDER}`,
                       borderRadius: 11, fontSize: 12, color: TEXT, outline: 'none', width: 175,
                       fontFamily: 'Inter, sans-serif', transition: 'border-color 150ms',
                     }}
@@ -345,7 +345,7 @@ export default function Watchlists() {
                     position: 'absolute', top: 'calc(100% + 6px)', right: 0,
                     width: window.innerWidth < 768 ? Math.min(260, window.innerWidth - 16) : 260,
                     maxWidth: '100vw',
-                    background: BG3, border: `1px solid rgba(255,255,255,0.1)`,
+                    background: BG3, border: `1px solid rgba(var(--fg),0.1)`,
                     borderRadius: 14, boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
                     zIndex: 50, overflowY: 'auto', maxHeight: '40vh',
                   }}>
@@ -358,7 +358,7 @@ export default function Watchlists() {
                           padding: '11px 14px', background: 'transparent', border: 'none',
                           cursor: 'pointer', textAlign: 'left', transition: 'background 100ms',
                         }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),0.05)'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                       >
                         <div style={{
@@ -393,7 +393,7 @@ export default function Watchlists() {
                 <div style={{
                   width: 56, height: 56, borderRadius: 16,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'rgba(255,255,255,0.03)', border: `1px solid ${BORDER}`,
+                  background: 'rgba(var(--fg),0.03)', border: `1px solid ${BORDER}`,
                 }}>
                   <i className="fa-solid fa-circle-plus" style={{ fontSize: 22, color: MUTED, opacity: 0.5 }} />
                 </div>
@@ -404,7 +404,7 @@ export default function Watchlists() {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
+                    <tr style={{ borderBottom: `1px solid rgba(var(--fg),0.04)` }}>
                       {[
                         { label: 'Symbol', align: 'left' },
                         { label: 'Company', align: 'left' },
@@ -429,9 +429,9 @@ export default function Watchlists() {
                       return (
                         <tr
                           key={s.symbol}
-                          style={{ borderBottom: `1px solid rgba(255,255,255,0.028)`, cursor: 'pointer', transition: 'background 100ms' }}
+                          style={{ borderBottom: `1px solid rgba(var(--fg),0.028)`, cursor: 'pointer', transition: 'background 100ms' }}
                           onClick={() => { selectSymbol(s.symbol); openStockDetail(s.symbol); }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.028)'; }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(var(--fg),0.028)'; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}
                         >
                           <td style={{ padding: '14px 18px' }}>
@@ -469,7 +469,7 @@ export default function Watchlists() {
                               padding: '3px 9px', borderRadius: 8,
                               fontSize: 11, fontWeight: 800, fontFamily: FONT_MONO,
                               color: cc,
-                              background: isPos ? 'rgba(0,230,118,0.1)' : s.change < 0 ? 'rgba(255,82,82,0.1)' : 'rgba(255,255,255,0.05)',
+                              background: isPos ? 'rgba(0,230,118,0.1)' : s.change < 0 ? 'rgba(255,82,82,0.1)' : 'rgba(var(--fg),0.05)',
                             }}>
                               <i className={`fa-solid fa-caret-${isPos ? 'up' : 'down'}`} style={{ fontSize: 9 }} />
                               {Math.abs(s.change).toFixed(2)}%

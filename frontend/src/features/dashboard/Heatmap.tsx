@@ -4,7 +4,7 @@ import { useUIStore } from '../../stores/ui';
 import type { Stock } from '../../types';
 
 function tileStyle(pct: number): React.CSSProperties {
-  if (pct === 0) return { background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)' };
+  if (pct === 0) return { background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.06)' };
   const c = Math.max(-10, Math.min(10, pct));
   const t = Math.abs(c) / 10;
   if (pct > 0) {
@@ -68,7 +68,7 @@ export default function Heatmap() {
         </div>
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex items-center gap-3 text-[9px] font-semibold" style={{ color: 'var(--color-muted)' }}>
-            {[['rgba(255,82,82,.45)', 'Loss'],['rgba(255,255,255,.1)','Flat'],['rgba(0,230,118,.45)','Gain']].map(([bg, label]) => (
+            {[['rgba(255,82,82,.45)', 'Loss'],['rgba(var(--fg),.1)','Flat'],['rgba(0,230,118,.45)','Gain']].map(([bg, label]) => (
               <span key={label} className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-sm" style={{ background: bg }} />
                 {label}
@@ -77,7 +77,7 @@ export default function Heatmap() {
           </div>
           <button onClick={e => { e.stopPropagation(); toggle(); }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all hover:opacity-80"
-            style={{ background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)' }}>
+            style={{ background: 'rgba(var(--fg),.05)', border: '1px solid var(--color-border)', color: 'var(--color-text2)' }}>
             <i className={`fa-solid fa-chevron-${collapsed ? 'down' : 'up'} text-[9px]`} />
             {collapsed ? 'Expand' : 'Collapse'}
           </button>
