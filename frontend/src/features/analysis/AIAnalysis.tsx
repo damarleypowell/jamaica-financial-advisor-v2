@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useMarketStore } from '../../stores/market';
-import { apiPost } from '../../lib/api';
+import { apiPost, ApiError } from '../../lib/api';
 import MarkdownRenderer from '../../components/ui/MarkdownRenderer';
 
 type Level = 'beginner' | 'intermediate' | 'advanced';
@@ -26,16 +26,28 @@ export default function AIAnalysis() {
   // Seed from the ?q= deep-link param on first render (no effect needed).
   const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '');
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const mutation = useMutation({
-    mutationFn: (q: string) => apiPost<{ response: string }>('/api/chat', {
-      messages: [{ role: 'user', content: PROMPTS[level](q) }]
-    }),
+    mutationFn: (q: string) => {
+      const controller = new AbortController();
+      abortRef.current = controller;
+      return apiPost<{ response: string }>('/api/chat', {
+        messages: [{ role: 'user', content: PROMPTS[level](q) }],
+      }, { signal: controller.signal });
+    },
   });
 
   const handleAnalyze = () => {
     const q = query.trim();
-    if (!q) return;
+    if (!q || mutation.isPending) return;
     mutation.mutate(q);
+  };
+
+  // Stop = abort the in-flight request and clear back to the input state.
+  const handleStop = () => {
+    abortRef.current?.abort();
+    mutation.reset();
   };
 
   const handleChip = (sym: string) => {
@@ -65,11 +77,12 @@ export default function AIAnalysis() {
         <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--color-muted)' }}>Analysis depth</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           {LEVELS.map(l => (
-            <button key={l.key} onClick={() => setLevel(l.key)} style={{
-              padding: '16px 14px', borderRadius: 14, cursor: 'pointer',
+            <button key={l.key} onClick={() => setLevel(l.key)} disabled={mutation.isPending} style={{
+              padding: '16px 14px', borderRadius: 14, cursor: mutation.isPending ? 'not-allowed' : 'pointer',
               border: `1px solid ${level === l.key ? l.color + '55' : 'var(--color-border)'}`,
               background: level === l.key ? l.color + '0e' : 'var(--color-bg2)',
               transition: 'all 180ms', textAlign: 'center',
+              opacity: mutation.isPending && level !== l.key ? .45 : 1,
             }}>
               <i className={l.icon} style={{ fontSize: 20, color: level === l.key ? l.color : 'var(--color-muted)', display: 'block', marginBottom: 8 }} />
               <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: level === l.key ? l.color : 'var(--color-text)' }}>{l.label}</p>
@@ -88,11 +101,11 @@ export default function AIAnalysis() {
             const s = stocks.find(st => st.symbol === sym);
             const pos = (s?.pctChange ?? 0) >= 0;
             return (
-              <button key={sym} onClick={() => handleChip(sym)} style={{
+              <button key={sym} onClick={() => handleChip(sym)} disabled={mutation.isPending} style={{
                 padding: '4px 11px', borderRadius: 99, fontSize: 11, fontWeight: 700,
-                fontFamily: 'var(--font-mono)', cursor: 'pointer', transition: 'all 140ms',
+                fontFamily: 'var(--font-mono)', cursor: mutation.isPending ? 'not-allowed' : 'pointer', transition: 'all 140ms',
                 background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)',
-                color: 'var(--color-text2)',
+                color: 'var(--color-text2)', opacity: mutation.isPending ? .5 : 1,
               }}
                 onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = activeLevel.color + '55'; el.style.color = activeLevel.color; }}
                 onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--color-border)'; el.style.color = 'var(--color-text2)'; }}
@@ -110,6 +123,7 @@ export default function AIAnalysis() {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && e.metaKey) handleAnalyze(); }}
+            disabled={mutation.isPending}
             placeholder={`Type a stock symbol or question (e.g. "Analyse GraceKennedy for long-term growth") or paste a news article about a JSE company...`}
             rows={4}
             style={{
@@ -118,6 +132,7 @@ export default function AIAnalysis() {
               background: 'rgba(255,255,255,.04)', border: '1px solid var(--color-border)',
               color: 'var(--color-text)', fontFamily: 'var(--font-sans)',
               transition: 'border-color 180ms', boxSizing: 'border-box',
+              opacity: mutation.isPending ? .55 : 1, cursor: mutation.isPending ? 'not-allowed' : 'text',
             }}
             onFocus={e => (e.target.style.borderColor = activeLevel.color + '55')}
             onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
@@ -145,18 +160,50 @@ export default function AIAnalysis() {
         </div>
       </div>
 
-      {/* Loading */}
+      {/* Analysing — circular graphic + Stop */}
       {mutation.isPending && (
-        <div style={{ background: 'var(--color-bg2)', border: `1px solid ${activeLevel.color}30`, borderRadius: 16, padding: '28px 24px', textAlign: 'center' }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: activeLevel.color + '12', border: `1px solid ${activeLevel.color}30`, margin: '0 auto 12px' }}>
-            <i className="fa-solid fa-brain" style={{ fontSize: 20, color: activeLevel.color }} />
+        <div style={{ background: 'var(--color-bg2)', border: `1px solid ${activeLevel.color}30`, borderRadius: 16, padding: '32px 24px', textAlign: 'center' }}>
+          <div style={{ position: 'relative', width: 74, height: 74, margin: '0 auto 16px' }}>
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `5px solid ${activeLevel.color}22`, borderTopColor: activeLevel.color, animation: 'spin 1s linear infinite' }} />
+            <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: `3px solid ${activeLevel.color}14`, borderBottomColor: activeLevel.color + '88', animation: 'spin 1.5s linear infinite reverse' }} />
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fa-solid fa-brain" style={{ fontSize: 22, color: activeLevel.color }} />
+            </div>
           </div>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>AI is reading the JSE data...</p>
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--color-muted)' }}>{activeLevel.label} analysis in progress</p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 14 }}>
+          <p style={{ margin: 0, fontSize: 14.5, fontWeight: 800, color: 'var(--color-text)' }}>Analysing…</p>
+          <p style={{ margin: '5px 0 0', fontSize: 11.5, color: 'var(--color-muted)' }}>{activeLevel.label} analysis · Claude is reading live market data</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 5, margin: '14px 0 18px' }}>
             {[0, 1, 2].map(i => (
-              <span key={i} className="animate-pulse-dot" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: activeLevel.color, animationDelay: `${i * 220}ms` }} />
+              <span key={i} className="animate-pulse-dot" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: activeLevel.color, animationDelay: `${i * 220}ms` }} />
             ))}
+          </div>
+          <button onClick={handleStop} style={{
+            padding: '9px 22px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.4)', color: '#ff5252',
+            display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'all 160ms',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,82,82,.18)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,82,82,.1)')}
+          >
+            <i className="fa-solid fa-stop" style={{ fontSize: 10 }} /> Stop
+          </button>
+        </div>
+      )}
+
+      {/* Error — make failures visible instead of silently showing nothing */}
+      {mutation.isError && (mutation.error as Error)?.name !== 'AbortError' && (
+        <div style={{ background: 'rgba(255,82,82,.06)', border: '1px solid rgba(255,82,82,.3)', borderRadius: 16, padding: '18px 20px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 16, color: '#ff5252', marginTop: 2, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#ff5252' }}>Analysis failed</p>
+            <p style={{ margin: '3px 0 0', fontSize: 12.5, color: 'var(--color-text2)', lineHeight: 1.5 }}>
+              {(mutation.error as ApiError)?.status === 429
+                ? "You've reached your AI usage limit. Try again shortly or upgrade your plan."
+                : (mutation.error as ApiError)?.message || 'Something went wrong reaching the AI. Please try again.'}
+            </p>
+            <button onClick={handleAnalyze} style={{ marginTop: 12, padding: '7px 16px', borderRadius: 9, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>
+              <i className="fa-solid fa-rotate-right" style={{ marginRight: 6, fontSize: 11 }} /> Retry
+            </button>
           </div>
         </div>
       )}
@@ -173,7 +220,10 @@ export default function AIAnalysis() {
               <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: activeLevel.color }}>Gotham AI — {activeLevel.label} Analysis</p>
               <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)' }}>For educational purposes only · Not financial advice</p>
             </div>
-            <button onClick={() => mutation.reset()} style={{ marginLeft: 'auto', padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}>
+            <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 11px', borderRadius: 99, background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.28)', color: '#00e676', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+              <i className="fa-solid fa-circle-check" style={{ fontSize: 11 }} /> Complete
+            </span>
+            <button onClick={() => mutation.reset()} style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,.05)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer', flexShrink: 0 }}>
               New query
             </button>
           </div>

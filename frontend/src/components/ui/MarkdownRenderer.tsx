@@ -17,8 +17,20 @@ type Token =
   | { t: 'blockquote'; text: string }
   | { t: 'ul'; items: string[] }
   | { t: 'ol'; items: string[] }
+  | { t: 'table'; headers: string[]; rows: string[][] }
   | { t: 'codeblock'; lang: string; code: string }
   | { t: 'p'; text: string };
+
+// Matches an ordered-list marker: "1. text" (space) or a bare "1." at line end
+// (Claude often splits the number and its content across two lines). Does NOT
+// match "3.5%" since a digit follows the dot.
+const OL_RE = /^\d+\.(\s|$)/;
+
+const splitRow = (l: string): string[] =>
+  l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+
+// A GFM table separator row, e.g. "| --- | :--: |" or "---|---"
+const isTableSep = (l: string): boolean => /^[\s|:-]+$/.test(l) && l.includes('-') && l.includes('|');
 
 function tokenize(src: string): Token[] {
   const lines = src.split('\n');
@@ -55,6 +67,19 @@ function tokenize(src: string): Token[] {
     // HR
     if (/^[-*_]{3,}$/.test(line.trim())) { tokens.push({ t: 'hr' }); i++; continue; }
 
+    // Table (GFM): a header row with pipes, then a |---|---| separator, then body rows
+    if (line.includes('|') && i + 1 < lines.length && isTableSep(lines[i + 1])) {
+      const headers = splitRow(line);
+      i += 2; // consume header + separator
+      const rows: string[][] = [];
+      while (i < lines.length && lines[i].includes('|') && lines[i].trim() !== '') {
+        rows.push(splitRow(lines[i]));
+        i++;
+      }
+      tokens.push({ t: 'table', headers, rows });
+      continue;
+    }
+
     // Blockquote
     if (line.startsWith('> ')) { tokens.push({ t: 'blockquote', text: line.slice(2) }); i++; continue; }
 
@@ -69,12 +94,21 @@ function tokenize(src: string): Token[] {
       continue;
     }
 
-    // Ordered list
-    if (/^\d+\.\s/.test(line)) {
+    // Ordered list (handles "1. text" and a bare "1." with content on the next line)
+    if (OL_RE.test(line)) {
       const items: string[] = [];
-      while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
-        items.push(lines[i].replace(/^\d+\.\s/, ''));
+      while (i < lines.length && OL_RE.test(lines[i])) {
+        let content = lines[i].replace(/^\d+\.\s*/, '');
         i++;
+        if (content.trim() === '') {
+          const buf: string[] = [];
+          while (i < lines.length && lines[i].trim() !== '' && !OL_RE.test(lines[i]) && !/^[-*+]\s/.test(lines[i])) {
+            buf.push(lines[i].trim());
+            i++;
+          }
+          content = buf.join(' ');
+        }
+        items.push(content);
       }
       tokens.push({ t: 'ol', items });
       continue;
@@ -85,7 +119,7 @@ function tokenize(src: string): Token[] {
 
     // Paragraph
     const pLines: string[] = [];
-    while (i < lines.length && lines[i].trim() !== '' && !lines[i].startsWith('#') && !lines[i].startsWith('```') && !/^[-*+]\s/.test(lines[i]) && !/^\d+\.\s/.test(lines[i]) && !lines[i].startsWith('> ') && !/^[-*_]{3,}$/.test(lines[i].trim())) {
+    while (i < lines.length && lines[i].trim() !== '' && !lines[i].startsWith('#') && !lines[i].startsWith('```') && !/^[-*+]\s/.test(lines[i]) && !OL_RE.test(lines[i]) && !lines[i].startsWith('> ') && !/^[-*_]{3,}$/.test(lines[i].trim()) && !(lines[i].includes('|') && i + 1 < lines.length && isTableSep(lines[i + 1]))) {
       pLines.push(lines[i]);
       i++;
     }
@@ -108,8 +142,8 @@ function Inline({ text }: { text: string }) {
     { re: /`([^`]+)`/,      render: (m: RegExpExecArray) => (
       <code key={key++} style={{
         fontFamily: 'var(--font-mono)', fontSize: '0.85em',
-        background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)',
-        borderRadius: 4, padding: '1px 5px', color: 'var(--color-green)',
+        background: 'var(--color-bg3)', border: '1px solid var(--color-border2)',
+        borderRadius: 4, padding: '1px 5px', color: 'var(--color-green2)',
       }}>{m[1]}</code>
     )},
     { re: /\[([^\]]+)\]\(([^)]+)\)/, render: (m: RegExpExecArray) => (
@@ -158,7 +192,7 @@ export default function MarkdownRenderer({ content, className, style }: Props) {
             </h1>
           );
           case 'h2': return (
-            <h2 key={idx} style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em', lineHeight: 1.3, paddingBottom: 4, borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+            <h2 key={idx} style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em', lineHeight: 1.3, paddingBottom: 4, borderBottom: '1px solid var(--color-border)' }}>
               <Inline text={tok.text} />
             </h2>
           );
@@ -173,7 +207,7 @@ export default function MarkdownRenderer({ content, className, style }: Props) {
             </h4>
           );
           case 'hr': return (
-            <div key={idx} style={{ height: 1, background: 'rgba(255,255,255,.06)', margin: '4px 0' }} />
+            <div key={idx} style={{ height: 1, background: 'var(--color-border)', margin: '4px 0' }} />
           );
           case 'blockquote': return (
             <div key={idx} style={{
@@ -205,10 +239,36 @@ export default function MarkdownRenderer({ content, className, style }: Props) {
               ))}
             </ol>
           );
+          case 'table': return (
+            <div key={idx} style={{ overflowX: 'auto', border: '1px solid var(--color-border2)', borderRadius: 10, WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12.5 }}>
+                <thead>
+                  <tr>
+                    {tok.headers.map((h, k) => (
+                      <th key={k} style={{ textAlign: 'left', padding: '9px 13px', background: 'var(--color-bg3)', color: 'var(--color-text)', fontWeight: 800, borderBottom: '1px solid var(--color-border2)', whiteSpace: 'nowrap' }}>
+                        <Inline text={h} />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {tok.rows.map((r, ri) => (
+                    <tr key={ri}>
+                      {tok.headers.map((_, ci) => (
+                        <td key={ci} style={{ padding: '9px 13px', color: 'var(--color-text2)', borderBottom: ri === tok.rows.length - 1 ? 'none' : '1px solid var(--color-border)', verticalAlign: 'top', lineHeight: 1.5 }}>
+                          <Inline text={r[ci] ?? ''} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
           case 'codeblock': return (
-            <div key={idx} style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10, overflow: 'hidden' }}>
+            <div key={idx} style={{ background: 'var(--color-bg3)', border: '1px solid var(--color-border)', borderRadius: 10, overflow: 'hidden' }}>
               {tok.lang && (
-                <div style={{ padding: '6px 14px', borderBottom: '1px solid rgba(255,255,255,.06)', fontSize: 10, fontWeight: 700, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                <div style={{ padding: '6px 14px', borderBottom: '1px solid var(--color-border)', fontSize: 10, fontWeight: 700, color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
                   {tok.lang}
                 </div>
               )}

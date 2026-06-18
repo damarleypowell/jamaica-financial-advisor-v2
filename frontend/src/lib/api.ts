@@ -58,8 +58,8 @@ export function apiGet<T>(url: string): Promise<T> {
   return apiFetch<T>(url, { method: 'GET' });
 }
 
-export function apiPost<T>(url: string, body?: unknown): Promise<T> {
-  return apiFetch<T>(url, { method: 'POST', body: body != null ? JSON.stringify(body) : undefined });
+export function apiPost<T>(url: string, body?: unknown, init?: RequestInit): Promise<T> {
+  return apiFetch<T>(url, { ...init, method: 'POST', body: body != null ? JSON.stringify(body) : undefined });
 }
 
 export function apiPut<T>(url: string, body?: unknown): Promise<T> {

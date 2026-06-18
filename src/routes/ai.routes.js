@@ -31,6 +31,40 @@ const JSE_SYSTEM_CACHE_BLOCK = {
 };
 const VOICE_ID = "onwK4e9ZLuTAKqWW03F9"; // Daniel — deep, clear, professional British voice
 
+// Pull live data for any listed securities the user names, so the model quotes
+// the CURRENT scraped price/▲ instead of stale training-data figures. Matches a
+// ticker as a whole word, or the full company name, against the in-memory feed.
+function referencedSecurities(text) {
+  if (!text) return [];
+  const upper = text.toUpperCase();
+  const seen = new Set();
+  const out = [];
+  for (const s of marketService.livePrices) {
+    if (!s.symbol) continue;
+    const sym = s.symbol.toUpperCase();
+    const esc = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const symHit = new RegExp(`\\b${esc}\\b`).test(upper);
+    const nameHit = s.name && s.name.length > 3 && upper.includes(s.name.toUpperCase());
+    if ((symHit || nameHit) && !seen.has(sym)) {
+      seen.add(sym);
+      out.push(s);
+      if (out.length >= 5) break;
+    }
+  }
+  return out;
+}
+
+function formatSecurity(s) {
+  const parts = [`${s.symbol}${s.name ? ` (${s.name})` : ""}`];
+  if (s.sector && s.sector !== "General") parts.push(s.sector);
+  if (s.livePrice != null) parts.push(`J$${s.livePrice}`);
+  if (typeof s.liveChange === "number") parts.push(`${s.liveChange >= 0 ? "+" : ""}${s.liveChange}% today`);
+  if (s.volume) parts.push(`vol ${s.volume}`);
+  if (s.high52 && s.low52) parts.push(`52w ${s.low52}-${s.high52}`);
+  if (s.marketCap && s.marketCap !== "N/A") parts.push(`mkt cap ${s.marketCap}`);
+  return "- " + parts.join(" · ");
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ── AI Chat ──────────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
@@ -47,10 +81,17 @@ router.post("/api/chat", authMiddleware, aiGuard("chat"), checkAIChatLimit(), ra
     .sort((a, b) => a.liveChange - b.liveChange)
     .slice(0, 5);
 
+  const referenced = referencedSecurities(
+    messages.map((m) => (typeof m.content === "string" ? m.content : "")).join(" ")
+  );
+  const referencedBlock = referenced.length
+    ? `\n\nReferenced securities (live scraped data — treat these as the CURRENT price and % change; do NOT claim you lack current price data for these):\n${referenced.map(formatSecurity).join("\n")}`
+    : "";
+
   const marketContext = `Current Caribbean Market Data (live):
 Top Gainers: ${topGainers.map((s) => `${s.symbol}(+${s.liveChange}%,$${s.livePrice})`).join(", ")}
 Top Losers: ${topLosers.map((s) => `${s.symbol}(${s.liveChange}%,$${s.livePrice})`).join(", ")}
-Total Listed Securities: ${marketService.livePrices.length}
+Total Listed Securities: ${marketService.livePrices.length}${referencedBlock}
 ${context ? `\nUser Context: ${context}` : ""}`;
 
   try {
