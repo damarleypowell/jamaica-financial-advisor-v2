@@ -1,0 +1,35 @@
+name: Keep Render awake
+
+# Render's free tier sleeps after ~15 min of inactivity, so the next visitor
+# eats a 30-60s cold start. This pings the health endpoint on a schedule to keep
+# the instance warm. Note: GitHub's scheduled runners can be delayed under load,
+# so we ping every 5 min to stay comfortably under the 15-min sleep window.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}   # allow manual "Run workflow" from the Actions tab
+
+# If a run is still going when the next fires, skip the new one.
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping /health (retry through a cold start)
+        run: |
+          URL="https://gotham-latk.onrender.com/health"
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$URL" || echo 000)
+            echo "attempt $i -> HTTP $code"
+            if [ "$code" = "200" ]; then
+              echo "awake ✅"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::warning::health did not return 200 after retries (cold start may still be finishing)"
+          exit 0   # never fail the workflow on a transient miss
