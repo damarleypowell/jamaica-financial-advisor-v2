@@ -1404,7 +1404,7 @@ function ModuleViewer({
             <button
               onClick={onComplete}
               disabled={module.type === 'exercise' ? !allStepsRevealed : module.type === 'quiz' ? !allQuizAnswered : false}
-              style={{ padding: '9px 20px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 12, fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: (module.type === 'exercise' && !allStepsRevealed) || (module.type === 'quiz' && !allQuizAnswered) ? 0.4 : 1 }}>
+              style={{ padding: '9px 20px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 12, fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: (module.type === 'exercise' && !allStepsRevealed) || (module.type === 'quiz' && !allQuizAnswered) ? 0.4 : 1 }}>
               <CheckCircle size={13} /> Mark Complete
             </button>
           )}

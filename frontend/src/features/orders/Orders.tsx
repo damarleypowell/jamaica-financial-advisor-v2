@@ -98,7 +98,7 @@ export default function Orders() {
               </div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>Unable to load orders. Please try again.</p>
               <button onClick={() => oRefetch()}
-                style={{ padding: '8px 20px', borderRadius: 10, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                style={{ padding: '8px 20px', borderRadius: 10, background: 'var(--color-green)', color: '#04060d', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
                 Retry
               </button>
             </div>
@@ -161,7 +161,7 @@ export default function Orders() {
               </div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>Unable to load orders. Please try again.</p>
               <button onClick={() => tRefetch()}
-                style={{ padding: '8px 20px', borderRadius: 10, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                style={{ padding: '8px 20px', borderRadius: 10, background: 'var(--color-green)', color: '#04060d', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
                 Retry
               </button>
             </div>

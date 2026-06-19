@@ -376,7 +376,7 @@ export default function Settings() {
                       disabled={saveMut.isPending || name.trim() === user.name}
                       style={{
                         alignSelf: 'flex-start', padding: '10px 28px',
-                        background: 'var(--color-green)', color: 'var(--color-bg)',
+                        background: 'var(--color-green)', color: '#04060d',
                         borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none',
                         cursor: saveMut.isPending || name.trim() === user.name ? 'not-allowed' : 'pointer',
                         opacity: saveMut.isPending || name.trim() === user.name ? .5 : 1,
@@ -431,7 +431,7 @@ export default function Settings() {
                   disabled={pwMut.isPending || !currentPw || !newPw || !confirmPw}
                   style={{
                     alignSelf: 'flex-start', padding: '10px 28px',
-                    background: 'var(--color-green)', color: 'var(--color-bg)',
+                    background: 'var(--color-green)', color: '#04060d',
                     borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none',
                     cursor: pwMut.isPending || !currentPw || !newPw || !confirmPw ? 'not-allowed' : 'pointer',
                     opacity: pwMut.isPending || !currentPw || !newPw || !confirmPw ? .5 : 1,

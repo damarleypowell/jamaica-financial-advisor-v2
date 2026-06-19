@@ -246,7 +246,7 @@ export default function USStocks() {
               orderMutation.mutate({ symbol: orderSymbol, qty: parseInt(orderQty), side: orderSide, type: orderType, limitPrice: limitPrice ? parseFloat(limitPrice) : undefined });
             }}
             disabled={!orderSymbol || !orderQty || orderMutation.isPending}
-            style={{ width: '100%', height: 42, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', transition: 'all 200ms', background: orderSide === 'buy' ? 'var(--color-green)' : '#ff5252', color: 'var(--color-bg)', opacity: (!orderSymbol || !orderQty || orderMutation.isPending) ? .5 : 1 }}>
+            style={{ width: '100%', height: 42, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', transition: 'all 200ms', background: orderSide === 'buy' ? 'var(--color-green)' : '#ff5252', color: '#04060d', opacity: (!orderSymbol || !orderQty || orderMutation.isPending) ? .5 : 1 }}>
             {orderMutation.isPending ? <i className="fa-solid fa-spinner fa-spin" /> : `${orderSide === 'buy' ? 'Buy' : 'Sell'} ${orderSymbol || '—'}`}
           </button>
         </div>

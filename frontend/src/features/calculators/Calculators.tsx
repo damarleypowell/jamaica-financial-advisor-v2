@@ -267,7 +267,7 @@ function PortfolioOptCalc() {
       </div>
 
       <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
-        style={{ padding: '11px', borderRadius: 12, background: 'var(--color-green)', border: 'none', fontSize: 13, fontWeight: 800, color: 'var(--color-bg)', cursor: mutation.isPending ? 'not-allowed' : 'pointer', opacity: mutation.isPending ? .7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'opacity .15s' }}>
+        style={{ padding: '11px', borderRadius: 12, background: 'var(--color-green)', border: 'none', fontSize: 13, fontWeight: 800, color: '#04060d', cursor: mutation.isPending ? 'not-allowed' : 'pointer', opacity: mutation.isPending ? .7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'opacity .15s' }}>
         {mutation.isPending ? (
           <><div style={{ width: 14, height: 14, border: '2px solid rgba(0,0,0,.25)', borderTopColor: 'var(--color-bg)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Optimizing...</>
         ) : (
@@ -287,7 +287,7 @@ function PortfolioOptCalc() {
           </div>
           {mutation.error.message !== 'Enter at least 2 symbols' && (
             <button onClick={() => mutation.mutate()}
-              style={{ alignSelf: 'flex-start', padding: '6px 16px', borderRadius: 8, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+              style={{ alignSelf: 'flex-start', padding: '6px 16px', borderRadius: 8, background: 'var(--color-green)', color: '#04060d', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
               Retry
             </button>
           )}

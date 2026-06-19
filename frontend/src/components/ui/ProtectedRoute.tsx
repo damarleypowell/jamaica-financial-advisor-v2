@@ -124,7 +124,7 @@ function UpgradeWall({ requiredTier, featureName, userTier, signedIn }: {
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 width: '100%', padding: '13px 0', borderRadius: 13,
-                background: color, color: 'var(--color-bg)',
+                background: color, color: '#04060d',
                 fontSize: 14, fontWeight: 800, textDecoration: 'none',
                 boxShadow: `0 4px 24px ${color}40`,
                 transition: 'box-shadow 180ms, transform 180ms',
@@ -148,7 +148,7 @@ function UpgradeWall({ requiredTier, featureName, userTier, signedIn }: {
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   width: '100%', padding: '13px 0', borderRadius: 13,
-                  background: color, color: 'var(--color-bg)',
+                  background: color, color: '#04060d',
                   fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer',
                   boxShadow: `0 4px 24px ${color}40`,
                   transition: 'box-shadow 180ms, transform 180ms',

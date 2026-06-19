@@ -451,7 +451,7 @@ export default function Portfolio() {
               </div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>Unable to load portfolio data. Please try again.</p>
               <button onClick={() => posRefetch()}
-                style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
+                style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
                 Retry
               </button>
             </div>
@@ -462,7 +462,7 @@ export default function Portfolio() {
               </div>
               <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>No positions yet</p>
               <p style={{ margin: 0, fontSize: 12, color: 'rgba(var(--fg),.35)' }}>Go to <strong>Place Trade</strong> and buy your first stock.</p>
-              <button onClick={() => setTab('trade')} style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
+              <button onClick={() => setTab('trade')} style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
                 Place First Trade
               </button>
             </div>
@@ -531,7 +531,7 @@ export default function Portfolio() {
               </div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>Unable to load portfolio data. Please try again.</p>
               <button onClick={() => histRefetch()}
-                style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
+                style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
                 Retry
               </button>
             </div>
@@ -586,7 +586,7 @@ export default function Portfolio() {
             </div>
             <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>Unable to load portfolio data. Please try again.</p>
             <button onClick={() => walletRefetch()}
-              style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
+              style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
               Retry
             </button>
           </div>
@@ -607,7 +607,7 @@ export default function Portfolio() {
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setWalletAction('deposit')} style={{ flex: 1, padding: '11px', borderRadius: 12, background: '#00e676', color: 'var(--color-bg)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
+              <button onClick={() => setWalletAction('deposit')} style={{ flex: 1, padding: '11px', borderRadius: 12, background: '#00e676', color: '#04060d', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
                 + Add Virtual Cash
               </button>
               <button onClick={() => setWalletAction('withdraw')} style={{ flex: 1, padding: '11px', borderRadius: 12, background: 'rgba(var(--fg),.05)', border: '1px solid rgba(var(--fg),.1)', color: 'rgba(var(--fg),.6)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: INTER }}>
@@ -627,7 +627,7 @@ export default function Portfolio() {
                   />
                   <button onClick={() => { const a = parseFloat(walletAmt); if (!a || a <= 0) return; if (walletAction === 'deposit') depositMut.mutate(a); else withdrawMut.mutate(a); }}
                     disabled={depositMut.isPending || withdrawMut.isPending}
-                    style={{ padding: '10px 20px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
+                    style={{ padding: '10px 20px', borderRadius: 10, background: '#00e676', color: '#04060d', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
                     Confirm
                   </button>
                   <button onClick={() => { setWalletAction(null); setWalletAmt(''); }}

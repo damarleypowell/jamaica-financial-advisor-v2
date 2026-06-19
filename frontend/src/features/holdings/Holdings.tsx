@@ -203,7 +203,7 @@ export default function Holdings() {
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={addHolding} disabled={saveMut.isPending}
-              style={{ flex: 1, height: 42, borderRadius: 11, background: '#00e676', color: 'var(--color-bg)', fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer', opacity: saveMut.isPending ? .6 : 1 }}>
+              style={{ flex: 1, height: 42, borderRadius: 11, background: '#00e676', color: '#04060d', fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer', opacity: saveMut.isPending ? .6 : 1 }}>
               {saveMut.isPending ? 'Saving…' : 'Add holding'}
             </button>
             <button onClick={() => { setAdding(false); setSymbol(''); setSymSearch(''); setShares(''); setAvgCost(''); }}

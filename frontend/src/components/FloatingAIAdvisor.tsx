@@ -225,7 +225,7 @@ export default function FloatingAIAdvisor() {
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = open ? 'rotate(45deg) scale(0.95)' : 'scale(1.08)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = open ? 'rotate(45deg) scale(0.9)' : 'scale(1)'; }}
       >
-        <i className={`fa-solid ${open ? 'fa-xmark' : 'fa-microphone-lines'}`} style={{ fontSize: 20, color: 'var(--color-bg)' }} />
+        <i className={`fa-solid ${open ? 'fa-xmark' : 'fa-microphone-lines'}`} style={{ fontSize: 20, color: '#04060d' }} />
       </button>
 
       {/* ── advisor panel ── */}

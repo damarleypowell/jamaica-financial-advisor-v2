@@ -305,7 +305,7 @@ export default function Onboarding() {
           style={{
             width: '100%', padding: '17px', borderRadius: 16,
             background: current.color,
-            border: 'none', color: 'var(--color-bg)', fontWeight: 900, fontSize: 15,
+            border: 'none', color: '#04060d', fontWeight: 900, fontSize: 15,
             cursor: 'pointer', fontFamily: SANS,
             boxShadow: `0 6px 28px ${current.color}40`,
             transition: 'opacity .15s, transform .1s',

@@ -465,7 +465,7 @@ export default function Alerts() {
             </div>
             <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>Unable to load alerts. Please try again.</p>
             <button onClick={() => alertsRefetch()}
-              style={{ padding: '8px 20px', borderRadius: 10, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+              style={{ padding: '8px 20px', borderRadius: 10, background: 'var(--color-green)', color: '#04060d', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
               Retry
             </button>
           </div>
@@ -508,7 +508,7 @@ export default function Alerts() {
               </p>
             </div>
           </div>
-          <a href="/subscription" style={{ padding: '8px 20px', borderRadius: 9, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 12, fontWeight: 800, textDecoration: 'none', transition: 'opacity .15s' }}
+          <a href="/subscription" style={{ padding: '8px 20px', borderRadius: 9, background: 'var(--color-green)', color: '#04060d', fontSize: 12, fontWeight: 800, textDecoration: 'none', transition: 'opacity .15s' }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '.85')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
           >

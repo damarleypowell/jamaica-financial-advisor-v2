@@ -854,7 +854,7 @@ function PortfolioPreviewCard({ mode, navigate, openAuthModal }: {
             <p style={{ margin: '6px 0 14px', fontSize: 12, color: 'rgba(var(--fg),.5)', fontFamily: SANS, lineHeight: 1.55 }}>{sub}</p>
             <button onClick={onCta} style={{
               display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 12,
-              background: 'linear-gradient(135deg, #00c853, #00e676)', color: 'var(--color-bg)', fontWeight: 800, fontSize: 13.5,
+              background: 'linear-gradient(135deg, #00c853, #00e676)', color: '#04060d', fontWeight: 800, fontSize: 13.5,
               border: 'none', cursor: 'pointer', fontFamily: SANS, boxShadow: '0 6px 22px rgba(0,230,118,.3)',
             }}>{ctaLabel} →</button>
           </div>

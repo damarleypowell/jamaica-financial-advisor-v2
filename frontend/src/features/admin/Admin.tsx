@@ -269,7 +269,7 @@ function UserPanel({ user, onClose, onUpdate }: {
           </div>
 
           <button onClick={() => onUpdate(user.id, { subscriptionTier: tier, kycStatus: kyc })}
-            style={{ padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#00e676', color: 'var(--color-bg2)', fontFamily: SYNE, transition: 'opacity 150ms' }}
+            style={{ padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#00e676', color: '#04060d', fontFamily: SYNE, transition: 'opacity 150ms' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '.85'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
           >
@@ -720,7 +720,7 @@ export default function Admin() {
                 </div>
                 <button onClick={() => blockIpInput && blockIP.mutate({ ip: blockIpInput, reason: blockReason })}
                   disabled={!blockIpInput || blockIP.isPending}
-                  style={{ padding: '9px 18px', borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#ff5252', color: 'rgba(var(--fg),1)', opacity: (!blockIpInput || blockIP.isPending) ? .5 : 1, transition: 'opacity 150ms', whiteSpace: 'nowrap' }}>
+                  style={{ padding: '9px 18px', borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#ff5252', color: '#fff', opacity: (!blockIpInput || blockIP.isPending) ? .5 : 1, transition: 'opacity 150ms', whiteSpace: 'nowrap' }}>
                   {blockIP.isPending ? 'Blocking…' : 'Block IP'}
                 </button>
               </div>
@@ -871,7 +871,7 @@ export default function Admin() {
                 </div>
                 <button onClick={() => { if (broadcastSubject && broadcastBody) sendBroadcast.mutate(); }}
                   disabled={!broadcastSubject || !broadcastBody || sendBroadcast.isPending}
-                  style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#ce93d8', color: 'var(--color-bg2)', fontFamily: SYNE, opacity: (!broadcastSubject || !broadcastBody || sendBroadcast.isPending) ? .5 : 1, transition: 'opacity 150ms' }}>
+                  style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#ce93d8', color: '#04060d', fontFamily: SYNE, opacity: (!broadcastSubject || !broadcastBody || sendBroadcast.isPending) ? .5 : 1, transition: 'opacity 150ms' }}>
                   {sendBroadcast.isPending ? 'Sending…' : sendBroadcast.isSuccess ? 'Sent ✓' : 'Send Broadcast'}
                 </button>
               </div>

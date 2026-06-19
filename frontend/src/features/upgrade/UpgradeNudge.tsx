@@ -91,7 +91,7 @@ export function UpgradeNudge({ context, data, compact = false, requiredTier = 'C
           onClick={() => navigate('/subscription')}
           style={{
             padding: '8px 18px', borderRadius: 10,
-            background: color, color: 'var(--color-bg)',
+            background: color, color: '#04060d',
             fontSize: 12, fontWeight: 800, border: 'none', cursor: 'pointer',
             boxShadow: `0 2px 12px ${color}35`,
           }}

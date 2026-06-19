@@ -167,7 +167,7 @@ function AuthSection({ user, isAuthenticated, openAuthModal, logout }: {
       </button>
       <button
         onClick={() => openAuthModal('signup')}
-        style={{ padding: '7px 16px', fontSize: 13, fontWeight: 700, color: 'var(--color-bg)', background: 'var(--color-green)', border: 'none', borderRadius: 10, transition: 'all 180ms', boxShadow: '0 2px 16px rgba(0,230,118,.3)', cursor: 'pointer' }}
+        style={{ padding: '7px 16px', fontSize: 13, fontWeight: 700, color: '#04060d', background: 'var(--color-green)', border: 'none', borderRadius: 10, transition: 'all 180ms', boxShadow: '0 2px 16px rgba(0,230,118,.3)', cursor: 'pointer' }}
         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(0,230,118,.45)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px rgba(0,230,118,.3)'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
         Sign Up
@@ -296,7 +296,7 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
             </button>
           ) : (
             <button onClick={() => openAuthModal('signup')}
-              style={{ padding: '7px 15px', borderRadius: 10, background: 'var(--color-green)', color: 'var(--color-bg)', fontSize: 12.5, fontWeight: 800, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 2px 12px rgba(0,230,118,.3)' }}>
+              style={{ padding: '7px 15px', borderRadius: 10, background: 'var(--color-green)', color: '#04060d', fontSize: 12.5, fontWeight: 800, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 2px 12px rgba(0,230,118,.3)' }}>
               Sign Up
             </button>
           )}

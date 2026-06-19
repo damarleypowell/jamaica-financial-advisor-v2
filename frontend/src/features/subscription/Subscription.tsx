@@ -73,7 +73,7 @@ function PayPalButtonsInner({ planId, planName, priceUSD, onSuccess, onFallback,
   );
 
   const fallbackBtn = (
-    <button onClick={onFallback} disabled={fallbackLoading} style={{ width: '100%', padding: '11px', borderRadius: 12, background: '#00e676', color: 'var(--color-bg)', fontSize: 13, fontWeight: 700, border: 'none', cursor: fallbackLoading ? 'not-allowed' : 'pointer', opacity: fallbackLoading ? .6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+    <button onClick={onFallback} disabled={fallbackLoading} style={{ width: '100%', padding: '11px', borderRadius: 12, background: '#00e676', color: '#04060d', fontSize: 13, fontWeight: 700, border: 'none', cursor: fallbackLoading ? 'not-allowed' : 'pointer', opacity: fallbackLoading ? .6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
       {fallbackLoading ? <><div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid currentColor', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }} /> Activating...</> : `Activate ${planName} Plan`}
     </button>
   );
@@ -158,7 +158,7 @@ function UpgradeModal({ plan, paypalConfig, onClose, onSuccess }: { plan: Plan; 
                   <i className="fa-solid fa-gift" style={{ fontSize: 13, color: '#00e676', flexShrink: 0, marginTop: 1 }} />
                   <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text2)', lineHeight: 1.5 }}><strong style={{ color: 'rgba(var(--fg),1)' }}>Free during beta.</strong> Every paid feature is unlocked at no cost while we're in early access — no card, no charge.</p>
                 </div>
-                <button onClick={() => fallbackMut.mutate(plan.id)} disabled={fallbackMut.isPending} style={{ width: '100%', padding: '12px', borderRadius: 12, background: '#00e676', color: 'var(--color-bg)', fontSize: 14, fontWeight: 700, border: 'none', cursor: fallbackMut.isPending ? 'not-allowed' : 'pointer', opacity: fallbackMut.isPending ? .6 : 1 }}>
+                <button onClick={() => fallbackMut.mutate(plan.id)} disabled={fallbackMut.isPending} style={{ width: '100%', padding: '12px', borderRadius: 12, background: '#00e676', color: '#04060d', fontSize: 14, fontWeight: 700, border: 'none', cursor: fallbackMut.isPending ? 'not-allowed' : 'pointer', opacity: fallbackMut.isPending ? .6 : 1 }}>
                   {fallbackMut.isPending ? 'Activating…' : `Unlock ${plan.name} — free beta`}
                 </button>
               </div>
