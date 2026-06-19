@@ -65,7 +65,7 @@ export default function OptionsDrawer() {
         {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px 20px' }}>
           <div>
-            <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: '.1em', color: 'var(--color-text)' }}>GOTHAM</p>
+            <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: '.1em', color: 'var(--color-text)' }}>OROS</p>
             <p style={{ margin: 0, fontSize: 9, fontWeight: 600, letterSpacing: '.25em', color: 'var(--color-muted)' }}>FINANCIAL</p>
           </div>
           <button className="top-icon-btn" onClick={closeOptionsDrawer} aria-label="Close menu">

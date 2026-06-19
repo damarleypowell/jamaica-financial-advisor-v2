@@ -156,7 +156,7 @@ function UpgradeModal({ plan, paypalConfig, onClose, onSuccess }: { plan: Plan; 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(0,230,118,.06)', border: '1px solid rgba(0,230,118,.2)', display: 'flex', gap: 10 }}>
                   <i className="fa-solid fa-gift" style={{ fontSize: 13, color: '#00e676', flexShrink: 0, marginTop: 1 }} />
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text2)', lineHeight: 1.5 }}><strong style={{ color: '#fff' }}>Free during beta.</strong> Every paid feature is unlocked at no cost while we're in early access — no card, no charge.</p>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text2)', lineHeight: 1.5 }}><strong style={{ color: 'rgba(var(--fg),1)' }}>Free during beta.</strong> Every paid feature is unlocked at no cost while we're in early access — no card, no charge.</p>
                 </div>
                 <button onClick={() => fallbackMut.mutate(plan.id)} disabled={fallbackMut.isPending} style={{ width: '100%', padding: '12px', borderRadius: 12, background: '#00e676', color: 'var(--color-bg)', fontSize: 14, fontWeight: 700, border: 'none', cursor: fallbackMut.isPending ? 'not-allowed' : 'pointer', opacity: fallbackMut.isPending ? .6 : 1 }}>
                   {fallbackMut.isPending ? 'Activating…' : `Unlock ${plan.name} — free beta`}
@@ -349,11 +349,11 @@ export default function Subscription() {
         </div>
       </div>
 
-      {/* Honest note — Gotham is paper-trading + research, so there are no real commissions */}
+      {/* Honest note — Oros is paper-trading + research, so there are no real commissions */}
       <div style={{ padding: '16px 20px', background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 14 }}>
         <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>No trading commissions</p>
         <p style={{ margin: 0, fontSize: 13, color: 'var(--color-muted)', lineHeight: 1.6 }}>
-          Gotham is a <strong style={{ color: 'var(--color-text)' }}>paper-trading and research platform</strong> — you practise with virtual funds at real live prices, with <strong style={{ color: 'var(--color-text)' }}>zero commissions and no hidden fees</strong>. Your plan covers AI usage, analytics, watchlists and alerts — nothing is charged per trade.
+          Oros is a <strong style={{ color: 'var(--color-text)' }}>paper-trading and research platform</strong> — you practise with virtual funds at real live prices, with <strong style={{ color: 'var(--color-text)' }}>zero commissions and no hidden fees</strong>. Your plan covers AI usage, analytics, watchlists and alerts — nothing is charged per trade.
         </p>
       </div>
 

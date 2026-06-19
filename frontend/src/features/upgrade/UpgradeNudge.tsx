@@ -85,7 +85,7 @@ export function UpgradeNudge({ context, data, compact = false, requiredTier = 'C
       </div>
 
       <div style={{ flex: 1 }}>
-        <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: '#fff' }}>{headline}</p>
+        <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>{headline}</p>
         <p style={{ margin: '0 0 12px', fontSize: 12, color: 'rgba(var(--fg),.5)', lineHeight: 1.5 }}>{sub}</p>
         <button
           onClick={() => navigate('/subscription')}

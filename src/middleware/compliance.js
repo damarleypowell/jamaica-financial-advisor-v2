@@ -1,6 +1,6 @@
 // ── Legal Compliance Wrapper ──────────────────────────────────────────────────
 // Wraps all AI responses with FSC-required disclaimers.
-// Keeps Gotham in "educational tool" category — no $10M insurance needed.
+// Keeps Oros in "educational tool" category — no $10M insurance needed.
 
 let prisma;
 try { prisma = require('../config/database').prisma; } catch (_) { prisma = null; }
@@ -9,7 +9,7 @@ const USE_DB = !!(process.env.DATABASE_URL && prisma);
 const LEGAL_DISCLAIMERS = {
   stockAnalysis: {
     short: "⚠️ Educational analysis only. Not investment advice.",
-    full: "IMPORTANT DISCLAIMER: This analysis is based on historical data and mathematical models. It is NOT personalized investment advice for your specific situation. Past performance does not guarantee future results. Markets involve risk of loss. Consult a licensed investment advisor before investing. Gotham Financial is a technology and information service. We are not a registered investment advisor or broker-dealer."
+    full: "IMPORTANT DISCLAIMER: This analysis is based on historical data and mathematical models. It is NOT personalized investment advice for your specific situation. Past performance does not guarantee future results. Markets involve risk of loss. Consult a licensed investment advisor before investing. Oros is a technology and information service. We are not a registered investment advisor or broker-dealer."
   },
   portfolioOptimizer: {
     short: "⚠️ Theoretical model. Not a recommendation for YOUR portfolio.",
@@ -29,7 +29,7 @@ const LEGAL_DISCLAIMERS = {
   }
 };
 
-const LEGAL_FOOTER = "Gotham Financial Ltd. is a financial technology information service. Not a registered investment advisor or broker-dealer.";
+const LEGAL_FOOTER = "Oros Ltd. is a financial technology information service. Not a registered investment advisor or broker-dealer.";
 
 function wrapAIResponse(content, featureType, includeFullDisclaimer = false) {
   const disclaimer = LEGAL_DISCLAIMERS[featureType] || LEGAL_DISCLAIMERS.aiChat;

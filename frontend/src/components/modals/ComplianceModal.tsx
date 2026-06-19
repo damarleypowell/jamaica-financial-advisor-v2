@@ -30,7 +30,7 @@ export default function ComplianceModal() {
   const items = [
     {
       key: 'understand' as const,
-      label: 'I understand Gotham Financial is an educational and research tool, not a regulated investment advisor.',
+      label: 'I understand Oros is an educational and research tool, not a regulated investment advisor.',
     },
     {
       key: 'notAdvice' as const,
@@ -98,7 +98,7 @@ export default function ComplianceModal() {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 13, color: '#ffd740', marginTop: 1, flexShrink: 0 }} />
               <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text2)', lineHeight: 1.6 }}>
-                Gotham Financial provides market data, AI-powered analysis, and financial education.
+                Oros provides market data, AI-powered analysis, and financial education.
                 We do <strong style={{ color: 'var(--color-text)' }}>NOT</strong> provide personalized
                 investment advice or act as a registered investment advisor or broker-dealer.
               </p>
@@ -165,7 +165,7 @@ export default function ComplianceModal() {
           </button>
           <p style={{ fontSize: 11, color: 'var(--color-muted)', textAlign: 'center', lineHeight: 1.5 }}>
             By continuing, you acknowledge all investment decisions are your sole responsibility.
-            Gotham Financial Ltd. is not liable for investment losses.
+            Oros Ltd. is not liable for investment losses.
           </p>
         </div>
       </div>

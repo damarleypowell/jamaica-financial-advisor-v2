@@ -46,7 +46,7 @@ const S: Record<string, CSSProperties> = {
   input: { width: '100%', height: 44, borderRadius: 10, background: FIELD, border: `1.5px solid ${BORDER}`, fontSize: 14, padding: '0 14px', color: INK, outline: 'none', boxSizing: 'border-box', transition: 'border .15s, box-shadow .15s, background .15s', fontFamily: BODY },
   inputFocus: { border: `1.5px solid rgba(0,230,118,.6)`, boxShadow: '0 0 0 3px rgba(0,230,118,.14)', background: 'rgba(var(--fg),.06)' },
   inputWrap: { position: 'relative' as const },
-  btnDark: { width: '100%', height: 44, borderRadius: 10, background: FDARK, color: '#fff', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', fontFamily: BODY, letterSpacing: '.01em', transition: 'transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s, opacity .15s' },
+  btnDark: { width: '100%', height: 44, borderRadius: 10, background: FDARK, color: 'rgba(var(--fg),1)', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', fontFamily: BODY, letterSpacing: '.01em', transition: 'transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s, opacity .15s' },
   link: { background: 'none', border: 'none', color: GREEN, cursor: 'pointer', fontFamily: BODY, fontWeight: 600, fontSize: 13, padding: 0, transition: 'opacity .15s' },
   mutedText: { fontSize: 13, color: SUB, textAlign: 'center' as const, fontFamily: BODY },
   h2: { fontSize: 24, fontWeight: 700, color: INK, margin: 0, lineHeight: 1.18, fontFamily: HEAD, letterSpacing: '-0.005em', WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', textRendering: 'optimizeLegibility' },
@@ -185,7 +185,7 @@ function BrandPanel() {
               <polyline points="15,7 21,7 21,13" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.22em', color: GREEN, fontFamily: HEAD, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>GOTHAM FINANCIAL</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.22em', color: GREEN, fontFamily: HEAD, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>OROS FINANCIAL</span>
         </div>
 
         <h1 style={{ fontFamily: HEAD, fontSize: 24, fontWeight: 700, color: '#F0F6F1', lineHeight: 1.16, margin: '0 0 12px', letterSpacing: '-0.005em', WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', textRendering: 'optimizeLegibility' }}>
@@ -378,7 +378,7 @@ function AppleOAuth({ onSuccess, onError }: { onSuccess: () => void; onError: (m
   if (!AID) return null;
 
   return (
-    <SocialBtn onClick={handleClick} disabled={!ready} style={{ background: '#000', color: '#fff', border: '1.5px solid #000' }}>
+    <SocialBtn onClick={handleClick} disabled={!ready} style={{ background: '#000', color: 'rgba(var(--fg),1)', border: '1.5px solid #000' }}>
       <svg width="14" height="17" viewBox="0 0 814 1000" fill="white">
         <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-161-39.5c-74 0-103.7 40.8-165.9 40.8s-105-42.3-150.3-107.9L74.1 740.1c-60.9-91.8-91.5-217.8-91.5-217.8s-36.6 178.4 24.6 287.9c12.5 22.9 25.3 45.8 37.5 68.4C93.3 970 178.2 1000 263.5 1000c84 0 159-52.3 212.8-52.3 52.7 0 127.3 54.8 214.7 54.8 85.5 0 170.1-45 225.9-140.4.7-1.2 36.7-61.9 60.7-129.4 4.7-12.7 9.2-25.7 13.2-38.6 5.8-19.1 9.8-38.8 11.6-59.4.7-7.9 1-16.4 1-25.2 0-188.4-168.4-346.8-214.3-368.8zM551.5 5.8C565.7 19.3 634 97.6 634 190.1c0 93.2-75.4 156.8-127.2 189.7-7 4.4-18.7 9.3-29.5 9.3-11.4 0-22.9-5.2-30.8-10.7C410 361.7 351 291 351 190.1c0-100.6 69.4-177.8 89-190.1 5-3.2 11.5-5 18.4-5 6.8 0 13.3 1.8 18.4 5l74.7 5.8z"/>
       </svg>
@@ -437,7 +437,7 @@ function LoginForm() {
     <form onSubmit={submit} style={S.stack}>
       <div>
         <h2 style={S.h2}>Welcome back</h2>
-        <p style={S.sub}>Sign in to your Gotham account</p>
+        <p style={S.sub}>Sign in to your Oros account</p>
       </div>
 
       <OAuthSection onSuccess={onOk} onError={onErr} />
@@ -465,7 +465,7 @@ function LoginForm() {
       >{isLoading ? 'Signing in…' : 'Sign In'}</button>
 
       <p style={S.mutedText}>
-        New to Gotham?{' '}
+        New to Oros?{' '}
         <button type="button" onClick={() => setAuthModalView('signup')} style={S.link}>Create a free account</button>
       </p>
     </form>
@@ -514,7 +514,7 @@ function VerifyCodeForm({ email, onDone }: { email: string; onDone: () => void }
   };
 
   if (verified) return (
-    <Done icon="check" title="Email verified!" body="You're all set — welcome to Gotham." cta="Continue" onCta={onDone} />
+    <Done icon="check" title="Email verified!" body="You're all set — welcome to Oros." cta="Continue" onCta={onDone} />
   );
 
   return (

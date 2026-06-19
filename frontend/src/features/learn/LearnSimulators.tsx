@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 /**
  * Interactive, animated learning simulators for the Learning Hub.
  * Visual-first: every concept is something you DRAG and watch change,
- * not paragraphs to read. Matches the Gotham dark/green aesthetic.
+ * not paragraphs to read. Matches the Oros dark/green aesthetic.
  */
 
 const FONT = "'Inter', sans-serif";
@@ -157,7 +157,7 @@ export function CompoundGrowthSim() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
         <div style={{ ...cardBox, padding: '10px 12px', textAlign: 'center' }}>
           <div style={{ fontSize: 9, color: 'rgba(var(--fg),.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>You put in</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', fontFamily: MONO, marginTop: 3 }}><CountUp value={final.contributed} /></div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: 'rgba(var(--fg),1)', fontFamily: MONO, marginTop: 3 }}><CountUp value={final.contributed} /></div>
         </div>
         <div style={{ ...cardBox, padding: '10px 12px', textAlign: 'center', borderColor: 'rgba(0,230,118,.25)', background: 'rgba(0,230,118,.06)' }}>
           <div style={{ fontSize: 9, color: GREEN, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>Growth (free)</div>
@@ -331,7 +331,7 @@ export default function InteractiveSimulators() {
   return (
     <section>
       <SimStyles />
-      <h2 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: 8, fontFamily: FONT }}>
+      <h2 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 800, color: 'rgba(var(--fg),1)', display: 'flex', alignItems: 'center', gap: 8, fontFamily: FONT }}>
         <span style={{ fontSize: 16 }}>🎮</span> Interactive Simulators
       </h2>
       <p style={{ margin: '0 0 14px', fontSize: 12, color: 'rgba(var(--fg),.4)', fontFamily: FONT }}>
@@ -508,7 +508,7 @@ export function RiskProfileSim() {
     <div style={{ animation: 'simFadeUp .3s ease' }}>
       <SimStyles />
       <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'rgba(var(--fg),.5)', lineHeight: 1.6, fontFamily: FONT }}>
-        A classic rule of thumb: hold roughly <strong style={{ color: '#fff' }}>(110 − your age)%</strong> in
+        A classic rule of thumb: hold roughly <strong style={{ color: 'rgba(var(--fg),1)' }}>(110 − your age)%</strong> in
         stocks, with the rest in safer bonds and cash. Drag your age and watch the mix shift from
         growth-focused to safety-focused.
       </p>

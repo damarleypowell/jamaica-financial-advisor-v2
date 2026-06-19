@@ -217,7 +217,7 @@ export default function AIAnalysis() {
               <i className="fa-solid fa-robot" style={{ fontSize: 13, color: activeLevel.color }} />
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: activeLevel.color }}>Gotham AI — {activeLevel.label} Analysis</p>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: activeLevel.color }}>Oros AI — {activeLevel.label} Analysis</p>
               <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)' }}>For educational purposes only · Not financial advice</p>
             </div>
             <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 11px', borderRadius: 99, background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.28)', color: '#00e676', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>

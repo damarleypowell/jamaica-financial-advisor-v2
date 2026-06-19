@@ -52,7 +52,7 @@ export default function VerifyEmail() {
             </p>
             <button
               onClick={() => navigate('/')}
-              style={{ background: GREEN, color: '#fff', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}
+              style={{ background: GREEN, color: 'rgba(var(--fg),1)', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}
             >
               Go to Dashboard
             </button>
@@ -72,7 +72,7 @@ export default function VerifyEmail() {
             </p>
             <button
               onClick={() => navigate('/')}
-              style={{ background: '#111827', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}
+              style={{ background: '#111827', color: 'rgba(var(--fg),1)', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}
             >
               Back to Home
             </button>

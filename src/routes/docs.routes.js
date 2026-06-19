@@ -4,10 +4,10 @@ const router = Router();
 const API_DOCS = {
   openapi: "3.0.3",
   info: {
-    title: "Gotham Financial Trading Platform API",
+    title: "Oros Trading Platform API",
     version: "2.0.0",
-    description: "Gotham Financial — AI-powered Investment & Trading Platform",
-    contact: { name: "Gotham Financial Support" },
+    description: "Oros — AI-powered Investment & Trading Platform",
+    contact: { name: "Oros Support" },
   },
   servers: [
     { url: "http://localhost:3000", description: "Development" },
@@ -167,7 +167,7 @@ router.get("/api/docs", (_req, res) => {
   res.send(`<!DOCTYPE html>
 <html>
 <head>
-  <title>Gotham Financial API Docs</title>
+  <title>Oros API Docs</title>
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
   <style>body{margin:0;background:#1a1a2e;} .swagger-ui .topbar{display:none;}</style>
 </head>

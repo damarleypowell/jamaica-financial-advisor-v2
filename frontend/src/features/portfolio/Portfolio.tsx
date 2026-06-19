@@ -175,7 +175,7 @@ export default function Portfolio() {
         <div style={{ width: 64, height: 64, borderRadius: 20, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <i className="fa-solid fa-flask-vial" style={{ fontSize: 24, color: 'rgba(var(--fg),.3)' }} />
         </div>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff' }}>Sign in to access Paper Trading</h2>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'rgba(var(--fg),1)' }}>Sign in to access Paper Trading</h2>
         <p style={{ margin: 0, fontSize: 13, color: 'rgba(var(--fg),.4)' }}>Practice investing with J$1,000,000 in virtual funds — no real money at risk.</p>
       </div>
     );
@@ -200,7 +200,7 @@ export default function Portfolio() {
             <i className="fa-solid fa-flask-vial" style={{ fontSize: 15, color: '#00e676' }} />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#fff' }}>Paper Trading</h1>
+            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'rgba(var(--fg),1)' }}>Paper Trading</h1>
             <p style={{ margin: 0, fontSize: 11, color: 'rgba(var(--fg),.35)' }}>Practice with J$1,000,000 virtual funds · No real money at risk</p>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 99, background: 'rgba(0,230,118,.08)', border: '1px solid rgba(0,230,118,.2)' }}>
@@ -212,20 +212,20 @@ export default function Portfolio() {
         {/* What this is + where to find prices / charts / analysis */}
         <div style={{ marginTop: 12, padding: '14px 16px', borderRadius: 14, background: 'rgba(64,196,255,.05)', border: '1px solid rgba(64,196,255,.16)' }}>
           <p style={{ margin: '0 0 10px', fontSize: 12, color: 'rgba(var(--fg),.6)', lineHeight: 1.6, fontFamily: INTER }}>
-            This is your <strong style={{ color: '#fff' }}>practice account</strong> — buy and sell with virtual money at <strong style={{ color: '#fff' }}>real, live JSE &amp; US prices</strong>. To research before you trade, jump to:
+            This is your <strong style={{ color: 'rgba(var(--fg),1)' }}>practice account</strong> — buy and sell with virtual money at <strong style={{ color: 'rgba(var(--fg),1)' }}>real, live JSE &amp; US prices</strong>. To research before you trade, jump to:
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
             {[
               { label: 'Live Prices', sub: 'Dashboard', icon: 'fa-solid fa-chart-line', to: '/' },
               { label: 'Charts', sub: 'Technical view', icon: 'fa-solid fa-chart-area', to: '/technicals' },
-              { label: 'AI Analysis', sub: 'Ask Gotham AI', icon: 'fa-solid fa-robot', to: '/analysis' },
+              { label: 'AI Analysis', sub: 'Ask Oros AI', icon: 'fa-solid fa-robot', to: '/analysis' },
             ].map(card => (
               <button key={card.label} onClick={() => navigate(card.to)}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, padding: '10px 12px', borderRadius: 11, background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.08)', cursor: 'pointer', transition: 'all .15s', textAlign: 'left', fontFamily: INTER }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(64,196,255,.4)'; e.currentTarget.style.background = 'rgba(64,196,255,.06)'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(var(--fg),.08)'; e.currentTarget.style.background = 'rgba(var(--fg),.03)'; }}>
                 <i className={card.icon} style={{ fontSize: 13, color: '#40c4ff' }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{card.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>{card.label}</span>
                 <span style={{ fontSize: 10, color: 'rgba(var(--fg),.4)' }}>{card.sub}</span>
               </button>
             ))}
@@ -278,7 +278,7 @@ export default function Portfolio() {
                   style={{
                     width: '100%', padding: '12px 16px', borderRadius: 12, fontSize: 13, fontFamily: INTER, outline: 'none', boxSizing: 'border-box',
                     background: 'rgba(var(--fg),.04)', border: `1px solid ${symbol ? 'rgba(0,230,118,.3)' : 'rgba(var(--fg),.1)'}`,
-                    color: '#fff', transition: 'border-color .15s',
+                    color: 'rgba(var(--fg),1)', transition: 'border-color .15s',
                   }}
                 />
                 {showDropdown && filteredStocks.length > 0 && !symbol && (
@@ -293,7 +293,7 @@ export default function Portfolio() {
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
                         <div>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: '#fff', fontFamily: MONO, marginRight: 8 }}>{s.symbol}</span>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: 'rgba(var(--fg),1)', fontFamily: MONO, marginRight: 8 }}>{s.symbol}</span>
                           <span style={{ fontSize: 11, color: 'rgba(var(--fg),.4)' }}>{s.name ?? ''}</span>
                         </div>
                         <span style={{ fontSize: 11, fontWeight: 700, color: (s.pctChange ?? 0) >= 0 ? '#00e676' : '#ff5252', fontFamily: MONO }}>
@@ -309,11 +309,11 @@ export default function Portfolio() {
               {symbol && selectedStock && (
                 <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(0,230,118,.05)', border: '1px solid rgba(0,230,118,.15)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', fontFamily: MONO }}>{symbol}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: 'rgba(var(--fg),1)', fontFamily: MONO }}>{symbol}</span>
                     <span style={{ fontSize: 11, color: 'rgba(var(--fg),.4)', marginLeft: 8 }}>{selectedStock.name}</span>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', fontFamily: MONO }}>J${f2(marketPrice)}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: 'rgba(var(--fg),1)', fontFamily: MONO }}>J${f2(marketPrice)}</div>
                     <div style={{ fontSize: 10, fontWeight: 700, color: chgColor(selectedStock.pctChange ?? 0), fontFamily: MONO }}>
                       {(selectedStock.pctChange ?? 0) >= 0 ? '+' : ''}{(selectedStock.pctChange ?? 0).toFixed(2)}%
                     </div>
@@ -344,7 +344,7 @@ export default function Portfolio() {
               <div>
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(var(--fg),.35)', marginBottom: 8 }}>Order Type</label>
                 <select value={orderType} onChange={e => { setOrderType(e.target.value as 'MARKET' | 'LIMIT'); setTradeMsg(null); }}
-                  style={{ width: '100%', padding: '11px 14px', borderRadius: 12, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.1)', color: '#fff', fontSize: 13, fontFamily: INTER, outline: 'none', cursor: 'pointer' }}>
+                  style={{ width: '100%', padding: '11px 14px', borderRadius: 12, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.1)', color: 'rgba(var(--fg),1)', fontSize: 13, fontFamily: INTER, outline: 'none', cursor: 'pointer' }}>
                   <option value="MARKET">Market (instant fill)</option>
                   <option value="LIMIT">Limit (set your price)</option>
                 </select>
@@ -353,7 +353,7 @@ export default function Portfolio() {
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(var(--fg),.35)', marginBottom: 8 }}>Shares</label>
                 <input type="number" min="1" value={qty} onChange={e => { setQty(e.target.value); setTradeMsg(null); }}
                   placeholder="e.g. 100"
-                  style={{ width: '100%', padding: '11px 14px', borderRadius: 12, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.1)', color: '#fff', fontSize: 13, fontFamily: MONO, outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '11px 14px', borderRadius: 12, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.1)', color: 'rgba(var(--fg),1)', fontSize: 13, fontFamily: MONO, outline: 'none', boxSizing: 'border-box' }}
                   onFocus={e => (e.target.style.borderColor = 'rgba(0,230,118,.4)')}
                   onBlur={e => (e.target.style.borderColor = 'rgba(var(--fg),.1)')}
                 />
@@ -366,7 +366,7 @@ export default function Portfolio() {
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(var(--fg),.35)', marginBottom: 8 }}>Limit Price (J$)</label>
                 <input type="number" step="0.01" min="0" value={limitPrice} onChange={e => { setLimitPrice(e.target.value); setTradeMsg(null); }}
                   placeholder={marketPrice > 0 ? f2(marketPrice) : 'Price...'}
-                  style={{ width: '100%', padding: '11px 14px', borderRadius: 12, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.1)', color: '#fff', fontSize: 13, fontFamily: MONO, outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '11px 14px', borderRadius: 12, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.1)', color: 'rgba(var(--fg),1)', fontSize: 13, fontFamily: MONO, outline: 'none', boxSizing: 'border-box' }}
                   onFocus={e => (e.target.style.borderColor = 'rgba(0,230,118,.4)')}
                   onBlur={e => (e.target.style.borderColor = 'rgba(var(--fg),.1)')}
                 />
@@ -391,7 +391,7 @@ export default function Portfolio() {
                   ].map(([label, val]) => (
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 12, color: 'rgba(var(--fg),.4)', fontFamily: INTER }}>{label}</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#fff', fontFamily: label.includes('Cost') || label.includes('Total') ? MONO : INTER }}>{val}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(var(--fg),1)', fontFamily: label.includes('Cost') || label.includes('Total') ? MONO : INTER }}>{val}</span>
                     </div>
                   ))}
                 </div>
@@ -449,7 +449,7 @@ export default function Portfolio() {
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 18, color: '#ff5252' }} />
               </div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Unable to load portfolio data. Please try again.</p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>Unable to load portfolio data. Please try again.</p>
               <button onClick={() => posRefetch()}
                 style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
                 Retry
@@ -460,7 +460,7 @@ export default function Portfolio() {
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <i className="fa-solid fa-briefcase" style={{ fontSize: 22, color: 'rgba(var(--fg),.2)' }} />
               </div>
-              <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff' }}>No positions yet</p>
+              <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>No positions yet</p>
               <p style={{ margin: 0, fontSize: 12, color: 'rgba(var(--fg),.35)' }}>Go to <strong>Place Trade</strong> and buy your first stock.</p>
               <button onClick={() => setTab('trade')} style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
                 Place First Trade
@@ -492,15 +492,15 @@ export default function Portfolio() {
                               <span style={{ fontSize: 9, fontWeight: 900, color: pnl >= 0 ? '#00e676' : '#ff5252' }}>{(p.symbol ?? '').slice(0, 3)}</span>
                             </div>
                             <div>
-                              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: MONO }}>{p.symbol}</p>
+                              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'rgba(var(--fg),1)', fontFamily: MONO }}>{p.symbol}</p>
                               <p style={{ margin: 0, fontSize: 10, color: 'rgba(var(--fg),.35)' }}>{p.market ?? 'JSE'}</p>
                             </div>
                           </div>
                         </td>
                         <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 13, fontFamily: MONO, color: 'rgba(var(--fg),.7)' }}>{(p.shares ?? 0).toLocaleString()}</td>
                         <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 13, fontFamily: MONO, color: 'rgba(var(--fg),.7)' }}>J${f2(p.avgCost)}</td>
-                        <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 13, fontFamily: MONO, color: '#fff' }}>J${f2(cp)}</td>
-                        <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 13, fontWeight: 600, fontFamily: MONO, color: '#fff' }}>J${f2(mv)}</td>
+                        <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 13, fontFamily: MONO, color: 'rgba(var(--fg),1)' }}>J${f2(cp)}</td>
+                        <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 13, fontWeight: 600, fontFamily: MONO, color: 'rgba(var(--fg),1)' }}>J${f2(mv)}</td>
                         <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 13, fontWeight: 700, fontFamily: MONO, color: chgColor(pnl) }}>
                           {pnl >= 0 ? '+' : ''}J${f2(Math.abs(pnl))}
                         </td>
@@ -529,7 +529,7 @@ export default function Portfolio() {
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 18, color: '#ff5252' }} />
               </div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Unable to load portfolio data. Please try again.</p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>Unable to load portfolio data. Please try again.</p>
               <button onClick={() => histRefetch()}
                 style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
                 Retry
@@ -538,7 +538,7 @@ export default function Portfolio() {
           ) : transactions.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', gap: 12 }}>
               <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 28, color: 'rgba(var(--fg),.15)' }} />
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#fff' }}>No trade history</p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'rgba(var(--fg),1)' }}>No trade history</p>
               <p style={{ margin: 0, fontSize: 12, color: 'rgba(var(--fg),.35)' }}>Your completed trades appear here.</p>
             </div>
           ) : (
@@ -559,7 +559,7 @@ export default function Portfolio() {
                         onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.025)')}
                         onMouseLeave={e => (e.currentTarget.style.background = '')}>
                         <td style={{ padding: '11px 16px', fontSize: 11, color: 'rgba(var(--fg),.35)' }}>{(tx.createdAt ?? tx.date) ? new Date(tx.createdAt ?? tx.date as string).toLocaleDateString() : '—'}</td>
-                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: MONO }}>{tx.symbol}</td>
+                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 700, color: 'rgba(var(--fg),1)', fontFamily: MONO }}>{tx.symbol}</td>
                         <td style={{ padding: '11px 16px', textAlign: 'right' }}>
                           <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800, letterSpacing: '.06em', background: txSide === 'BUY' ? 'rgba(0,230,118,.12)' : 'rgba(255,82,82,.12)', color: txSide === 'BUY' ? '#00e676' : '#ff5252', border: `1px solid ${txSide === 'BUY' ? 'rgba(0,230,118,.25)' : 'rgba(255,82,82,.25)'}` }}>
                             {txSide}
@@ -567,7 +567,7 @@ export default function Portfolio() {
                         </td>
                         <td style={{ padding: '11px 16px', textAlign: 'right', fontSize: 13, fontFamily: MONO, color: 'rgba(var(--fg),.7)' }}>{(tx.quantity ?? 0).toLocaleString()}</td>
                         <td style={{ padding: '11px 16px', textAlign: 'right', fontSize: 13, fontFamily: MONO, color: 'rgba(var(--fg),.7)' }}>J${f2(tx.price)}</td>
-                        <td style={{ padding: '11px 16px', textAlign: 'right', fontSize: 13, fontWeight: 700, fontFamily: MONO, color: '#fff' }}>J${f2(tx.total)}</td>
+                        <td style={{ padding: '11px 16px', textAlign: 'right', fontSize: 13, fontWeight: 700, fontFamily: MONO, color: 'rgba(var(--fg),1)' }}>J${f2(tx.total)}</td>
                         <td style={{ padding: '11px 16px', textAlign: 'right', fontSize: 11, fontFamily: MONO, color: 'rgba(var(--fg),.35)' }}>J${f2(tx.fee)}</td>
                       </tr>
                     );
@@ -584,7 +584,7 @@ export default function Portfolio() {
             <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,82,82,.1)', border: '1px solid rgba(255,82,82,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 18, color: '#ff5252' }} />
             </div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Unable to load portfolio data. Please try again.</p>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>Unable to load portfolio data. Please try again.</p>
             <button onClick={() => walletRefetch()}
               style={{ padding: '9px 22px', borderRadius: 10, background: '#00e676', color: 'var(--color-bg)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: INTER }}>
               Retry
@@ -617,11 +617,11 @@ export default function Portfolio() {
 
             {walletAction && (
               <div style={{ background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.08)', borderRadius: 14, padding: '16px 18px' }}>
-                <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#fff', textTransform: 'capitalize', fontFamily: INTER }}>{walletAction === 'deposit' ? 'Add Virtual Cash (JMD)' : 'Remove Cash (JMD)'}</p>
+                <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'rgba(var(--fg),1)', textTransform: 'capitalize', fontFamily: INTER }}>{walletAction === 'deposit' ? 'Add Virtual Cash (JMD)' : 'Remove Cash (JMD)'}</p>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <input type="number" value={walletAmt} onChange={e => setWalletAmt(e.target.value)}
                     placeholder="Amount (J$)"
-                    style={{ flex: 1, padding: '10px 14px', borderRadius: 10, background: 'rgba(var(--fg),.05)', border: '1px solid rgba(var(--fg),.1)', color: '#fff', fontSize: 14, fontFamily: MONO, outline: 'none' }}
+                    style={{ flex: 1, padding: '10px 14px', borderRadius: 10, background: 'rgba(var(--fg),.05)', border: '1px solid rgba(var(--fg),.1)', color: 'rgba(var(--fg),1)', fontSize: 14, fontFamily: MONO, outline: 'none' }}
                     onFocus={e => (e.target.style.borderColor = 'rgba(0,230,118,.4)')}
                     onBlur={e => (e.target.style.borderColor = 'rgba(var(--fg),.1)')}
                   />

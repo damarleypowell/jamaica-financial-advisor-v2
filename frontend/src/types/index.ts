@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------ */
-/*  Core domain types for Gotham Financial                            */
+/*  Core domain types for Oros                            */
 /* ------------------------------------------------------------------ */
 
 export interface Stock {

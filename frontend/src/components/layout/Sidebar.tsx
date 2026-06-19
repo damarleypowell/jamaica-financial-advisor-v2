@@ -147,7 +147,7 @@ function SidebarContent({ onClose, userTier, isAdmin }: { onClose: () => void; u
             </svg>
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 900, letterSpacing: '.12em', color: '#00e676', lineHeight: 1 }}>GOTHAM</p>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 900, letterSpacing: '.12em', color: '#00e676', lineHeight: 1 }}>OROS</p>
             <p style={{ margin: 0, fontSize: 8, fontWeight: 600, letterSpacing: '.3em', color: 'var(--color-muted)', lineHeight: 1, marginTop: 3 }}>WEALTH</p>
           </div>
         </div>

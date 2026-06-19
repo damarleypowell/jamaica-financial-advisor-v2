@@ -129,7 +129,7 @@ function HeroCard({ jse, jseΔ, volume, firstName, jamTime, mktOpen, isConn, adv
                 <>
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(var(--fg),.3)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: INTER, marginBottom: 4 }}>{marketLabel}</div>
-                    <div style={{ fontSize: 36, fontWeight: 800, fontFamily: INTER, letterSpacing: '-0.03em', lineHeight: 1, color: '#fff' }}>
+                    <div style={{ fontSize: 36, fontWeight: 800, fontFamily: INTER, letterSpacing: '-0.03em', lineHeight: 1, color: 'rgba(var(--fg),1)' }}>
                       <Counter value={jse} decimals={0} />
                     </div>
                   </div>
@@ -243,7 +243,7 @@ function KPITile({ label, value, sub, icon, accent, delay = 0 }: {
             <i className={`fa-solid ${icon}`} style={{ fontSize: 11, color: accent }} />
           </div>
         </div>
-        <div style={{ fontSize: 26, fontWeight: 800, fontFamily: INTER, letterSpacing: "-0.025em", lineHeight: 1, color: '#fff' }}>{value}</div>
+        <div style={{ fontSize: 26, fontWeight: 800, fontFamily: INTER, letterSpacing: "-0.025em", lineHeight: 1, color: 'rgba(var(--fg),1)' }}>{value}</div>
         {sub && <div style={{ fontSize: 11, color: accent, fontFamily: MONO, marginTop: 6, fontWeight: 600 }}>{sub}</div>}
       </div>
     </div>
@@ -291,7 +291,7 @@ function MoverCard({ s, isSelected, onSelect, moverTab }: {
       }}>
       {isSelected && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: chgColor, opacity: 0.7 }} />}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-        <span style={{ fontSize: 12, fontWeight: 800, color: '#fff', fontFamily: MONO }}>{s.symbol}</span>
+        <span style={{ fontSize: 12, fontWeight: 800, color: 'rgba(var(--fg),1)', fontFamily: MONO }}>{s.symbol}</span>
         <span style={{ fontSize: 10, fontWeight: 700, color: pos ? '#00e676' : '#ff5252', fontFamily: MONO }}>
           {pos ? '+' : ''}{(s.pctChange ?? 0).toFixed(2)}%
         </span>
@@ -329,8 +329,8 @@ function NewUserWelcome({ firstName, navigate }: { firstName: string; navigate: 
       <Grain opacity={0.025} />
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ fontSize: 36, marginBottom: 12, animation: 'popIn .5s ease-out' }}>🌱</div>
-        <p style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>
-          Welcome to Gotham, {firstName}.
+        <p style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 900, color: 'rgba(var(--fg),1)', letterSpacing: '-0.02em' }}>
+          Welcome to Oros, {firstName}.
         </p>
         <p style={{ margin: '0 0 28px', fontSize: 13, color: 'rgba(var(--fg),.45)', lineHeight: 1.6, maxWidth: 400 }}>
           You're starting as a <strong style={{ color: '#78909c' }}>🌱 Seed</strong>. Complete your first 3 missions to reach <strong style={{ color: '#66bb6a' }}>🌿 Sapling</strong> and start building real wealth.
@@ -388,7 +388,7 @@ function PaywallBlock({ feature, tier }: { feature: string; tier: string }) {
       <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(0,200,83,.1)', border: '1px solid rgba(0,200,83,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
         <i className="fa-solid fa-lock" style={{ fontSize: 20, color: '#00c853' }} />
       </div>
-      <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 800, color: '#fff' }}>{feature}</p>
+      <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 800, color: 'rgba(var(--fg),1)' }}>{feature}</p>
       <p style={{ margin: '0 0 18px', fontSize: 12, color: 'rgba(var(--fg),.45)' }}>Requires a <strong style={{ color: '#00c853' }}>{tier}</strong> plan or higher</p>
       <a href="/subscription" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 22px', borderRadius: 10, background: '#00c853', color: '#000', fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>
         <i className="fa-solid fa-arrow-up" style={{ fontSize: 10 }} /> Upgrade Now
@@ -496,7 +496,7 @@ function MissionButton({ m, navigate }: { m: Mission; navigate: (p: string) => v
         <i className={`fa-solid ${m.icon}`} style={{ fontSize: 13, color: '#00e676' }} />
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{m.label}</p>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'rgba(var(--fg),1)', lineHeight: 1.2 }}>{m.label}</p>
         <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(var(--fg),.35)', lineHeight: 1.3 }}>{m.sub}</p>
       </div>
       <span style={{ fontSize: 10, fontWeight: 800, color: '#00e676', background: 'rgba(0,230,118,.1)', padding: '2px 7px', borderRadius: 99, flexShrink: 0, border: '1px solid rgba(0,230,118,.2)' }}>+{m.pts}</span>
@@ -549,7 +549,7 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
               </div>
               <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                 <p style={{ margin: 0, fontSize: 9, color: 'rgba(var(--fg),.25)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>Score</p>
-                <p style={{ margin: 0, fontSize: 24, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>{score}</p>
+                <p style={{ margin: 0, fontSize: 24, fontWeight: 900, color: 'rgba(var(--fg),1)', letterSpacing: '-0.04em', lineHeight: 1 }}>{score}</p>
               </div>
             </div>
 
@@ -752,7 +752,7 @@ function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, na
           {/* value + gain */}
           <div style={{ flex: 1, minWidth: 140 }}>
             <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: 'rgba(var(--fg),.35)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Total value</p>
-            <p style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 800, color: '#fff', fontFamily: MONO, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+            <p style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 800, color: 'rgba(var(--fg),1)', fontFamily: MONO, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
               J$<Counter value={portfolioValue} decimals={0} />
             </p>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, padding: '5px 10px', borderRadius: 9, background: `${accent}14`, border: `1px solid ${accent}30` }}>
@@ -774,7 +774,7 @@ function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, na
             return (
               <div key={s.symbol} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                 <span style={{ width: 9, height: 9, borderRadius: 3, background: s.color, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: MONO, width: 56 }}>{s.symbol}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(var(--fg),1)', fontFamily: MONO, width: 56 }}>{s.symbol}</span>
                 <div style={{ flex: 1, height: 5, borderRadius: 99, background: 'rgba(var(--fg),.06)', overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: mounted ? `${s.pct}%` : '0%', background: s.color, borderRadius: 99, transition: 'width .8s cubic-bezier(.22,1,.36,1)' }} />
                 </div>
@@ -850,7 +850,7 @@ function PortfolioPreviewCard({ mode, navigate, openAuthModal }: {
             <text x={70} y={80} textAnchor="middle" fill="rgba(var(--fg),.35)" fontSize={8} fontFamily={SANS}>4 stocks</text>
           </svg>
           <div style={{ flex: 1, minWidth: 150 }}>
-            <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#fff', fontFamily: SANS, lineHeight: 1.25 }}>{headline}</p>
+            <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'rgba(var(--fg),1)', fontFamily: SANS, lineHeight: 1.25 }}>{headline}</p>
             <p style={{ margin: '6px 0 14px', fontSize: 12, color: 'rgba(var(--fg),.5)', fontFamily: SANS, lineHeight: 1.55 }}>{sub}</p>
             <button onClick={onCta} style={{
               display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 12,
@@ -922,7 +922,7 @@ function WealthHero({ portfolioValue, totalGain, totalGainPct, walletBalance, fi
         <div style={{ marginBottom: 6 }}>
           <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: 'rgba(var(--fg),.28)', letterSpacing: '.1em', textTransform: 'uppercase', fontFamily: SANS }}>Total Wealth</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 40, fontWeight: 900, fontFamily: SANS, letterSpacing: '-0.04em', lineHeight: 1, color: '#fff' }}>
+            <div style={{ fontSize: 40, fontWeight: 900, fontFamily: SANS, letterSpacing: '-0.04em', lineHeight: 1, color: 'rgba(var(--fg),1)' }}>
               J$<Counter value={totalNet} decimals={2} />
             </div>
             {totalGain !== 0 && (
@@ -1272,7 +1272,7 @@ export default function Dashboard() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 22 }}>🚀</span>
             <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff' }}>You're on the Free plan — limited to JSE preview only</p>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>You're on the Free plan — limited to JSE preview only</p>
               <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(var(--fg),.5)' }}>Upgrade to CORE for full JSE + US Markets, charts, portfolio, alerts & more.</p>
             </div>
           </div>
@@ -1303,7 +1303,7 @@ export default function Dashboard() {
             style={{
               height: 34, paddingLeft: 12, paddingRight: 12, borderRadius: 10,
               background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.08)',
-              color: '#fff', fontSize: 12, fontFamily: INTER, outline: 'none', width: 160,
+              color: 'rgba(var(--fg),1)', fontSize: 12, fontFamily: INTER, outline: 'none', width: 160,
             }}
           />
         )}

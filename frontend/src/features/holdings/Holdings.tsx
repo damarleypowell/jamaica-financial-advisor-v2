@@ -130,7 +130,7 @@ export default function Holdings() {
       <div style={{ padding: '12px 16px', borderRadius: 13, background: 'rgba(64,196,255,.05)', border: '1px solid rgba(64,196,255,.16)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <i className="fa-solid fa-lock" style={{ fontSize: 13, color: '#40c4ff' }} />
         <span style={{ fontSize: 12, color: 'var(--color-text2)', flex: 1, minWidth: 200, lineHeight: 1.5 }}>
-          <strong style={{ color: '#fff' }}>Read-only.</strong> Enter holdings manually — we value and visualise them, but never connect to or move money in your brokerage.
+          <strong style={{ color: 'rgba(var(--fg),1)' }}>Read-only.</strong> Enter holdings manually — we value and visualise them, but never connect to or move money in your brokerage.
         </span>
         <button disabled title="Coming soon — auto-sync from US brokerages"
           style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 9, fontSize: 11.5, fontWeight: 700, background: 'rgba(var(--fg),.04)', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'not-allowed' }}>
@@ -182,7 +182,7 @@ export default function Holdings() {
                     style={{ width: '100%', padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--fg),.05)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                    <span><span style={{ fontSize: 12, fontWeight: 800, fontFamily: MONO, color: '#fff', marginRight: 8 }}>{s.symbol}</span><span style={{ fontSize: 11, color: 'var(--color-muted)' }}>{s.name}</span></span>
+                    <span><span style={{ fontSize: 12, fontWeight: 800, fontFamily: MONO, color: 'rgba(var(--fg),1)', marginRight: 8 }}>{s.symbol}</span><span style={{ fontSize: 11, color: 'var(--color-muted)' }}>{s.name}</span></span>
                     <span style={{ fontSize: 11, fontFamily: MONO, color: 'var(--color-text2)' }}>J${f2(s.price)}</span>
                   </button>
                 ))}
@@ -227,13 +227,13 @@ export default function Holdings() {
             <div key={r.symbol} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 12 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 800, fontFamily: MONO, color: '#fff' }}>{r.symbol} <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--color-muted)' }}>{r.market}</span></p>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 800, fontFamily: MONO, color: 'rgba(var(--fg),1)' }}>{r.symbol} <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--color-muted)' }}>{r.market}</span></p>
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--color-muted)' }}>
                   {r.shares} sh @ J${f2(r.avgCost)} {r.hasLive ? <span style={{ color: 'var(--color-text2)' }}>· now J${f2(r.live)}</span> : <span style={{ color: '#ffd740' }}>· no live price</span>}
                 </p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: MONO, color: '#fff' }}>J${f2(r.value)}</p>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: MONO, color: 'rgba(var(--fg),1)' }}>J${f2(r.value)}</p>
                 <p style={{ margin: 0, fontSize: 11, fontWeight: 700, fontFamily: MONO, color: r.pnl >= 0 ? '#00e676' : '#ff5252' }}>{r.pnl >= 0 ? '+' : ''}{r.pnlPct.toFixed(2)}%</p>
               </div>
               <button onClick={() => removeHolding(r.symbol!)} title="Remove"

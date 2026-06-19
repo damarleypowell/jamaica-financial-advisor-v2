@@ -150,7 +150,7 @@ const COURSES: Course[] = [
         content: {
           paragraphs: [
             'A stock quote is a real-time or delayed snapshot of a security\'s price and trading activity. Every number on a quote page tells you something specific. Knowing what each figure means is your most fundamental skill as an investor.',
-            'The most important figures are: Last Price (the most recent transaction), Open (first trade of the day), High and Low (the day\'s price range), Volume (total shares traded), and Percentage Change (how much the price moved from yesterday\'s close). On Gotham, all these are shown when you click any stock card.',
+            'The most important figures are: Last Price (the most recent transaction), Open (first trade of the day), High and Low (the day\'s price range), Volume (total shares traded), and Percentage Change (how much the price moved from yesterday\'s close). On Oros, all these are shown when you click any stock card.',
             'The bid-ask spread is the gap between what buyers will pay (bid) and what sellers will accept (ask). On liquid stocks like NCB, this spread is tiny — maybe a few cents. On thinly traded Junior Market stocks, the spread can be J$2–5, meaning you immediately lose that amount the moment you buy.',
           ],
           diagramKey: 'quote',
@@ -353,7 +353,7 @@ const COURSES: Course[] = [
           callouts: [
             { type: 'warning', text: 'A very low P/E can signal a value trap — a company so troubled that earnings will collapse, making today\'s P/E misleading. Always ask why a stock is cheap.' },
             { type: 'example', text: 'If Sagicor Financial trades at J$50 with EPS of J$6.25, its P/E = 8x. If the sector average is 12x, the stock may be undervalued — or the market sees something concerning. Investigate before concluding it\'s a bargain.' },
-            { type: 'tip', text: 'Use Gotham\'s AI Analysis tab to get instant ratio calculations and peer comparisons for any JSE or US stock.' },
+            { type: 'tip', text: 'Use Oros\'s AI Analysis tab to get instant ratio calculations and peer comparisons for any JSE or US stock.' },
           ],
           links: [
             { title: 'Finviz — US Stock Valuation Screener', url: 'https://finviz.com/screener.ashx', description: 'Screen US stocks by P/E, P/B, yield and 70+ other metrics.' },
@@ -478,7 +478,7 @@ const COURSES: Course[] = [
           ],
           callouts: [
             { type: 'tip', text: 'Single candlestick patterns are weak signals. Always confirm with the next candle or two, and look for patterns at significant support/resistance levels — not in random locations.' },
-            { type: 'info', text: 'All charts on Gotham use candlestick format by default. You can see daily OHLC data for any JSE or US stock by clicking on it from the Dashboard.' },
+            { type: 'info', text: 'All charts on Oros use candlestick format by default. You can see daily OHLC data for any JSE or US stock by clicking on it from the Dashboard.' },
           ],
           links: [
             { title: 'TradingView — Live Charts', url: 'https://www.tradingview.com', description: 'Best free charting platform. Search any JSE or US stock.' },
@@ -705,7 +705,7 @@ const COURSES: Course[] = [
           ],
           callouts: [
             { type: 'warning', text: 'Never invest money you might need within 12 months. Market timing is impossible, and you may be forced to sell at a loss right when the market is at its lowest.' },
-            { type: 'tip', text: 'Gotham\'s Portfolio Optimizer (under the Portfolio tab) calculates efficient allocations based on historical JSE and US stock data. Use it to test different allocation scenarios before committing real capital.' },
+            { type: 'tip', text: 'Oros\'s Portfolio Optimizer (under the Portfolio tab) calculates efficient allocations based on historical JSE and US stock data. Use it to test different allocation scenarios before committing real capital.' },
           ],
         },
       },
@@ -728,7 +728,7 @@ const COURSES: Course[] = [
               },
               {
                 instruction: 'Step 3 — You want 20% of your total portfolio in USD assets as a JMD hedge. How much is that, and what instrument would you use?',
-                answer: '20% of J$500,000 = J$100,000. At a rate of J$157/USD, this equals approximately US$637. Suitable instruments: a USD money market fund (offered by NCB Capital Markets, JMMB, or Sagicor), or directly purchasing US ETFs through Alpaca on the Gotham platform. The USD money market option is lower risk; the US ETF option (e.g. SPY, QQQ) offers growth potential but more volatility.',
+                answer: '20% of J$500,000 = J$100,000. At a rate of J$157/USD, this equals approximately US$637. Suitable instruments: a USD money market fund (offered by NCB Capital Markets, JMMB, or Sagicor), or directly purchasing US ETFs through Alpaca on the Oros platform. The USD money market option is lower risk; the US ETF option (e.g. SPY, QQQ) offers growth potential but more volatility.',
               },
               {
                 instruction: 'Step 4 — What is the single biggest risk in this portfolio and how would you monitor it?',
@@ -1038,7 +1038,7 @@ function LiveExercisePanel({ mode }: { mode: 'quote' | 'technical' }) {
           <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#00e676' }}>Live JSE Data</span>
           <span style={{ fontSize: 11, color: 'rgba(var(--fg),.3)', marginLeft: 'auto' }}>Updates every 30s</span>
         </div>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff' }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'rgba(var(--fg),1)' }}>
           {stock.name ?? stock.symbol} <span style={{ color: 'rgba(var(--fg),.4)', fontWeight: 400 }}>({stock.symbol})</span>
           <span style={{ marginLeft: 12, color: pctChange >= 0 ? '#00e676' : '#ff5252', fontSize: 13 }}>
             J${stock.price.toFixed(2)} &nbsp;{pctChange >= 0 ? '▲' : '▼'} {Math.abs(pctChange).toFixed(2)}%
@@ -1183,7 +1183,7 @@ function ModuleViewer({
             <Clock size={9} /> {module.duration} min
           </span>
         </div>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{module.title}</h2>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'rgba(var(--fg),1)', lineHeight: 1.3 }}>{module.title}</h2>
       </div>
 
       {/* Lesson content */}
@@ -1320,7 +1320,7 @@ function ModuleViewer({
             <div style={{ background: quizScore >= content.quiz.length * 0.8 ? 'rgba(0,230,118,.08)' : 'rgba(255,215,64,.08)', border: `1px solid ${quizScore >= content.quiz.length * 0.8 ? 'rgba(0,230,118,.3)' : 'rgba(255,215,64,.3)'}`, borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
               <Award size={20} color={quizScore >= content.quiz.length * 0.8 ? '#00e676' : '#ffd740'} />
               <div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#fff' }}>{quizScore}/{content.quiz.length} correct — {Math.round(quizScore / content.quiz.length * 100)}%</p>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'rgba(var(--fg),1)' }}>{quizScore}/{content.quiz.length} correct — {Math.round(quizScore / content.quiz.length * 100)}%</p>
                 <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(var(--fg),.5)' }}>{quizScore >= content.quiz.length * 0.8 ? 'Excellent work!' : 'Review the explanations below and try again.'}</p>
               </div>
             </div>
@@ -1330,7 +1330,7 @@ function ModuleViewer({
             const correct = quizAnswers[qi] === q.correct;
             return (
               <div key={qi} style={{ marginBottom: 16, background: 'rgba(var(--fg),.02)', border: '1px solid rgba(var(--fg),.07)', borderRadius: 14, padding: '16px 18px' }}>
-                <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#fff', lineHeight: 1.5 }}>
+                <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: 'rgba(var(--fg),1)', lineHeight: 1.5 }}>
                   <span style={{ color: '#ffd740', fontWeight: 800, marginRight: 6 }}>Q{qi + 1}.</span>{q.q}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1447,7 +1447,7 @@ function CourseRoadmap({
             <Clock size={9} /> {course.estimatedHours}h estimated
           </span>
         </div>
-        <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: '#fff' }}>{course.title}</h1>
+        <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: 'rgba(var(--fg),1)' }}>{course.title}</h1>
         <p style={{ margin: '0 0 16px', fontSize: 13, color: 'rgba(var(--fg),.55)', lineHeight: 1.6 }}>{course.description}</p>
         {/* Progress bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1533,7 +1533,7 @@ function CourseCard({ course, progress, onClick }: {
       </div>
       {/* Title */}
       <div>
-        <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{course.title}</h3>
+        <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: 'rgba(var(--fg),1)', lineHeight: 1.3 }}>{course.title}</h3>
         <p style={{ margin: 0, fontSize: 11, color: 'rgba(var(--fg),.4)' }}>{course.subtitle}</p>
       </div>
       {/* Description */}
@@ -1621,7 +1621,7 @@ export default function Learn() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'rgba(var(--fg),1)', display: 'flex', alignItems: 'center', gap: 10 }}>
             <Award size={22} color="#00e676" />
             Learning Hub
           </h1>
@@ -1663,7 +1663,7 @@ export default function Learn() {
 
       {/* Quick reference glossary */}
       <section>
-        <h2 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 800, color: 'rgba(var(--fg),1)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <TrendingUp size={15} color="#00e676" /> Quick Reference — Key Terms
         </h2>
         <div style={{ display: 'grid', gap: 8 }}>
@@ -1692,7 +1692,7 @@ function GlossaryRow({ term, definition }: { term: string; definition: string })
       <button onClick={() => setOpen(o => !o)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'transparent', border: 'none', cursor: 'pointer', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Zap size={11} color="#00e676" />
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', textAlign: 'left' }}>{term}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(var(--fg),1)', textAlign: 'left' }}>{term}</span>
         </div>
         {open ? <ChevronRight size={13} color="rgba(var(--fg),.35)" style={{ transform: 'rotate(90deg)' }} /> : <ChevronRight size={13} color="rgba(var(--fg),.35)" />}
       </button>

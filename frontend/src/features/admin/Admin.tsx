@@ -467,7 +467,7 @@ export default function Admin() {
             </div>
             <div>
               <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, fontFamily: SYNE, color: 'var(--color-text)' }}>Admin Panel</h1>
-              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-muted)' }}>Gotham Financial — System Control</p>
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-muted)' }}>Oros — System Control</p>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -720,7 +720,7 @@ export default function Admin() {
                 </div>
                 <button onClick={() => blockIpInput && blockIP.mutate({ ip: blockIpInput, reason: blockReason })}
                   disabled={!blockIpInput || blockIP.isPending}
-                  style={{ padding: '9px 18px', borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#ff5252', color: '#fff', opacity: (!blockIpInput || blockIP.isPending) ? .5 : 1, transition: 'opacity 150ms', whiteSpace: 'nowrap' }}>
+                  style={{ padding: '9px 18px', borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', background: '#ff5252', color: 'rgba(var(--fg),1)', opacity: (!blockIpInput || blockIP.isPending) ? .5 : 1, transition: 'opacity 150ms', whiteSpace: 'nowrap' }}>
                   {blockIP.isPending ? 'Blocking…' : 'Block IP'}
                 </button>
               </div>
