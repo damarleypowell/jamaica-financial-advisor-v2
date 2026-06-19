@@ -31,7 +31,7 @@ function fmtVol(n?: number) {
 }
 function greet() {
   const h = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Jamaica' })).getHours();
-  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 22 ? 'Good evening' : 'Good night';
 }
 
 type MoverTab = 'gainers' | 'losers' | 'active';
