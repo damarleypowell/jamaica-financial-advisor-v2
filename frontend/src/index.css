@@ -10,9 +10,9 @@
   --color-purple:  #ce93d8;
   --color-cyan:    #18ffff;
 
-  --color-bg:      var(--color-bg);
-  --color-bg2:     var(--color-bg2);
-  --color-bg3:     var(--color-bg3);
+  --color-bg:      #04060d;
+  --color-bg2:     #080d18;
+  --color-bg3:     #0c1422;
   --color-bg4:     #111e33;
   --color-surface: #172240;
 
@@ -28,7 +28,8 @@
   --color-muted:   #3d5470;
 
   --font-sans:    'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono:    'JetBrains Mono', 'Consolas', monospace;
+  /* No "robo"/monospace type anywhere — numbers use the sans face with tabular figures. */
+  --font-mono:    'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Syne', 'Inter', system-ui, sans-serif;
 
   /* 8px spacing scale */
@@ -78,7 +79,8 @@
   --surf: 255, 255, 255;
 }
 [data-theme="light"] body { background: var(--color-bg); color: var(--color-text); }
-[data-theme="light"] .card { background: #fff; border-color: rgba(0,0,0,.08); }
+[data-theme="light"] .card { background: #fff; border-color: rgba(0,0,0,.07); box-shadow: 0 1px 2px rgba(10,37,64,.06), 0 8px 24px -12px rgba(10,37,64,.10); }
+[data-theme="light"] .card:hover { box-shadow: 0 2px 4px rgba(10,37,64,.07), 0 14px 32px -12px rgba(10,37,64,.14); }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -147,11 +149,13 @@ body {
   background: var(--color-bg2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
+  /* resting elevation: a layered, slightly green-tinted shadow so surfaces lift off the canvas */
+  box-shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 28px -16px rgba(0,0,0,.55);
   transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 .card:hover {
   border-color: var(--color-border2);
-  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 14px 36px -14px rgba(0,0,0,.6), 0 0 0 1px rgba(0,230,118,.04);
 }
 .card-elevated {
   background: var(--color-bg3);
@@ -210,6 +214,12 @@ body {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+}
+/* Every figure display reads tabular so decimals/columns align (fintech rule). */
+.stat-value, .stat-change, .price-main, .price-change, .hero-number, .hero-number-sm,
+.wealth-hero__value, .wealth-hero__pnl, .ticker-item {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
 /* ── Badge ─────────────────────────────────────────────────────────── */
@@ -276,7 +286,7 @@ button { cursor: pointer; border: none; background: transparent; }
 }
 .btn-primary {
   background: var(--color-green);
-  color: var(--color-bg);
+  color: #04060d;
   box-shadow: 0 2px 16px rgba(0,230,118,.3);
 }
 .btn-primary:hover {
@@ -950,7 +960,7 @@ a { text-decoration: none; color: inherit; }
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 800;
-  color: var(--color-bg);
+  color: #04060d;
   transition: transform 120ms, box-shadow 120ms;
 }
 .onboarding-cta:active { transform: scale(.97); }
@@ -989,7 +999,7 @@ a { text-decoration: none; color: inherit; }
 .quick-action-btn:active { transform: scale(.97); }
 .quick-action-btn--primary {
   background: var(--color-green);
-  color: var(--color-bg);
+  color: #04060d;
   box-shadow: 0 4px 20px rgba(0,230,118,.3);
 }
 .quick-action-btn--secondary {
