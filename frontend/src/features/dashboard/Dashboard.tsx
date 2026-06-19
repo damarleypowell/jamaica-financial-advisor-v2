@@ -1311,8 +1311,8 @@ export default function Dashboard() {
 
       {/* ── US unavailable notice ───────────────────────────────── */}
       {usUnavailable && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 12, background: 'rgba(255,215,64,.06)', border: '1px solid rgba(255,215,64,.18)', fontSize: 12, color: 'rgba(255,215,64,.8)', fontFamily: INTER }}>
-          <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 11, color: '#ffd740' }} />
+        <div className="warn-amber" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 12, fontSize: 12, fontFamily: INTER }}>
+          <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 11, color: 'currentColor' }} />
           US market data unavailable — Alpaca API not configured. Switch to Caribbean markets to view live data.
           <button onClick={() => setMarket('caribbean')} style={{ marginLeft: 'auto', padding: '4px 12px', borderRadius: 8, background: 'rgba(0,230,118,.12)', border: '1px solid rgba(0,230,118,.25)', color: '#00e676', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
             Switch to Caribbean
