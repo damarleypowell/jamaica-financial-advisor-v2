@@ -35,7 +35,7 @@ function buildContext(symbol: string, live: LiveQuote | undefined, rsi: number |
   const rsiSignal = rsi !== null ? (rsi > 70 ? 'overbought (RSI > 70)' : rsi < 30 ? 'oversold (RSI < 30)' : `neutral (RSI ${rsi.toFixed(0)})`) : 'unavailable';
 
   return `
-You are Oros AI, an educational financial advisor embedded in the Oros platform (Caribbean + US stock trading).
+You are Gotham AI, an educational financial advisor embedded in the Gotham platform (Caribbean + US stock trading).
 IMPORTANT: Always include a brief disclaimer that this is educational commentary, not financial advice.
 Expertise level requested: ${level}. ${LEVEL_PROMPTS[level]}
 
@@ -168,7 +168,7 @@ export default function FloatingAIAdvisor() {
       const e = err as { status?: number; statusCode?: number; response?: { status?: number }; name?: string; message?: string };
       const status: number | undefined = e?.status ?? e?.statusCode ?? e?.response?.status;
       if (status === 401) {
-        errorText = 'Sign in to chat with the Oros AI advisor — it\'s free.';
+        errorText = 'Sign in to chat with the Gotham AI advisor — it\'s free.';
       } else if (status === 403) {
         errorText = e?.message || 'You\'ve reached your daily AI chat limit. It resets tomorrow — or upgrade for more.';
       } else if (status === 429) {
@@ -213,7 +213,7 @@ export default function FloatingAIAdvisor() {
       <button
         data-tour="floating-ai"
         onClick={() => setOpen(v => !v)}
-        title="Oros AI Advisor"
+        title="Gotham AI Advisor"
         style={{
           position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)', right: 20, zIndex: 9999,
           width: 56, height: 56, borderRadius: '50%', border: 'none', cursor: 'pointer',
@@ -244,7 +244,7 @@ export default function FloatingAIAdvisor() {
               <i className="fa-solid fa-robot" style={{ fontSize: 16, color: '#00e676' }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'var(--color-text)' }}>Oros AI Advisor</p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'var(--color-text)' }}>Gotham AI Advisor</p>
               <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)' }}>
                 {symbol ? `Watching ${symbol} · $${(live?.price ?? 0).toFixed(2)}` : 'Select a stock on the chart'}
               </p>

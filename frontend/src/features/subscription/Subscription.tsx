@@ -349,11 +349,11 @@ export default function Subscription() {
         </div>
       </div>
 
-      {/* Honest note — Oros is paper-trading + research, so there are no real commissions */}
+      {/* Honest note — Gotham is paper-trading + research, so there are no real commissions */}
       <div style={{ padding: '16px 20px', background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 14 }}>
         <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>No trading commissions</p>
         <p style={{ margin: 0, fontSize: 13, color: 'var(--color-muted)', lineHeight: 1.6 }}>
-          Oros is a <strong style={{ color: 'var(--color-text)' }}>paper-trading and research platform</strong> — you practise with virtual funds at real live prices, with <strong style={{ color: 'var(--color-text)' }}>zero commissions and no hidden fees</strong>. Your plan covers AI usage, analytics, watchlists and alerts — nothing is charged per trade.
+          Gotham is a <strong style={{ color: 'var(--color-text)' }}>paper-trading and research platform</strong> — you practise with virtual funds at real live prices, with <strong style={{ color: 'var(--color-text)' }}>zero commissions and no hidden fees</strong>. Your plan covers AI usage, analytics, watchlists and alerts — nothing is charged per trade.
         </p>
       </div>
 

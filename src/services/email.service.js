@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════════════════════
-// ── Email Service — Oros Transactional Emails ────────────────────
+// ── Email Service — Gotham Transactional Emails ────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
 const nodemailer = require("nodemailer");
@@ -11,15 +11,15 @@ try { ({ Resend } = require("resend")); } catch (_) { /* resend not installed */
 // ── Configuration ────────────────────────────────────────────────────────────
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || "";
-const EMAIL_FROM = process.env.EMAIL_FROM || "Oros <noreply@gothamfinancial.com>";
+const EMAIL_FROM = process.env.EMAIL_FROM || "Gotham <noreply@gothamfinancial.com>";
 const APP_URL = process.env.APP_URL || "https://gotham-latk.onrender.com";
 
 // ── Resend (primary provider) ──────────────────────────────────────────────────
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 // Until a domain is verified in Resend, onboarding@resend.dev only delivers to the
 // Resend account owner. After verifying your domain, set RESEND_FROM to an address
-// on it (e.g. "Oros <noreply@gothamfinancial.com>").
-const RESEND_FROM = process.env.RESEND_FROM || "Oros <onboarding@resend.dev>";
+// on it (e.g. "Gotham <noreply@gothamfinancial.com>").
+const RESEND_FROM = process.env.RESEND_FROM || "Gotham <onboarding@resend.dev>";
 const resendClient = RESEND_API_KEY && Resend ? new Resend(RESEND_API_KEY) : null;
 if (resendClient) console.log("  [Email] Resend transport configured (primary)");
 
@@ -113,7 +113,7 @@ function buildEmail({ title, preheader, greeting, body, ctaText, ctaUrl, footer 
 <div class="wrapper">
 <div class="container">
   <div class="header-bar">
-    <h1>Oros</h1>
+    <h1>Gotham</h1>
     <span class="tag">AI-Powered Investment Platform</span>
   </div>
   <div class="body-content">
@@ -125,8 +125,8 @@ function buildEmail({ title, preheader, greeting, body, ctaText, ctaUrl, footer 
   <div class="footer">
     ${footer || ""}
     <p style="margin-top:12px;">
-      Oros &mdash; AI-Powered Investment Platform<br/>
-      &copy; ${new Date().getFullYear()} Oros. All rights reserved.
+      Gotham &mdash; AI-Powered Investment Platform<br/>
+      &copy; ${new Date().getFullYear()} Gotham. All rights reserved.
     </p>
     <p style="margin-top:8px;">
       <a href="${APP_URL}/terms.html">Terms of Service</a> &nbsp;|&nbsp;
@@ -134,7 +134,7 @@ function buildEmail({ title, preheader, greeting, body, ctaText, ctaUrl, footer 
       <a href="${APP_URL}/terms.html#unsubscribe">Unsubscribe</a>
     </p>
     <p style="margin-top:6px;font-size:11px;color:#4a5568;">
-      This email was sent by Oros. If you did not request this email, please ignore it.
+      This email was sent by Gotham. If you did not request this email, please ignore it.
     </p>
   </div>
 </div>
@@ -200,11 +200,11 @@ async function sendVerificationEmail(email, token, name) {
   const verifyUrl = `${APP_URL}/verify-email?token=${encodeURIComponent(token)}`;
   const code = codeFromToken(token);
   const html = buildEmail({
-    title: "Verify Your Email — Oros",
-    preheader: "Verify your email to activate your Oros account.",
+    title: "Verify Your Email — Gotham",
+    preheader: "Verify your email to activate your Gotham account.",
     greeting: `Welcome, ${name || "Investor"}!`,
     body: `
-      <p>Thanks for joining Oros. Enter this 6-digit code in the app to verify your email:</p>
+      <p>Thanks for joining Gotham. Enter this 6-digit code in the app to verify your email:</p>
       <div class="info-box" style="text-align:center;">
         <div class="label">Your verification code</div>
         <div class="value" style="font-size:30px;letter-spacing:8px;color:#00c853;">${code}</div>
@@ -220,11 +220,11 @@ async function sendVerificationEmail(email, token, name) {
     return await deliver({
       from: EMAIL_FROM,
       to: email,
-      subject: `Your Oros code: ${code}`,
-      text: `Welcome to Oros, ${name || "Investor"}! Your verification code is ${code}. Or verify here: ${verifyUrl}`,
+      subject: `Your Gotham code: ${code}`,
+      text: `Welcome to Gotham, ${name || "Investor"}! Your verification code is ${code}. Or verify here: ${verifyUrl}`,
       html,
       headers: {
-        "X-Mailer": "Oros-Financial/2.0",
+        "X-Mailer": "Gotham-Financial/2.0",
         "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
       },
     });
@@ -240,11 +240,11 @@ async function sendVerificationEmail(email, token, name) {
 async function sendPasswordResetEmail(email, token, name) {
   const resetUrl = `${APP_URL}/reset-password?token=${encodeURIComponent(token)}`;
   const html = buildEmail({
-    title: "Reset Your Password — Oros",
-    preheader: "You requested a password reset for your Oros account.",
+    title: "Reset Your Password — Gotham",
+    preheader: "You requested a password reset for your Gotham account.",
     greeting: `Hi ${name || "there"},`,
     body: `
-      <p>We received a request to reset the password for your Oros account. Click the button below to choose a new password.</p>
+      <p>We received a request to reset the password for your Gotham account. Click the button below to choose a new password.</p>
       <p>This link will expire in <strong>1 hour</strong>. If you didn't request this, you can safely ignore this email.</p>
       <div class="info-box">
         <div class="label">Security Notice</div>
@@ -260,11 +260,11 @@ async function sendPasswordResetEmail(email, token, name) {
     return await deliver({
       from: EMAIL_FROM,
       to: email,
-      subject: "Reset Your Password — Oros",
+      subject: "Reset Your Password — Gotham",
       text: `Hi ${name || "there"}, reset your password here: ${resetUrl} (expires in 1 hour)`,
       html,
       headers: {
-        "X-Mailer": "Oros-Financial/2.0",
+        "X-Mailer": "Gotham-Financial/2.0",
         "X-Priority": "1",
         "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
       },
@@ -283,11 +283,11 @@ async function sendOrderConfirmation(email, order) {
   const sideColor = side === "BUY" ? "#00c853" : "#ff1744";
 
   const html = buildEmail({
-    title: "Order Confirmed — Oros",
+    title: "Order Confirmed — Gotham",
     preheader: `Your ${side} order for ${order.symbol} has been placed.`,
     greeting: "Order Confirmation",
     body: `
-      <p>Your order has been successfully placed on Oros.</p>
+      <p>Your order has been successfully placed on Gotham.</p>
       <div class="info-box">
         <div class="label">Order Details</div>
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
@@ -333,11 +333,11 @@ async function sendOrderConfirmation(email, order) {
     return await deliver({
       from: EMAIL_FROM,
       to: email,
-      subject: `Order Confirmed: ${side} ${order.quantity} ${order.symbol} — Oros`,
+      subject: `Order Confirmed: ${side} ${order.quantity} ${order.symbol} — Gotham`,
       text: `Your ${side} order for ${order.quantity} shares of ${order.symbol} at J$${order.price} has been placed.`,
       html,
       headers: {
-        "X-Mailer": "Oros-Financial/2.0",
+        "X-Mailer": "Gotham-Financial/2.0",
         "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
       },
     });
@@ -351,11 +351,11 @@ async function sendOrderConfirmation(email, order) {
  */
 async function sendWelcomeEmail(email, name) {
   const html = buildEmail({
-    title: "Welcome to Oros",
+    title: "Welcome to Gotham",
     preheader: "Your account is ready. Start investing with AI-powered insights.",
     greeting: `Welcome aboard, ${name || "Investor"}!`,
     body: `
-      <p>Your Oros account is now fully set up. Here's what you can do next:</p>
+      <p>Your Gotham account is now fully set up. Here's what you can do next:</p>
       <div class="info-box">
         <div class="label">Getting Started</div>
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
@@ -387,11 +387,11 @@ async function sendWelcomeEmail(email, name) {
     return await deliver({
       from: EMAIL_FROM,
       to: email,
-      subject: "Welcome to Oros — Let's Get Started",
-      text: `Welcome to Oros, ${name || "Investor"}! Your account is ready. Visit ${APP_URL} to get started.`,
+      subject: "Welcome to Gotham — Let's Get Started",
+      text: `Welcome to Gotham, ${name || "Investor"}! Your account is ready. Visit ${APP_URL} to get started.`,
       html,
       headers: {
-        "X-Mailer": "Oros-Financial/2.0",
+        "X-Mailer": "Gotham-Financial/2.0",
         "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
       },
     });
@@ -408,7 +408,7 @@ async function sendAlertTriggered(email, alert) {
   const dirColor = alert.direction === "above" ? "#00c853" : "#ff1744";
 
   const html = buildEmail({
-    title: `Price Alert: ${alert.symbol} — Oros`,
+    title: `Price Alert: ${alert.symbol} — Gotham`,
     preheader: `${alert.symbol} has ${direction} J$${alert.targetPrice}`,
     greeting: "Price Alert Triggered",
     body: `
@@ -454,7 +454,7 @@ async function sendAlertTriggered(email, alert) {
       text: `${alert.symbol} has ${direction} your target of J$${alert.targetPrice}. Current price: J$${alert.currentPrice}.`,
       html,
       headers: {
-        "X-Mailer": "Oros-Financial/2.0",
+        "X-Mailer": "Gotham-Financial/2.0",
         "List-Unsubscribe": `<${APP_URL}/api/auth/unsubscribe?email=${encodeURIComponent(email)}>`,
       },
     });
@@ -470,11 +470,11 @@ async function sendSignupNotification(to, user) {
   if (!to) return;
   const when = new Date().toLocaleString("en-US", { timeZone: "America/Jamaica" });
   const html = buildEmail({
-    title: "New Oros sign-up",
+    title: "New Gotham sign-up",
     preheader: `${user.name || "Someone"} just signed up.`,
     greeting: "New sign-up 🎉",
     body: `
-      <p>A new user just created an account on Oros.</p>
+      <p>A new user just created an account on Gotham.</p>
       <div class="info-box">
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:6px;">
           <tr><td style="padding:6px 0;color:#6b7a8d;font-size:13px;">Name</td><td style="padding:6px 0;text-align:right;color:#e8edf2;font-weight:700;font-size:14px;">${user.name || "—"}</td></tr>
@@ -490,7 +490,7 @@ async function sendSignupNotification(to, user) {
       from: EMAIL_FROM,
       to,
       subject: `New sign-up: ${user.name || user.email}`,
-      text: `New Oros sign-up: ${user.name || ""} <${user.email}> at ${when}`,
+      text: `New Gotham sign-up: ${user.name || ""} <${user.email}> at ${when}`,
       html,
     });
   } catch (err) {

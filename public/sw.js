@@ -15,7 +15,7 @@ const OFFLINE_PAGE = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Oros - Offline</title>
+  <title>Gotham - Offline</title>
   <style>
     body {
       font-family: 'Inter', system-ui, sans-serif;
@@ -44,7 +44,7 @@ const OFFLINE_PAGE = `<!DOCTYPE html>
   <div class="offline-wrap">
     <div class="icon">&#128268;</div>
     <h1>You're Offline</h1>
-    <p>Oros requires an internet connection for live market data and trading. Please check your connection and try again.</p>
+    <p>Gotham requires an internet connection for live market data and trading. Please check your connection and try again.</p>
     <button onclick="window.location.reload()">Retry Connection</button>
   </div>
 </body>

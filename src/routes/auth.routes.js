@@ -1216,7 +1216,7 @@ router.post(
           typeof user.settings === "object" ? user.settings : {};
         const otpauthUrl = authenticator.keyuri(
           user.email,
-          "Oros",
+          "Gotham",
           secret
         );
 
@@ -1249,7 +1249,7 @@ router.post(
 
       const otpauthUrl = authenticator.keyuri(
         user.email,
-        "Oros",
+        "Gotham",
         secret
       );
 

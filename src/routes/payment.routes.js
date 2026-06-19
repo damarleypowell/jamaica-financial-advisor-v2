@@ -63,8 +63,8 @@ router.post("/api/payments/create-order", authMiddleware, async (req, res) => {
     const token = await getPayPalToken();
 
     const description = type === "SUBSCRIPTION"
-      ? `Oros — ${plan || "CORE"} Plan (Monthly)`
-      : `Oros — Wallet Deposit`;
+      ? `Gotham — ${plan || "CORE"} Plan (Monthly)`
+      : `Gotham — Wallet Deposit`;
 
     const order = await paypalRequest("POST", "/v2/checkout/orders", {
       intent: "CAPTURE",
@@ -77,7 +77,7 @@ router.post("/api/payments/create-order", authMiddleware, async (req, res) => {
         custom_id: JSON.stringify({ userId: req.user.id, type, plan: plan || null }),
       }],
       application_context: {
-        brand_name: "Oros",
+        brand_name: "Gotham",
         landing_page: "NO_PREFERENCE",
         user_action: "PAY_NOW",
         return_url: `${process.env.APP_URL || "http://localhost:3001"}/subscription?payment=success`,

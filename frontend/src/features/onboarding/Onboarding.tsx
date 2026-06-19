@@ -12,7 +12,7 @@ const STEPS = [
     color: '#00e676',
     tag: 'Welcome',
     title: 'Plant Your Wealth',
-    body: 'Oros is your Caribbean investment companion — live JSE & US stock data, AI-powered advice, and a gamified path from Seed to Wealth Master.',
+    body: 'Gotham is your Caribbean investment companion — live JSE & US stock data, AI-powered advice, and a gamified path from Seed to Wealth Master.',
     cta: 'Let\'s go',
     features: [
       { icon: 'fa-chart-line', label: 'JSE + US Markets' },
@@ -40,7 +40,7 @@ const STEPS = [
     color: '#40c4ff',
     tag: 'Set Your Goal',
     title: 'What are you building toward?',
-    body: 'Whether it\'s J$50K this year or financial freedom in 10 years — Oros helps you build a plan and track every milestone.',
+    body: 'Whether it\'s J$50K this year or financial freedom in 10 years — Gotham helps you build a plan and track every milestone.',
     cta: 'Start for free',
     goals: [
       'Save for a major purchase',
@@ -153,7 +153,7 @@ export default function Onboarding() {
             </button>
           )}
           <div className="gf-wordmark">
-            <p style={{ margin: 0, fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '.14em', color: '#00e676', lineHeight: 1 }}>OROS</p>
+            <p style={{ margin: 0, fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '.14em', color: '#00e676', lineHeight: 1 }}>GOTHAM</p>
             <p style={{ margin: 0, fontSize: 7.5, fontWeight: 600, letterSpacing: '.34em', color: 'rgba(var(--fg),.3)', lineHeight: 1, marginTop: 3, paddingLeft: '.34em' }}>FINANCIAL</p>
           </div>
         </div>

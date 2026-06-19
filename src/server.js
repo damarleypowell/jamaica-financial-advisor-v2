@@ -41,7 +41,7 @@ async function start() {
   marketService.startSSEBroadcast();
 
   server = app.listen(config.port, () => {
-    console.log(`\n🇯🇲 Oros running on http://localhost:${config.port}\n`);
+    console.log(`\n🇯🇲 Gotham running on http://localhost:${config.port}\n`);
   });
 }
 

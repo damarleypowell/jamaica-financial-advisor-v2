@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 /**
  * Interactive, animated learning simulators for the Learning Hub.
  * Visual-first: every concept is something you DRAG and watch change,
- * not paragraphs to read. Matches the Oros dark/green aesthetic.
+ * not paragraphs to read. Matches the Gotham dark/green aesthetic.
  */
 
 const FONT = "'Inter', sans-serif";

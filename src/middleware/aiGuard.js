@@ -97,7 +97,7 @@ function extractUserText(body) {
 
 // ── Stage 2: Haiku classifier ────────────────────────────────────────────────
 
-const GUARD_SYSTEM = `You are a security and content classifier for a Caribbean financial investment app called Oros.
+const GUARD_SYSTEM = `You are a security and content classifier for a Caribbean financial investment app called Gotham.
 
 Evaluate the user input and respond with a JSON object ONLY (no markdown, no prose):
 {

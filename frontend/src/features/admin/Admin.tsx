@@ -467,7 +467,7 @@ export default function Admin() {
             </div>
             <div>
               <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, fontFamily: SYNE, color: 'var(--color-text)' }}>Admin Panel</h1>
-              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-muted)' }}>Oros — System Control</p>
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-muted)' }}>Gotham — System Control</p>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

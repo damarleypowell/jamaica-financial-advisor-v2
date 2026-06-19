@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════════════════════
-// Oros — Complete Frontend Application (Debug Pass)
+// Gotham — Complete Frontend Application (Debug Pass)
 // ══════════════════════════════════════════════════════════════════════════════
 
 (function() {
@@ -162,7 +162,7 @@
     const navItem = $(`.nav-item[data-view="${view}"]`);
     if (navItem) navItem.classList.add('active');
 
-    const [title, subtitle] = viewTitles[view] || ['Oros', ''];
+    const [title, subtitle] = viewTitles[view] || ['Gotham', ''];
     $('#headerTitle').textContent = title;
     $('#headerSubtitle').textContent = subtitle;
 
@@ -291,7 +291,7 @@
               <i class="fas fa-crown" style="width:18px;text-align:center;color:var(--gold);"></i> Subscription & Billing
             </div>
             <!-- WALLET & DEPOSITS — hidden until brokerage partnership integration.
-                 Oros is the intelligence layer; deposit/withdrawal flows will
+                 Gotham is the intelligence layer; deposit/withdrawal flows will
                  connect to Jamaican brokerages (NCB Capital, JMMB, etc.) once
                  API partnerships are in place. Re-enable by removing display:none. -->
             <div class="user-dropdown-item" data-action="wallet" style="display:none;padding:10px 18px;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;font-size:13px;color:var(--text2);">

@@ -39,7 +39,7 @@ const GUIDES: Record<string, GuideConfig> = {
   },
   '/alerts': {
     title: 'Welcome to Price Alerts',
-    intro: "Set a target price on any stock — either above or below the current price — and Oros will send you an email notification the moment it hits that level. This way you never miss a move while you're away from the app.",
+    intro: "Set a target price on any stock — either above or below the current price — and Gotham will send you an email notification the moment it hits that level. This way you never miss a move while you're away from the app.",
     tips: ['Set an alert above current price to catch breakouts', 'Set an alert below to catch dips and buy opportunities', 'You can have multiple alerts on the same stock'],
   },
   '/news': {
@@ -54,7 +54,7 @@ const GUIDES: Record<string, GuideConfig> = {
   },
   '/chat': {
     title: 'Welcome to AI Chat',
-    intro: "I'm Oros AI, your personal financial advisor. Ask me anything — about specific stocks, how to read a chart, what a financial term means, whether now is a good time to invest, or how to build a portfolio. I'll give you a detailed, educational answer instantly.",
+    intro: "I'm Gotham AI, your personal financial advisor. Ask me anything — about specific stocks, how to read a chart, what a financial term means, whether now is a good time to invest, or how to build a portfolio. I'll give you a detailed, educational answer instantly.",
     tips: ['Try asking: Is NCB a good buy right now?', 'Ask: What is a P/E ratio and why does it matter?', 'Ask: How do I read a candlestick chart?'],
   },
   '/analysis': {
@@ -74,7 +74,7 @@ const GUIDES: Record<string, GuideConfig> = {
   },
   '/subscription': {
     title: 'Your Subscription Plan',
-    intro: "This is where you manage your Oros plan. Free users get the dashboard and learning content. Upgrade to Core for full market access, the screener, watchlists, and alerts. Upgrade to Pro for unlimited AI chat, the voice agent, and machine learning predictions.",
+    intro: "This is where you manage your Gotham plan. Free users get the dashboard and learning content. Upgrade to Core for full market access, the screener, watchlists, and alerts. Upgrade to Pro for unlimited AI chat, the voice agent, and machine learning predictions.",
     tips: ['Core is $14.99/month — cancel anytime', 'Pro is $49.99/month — full AI features', 'Payments are secure and processed via PayPal'],
   },
 };
@@ -241,7 +241,7 @@ export default function FeatureGuide() {
               {guide.title}
             </p>
             <p style={{ margin: '3px 0 0', fontSize: 10, color: 'rgba(0,230,118,.7)', fontWeight: 600 }}>
-              {user ? `Hey ${user.name?.split(' ')[0] ?? 'there'} · ` : ''}Oros AI Guide
+              {user ? `Hey ${user.name?.split(' ')[0] ?? 'there'} · ` : ''}Gotham AI Guide
             </p>
           </div>
 
@@ -302,7 +302,7 @@ export default function FeatureGuide() {
               transition: 'all .15s',
             }}>
             <i className="fa-solid fa-robot" style={{ fontSize: 11 }} />
-            Ask Oros AI
+            Ask Gotham AI
           </button>
           <button
             onClick={handleDismiss}

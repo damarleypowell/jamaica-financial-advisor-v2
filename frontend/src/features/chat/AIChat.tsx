@@ -39,7 +39,7 @@ function MessageBubble({ msg, isLast }: { msg: ChatMessage; isLast?: boolean }) 
       <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', gap: 4 }}>
         {!isUser && (
           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-muted)', marginLeft: 2, letterSpacing: '.06em' }}>
-            OROS AI
+            GOTHAM AI
           </span>
         )}
         <div style={{
@@ -71,7 +71,7 @@ function ThinkingBubble() {
       <Avatar role="assistant" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-muted)', marginLeft: 2, letterSpacing: '.06em' }}>
-          OROS AI
+          GOTHAM AI
         </span>
         <div style={{
           background: 'var(--color-bg3)', border: '1px solid var(--color-border)',
@@ -176,7 +176,7 @@ export default function AIChat() {
             <i className="fa-solid fa-robot" style={{ fontSize: 15, color: 'var(--color-blue)' }} />
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'var(--color-text)' }}>Oros AI</p>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'var(--color-text)' }}>Gotham AI</p>
             <p style={{ margin: 0, fontSize: 10, color: 'var(--color-muted)' }}>JSE financial assistant · Claude powered · Educational use only</p>
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function AIChat() {
                 }}>
                   <i className="fa-solid fa-robot" style={{ fontSize: 30, color: 'var(--color-green)' }} />
                 </div>
-                <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 900, color: 'var(--color-text)' }}>Oros AI</h2>
+                <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 900, color: 'var(--color-text)' }}>Gotham AI</h2>
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--color-muted)', maxWidth: 380 }}>
                   Ask me about JSE stocks, investment strategies, portfolio construction, or financial planning.
                 </p>

@@ -150,7 +150,7 @@ const COURSES: Course[] = [
         content: {
           paragraphs: [
             'A stock quote is a real-time or delayed snapshot of a security\'s price and trading activity. Every number on a quote page tells you something specific. Knowing what each figure means is your most fundamental skill as an investor.',
-            'The most important figures are: Last Price (the most recent transaction), Open (first trade of the day), High and Low (the day\'s price range), Volume (total shares traded), and Percentage Change (how much the price moved from yesterday\'s close). On Oros, all these are shown when you click any stock card.',
+            'The most important figures are: Last Price (the most recent transaction), Open (first trade of the day), High and Low (the day\'s price range), Volume (total shares traded), and Percentage Change (how much the price moved from yesterday\'s close). On Gotham, all these are shown when you click any stock card.',
             'The bid-ask spread is the gap between what buyers will pay (bid) and what sellers will accept (ask). On liquid stocks like NCB, this spread is tiny — maybe a few cents. On thinly traded Junior Market stocks, the spread can be J$2–5, meaning you immediately lose that amount the moment you buy.',
           ],
           diagramKey: 'quote',
@@ -353,7 +353,7 @@ const COURSES: Course[] = [
           callouts: [
             { type: 'warning', text: 'A very low P/E can signal a value trap — a company so troubled that earnings will collapse, making today\'s P/E misleading. Always ask why a stock is cheap.' },
             { type: 'example', text: 'If Sagicor Financial trades at J$50 with EPS of J$6.25, its P/E = 8x. If the sector average is 12x, the stock may be undervalued — or the market sees something concerning. Investigate before concluding it\'s a bargain.' },
-            { type: 'tip', text: 'Use Oros\'s AI Analysis tab to get instant ratio calculations and peer comparisons for any JSE or US stock.' },
+            { type: 'tip', text: 'Use Gotham\'s AI Analysis tab to get instant ratio calculations and peer comparisons for any JSE or US stock.' },
           ],
           links: [
             { title: 'Finviz — US Stock Valuation Screener', url: 'https://finviz.com/screener.ashx', description: 'Screen US stocks by P/E, P/B, yield and 70+ other metrics.' },
@@ -478,7 +478,7 @@ const COURSES: Course[] = [
           ],
           callouts: [
             { type: 'tip', text: 'Single candlestick patterns are weak signals. Always confirm with the next candle or two, and look for patterns at significant support/resistance levels — not in random locations.' },
-            { type: 'info', text: 'All charts on Oros use candlestick format by default. You can see daily OHLC data for any JSE or US stock by clicking on it from the Dashboard.' },
+            { type: 'info', text: 'All charts on Gotham use candlestick format by default. You can see daily OHLC data for any JSE or US stock by clicking on it from the Dashboard.' },
           ],
           links: [
             { title: 'TradingView — Live Charts', url: 'https://www.tradingview.com', description: 'Best free charting platform. Search any JSE or US stock.' },
@@ -705,7 +705,7 @@ const COURSES: Course[] = [
           ],
           callouts: [
             { type: 'warning', text: 'Never invest money you might need within 12 months. Market timing is impossible, and you may be forced to sell at a loss right when the market is at its lowest.' },
-            { type: 'tip', text: 'Oros\'s Portfolio Optimizer (under the Portfolio tab) calculates efficient allocations based on historical JSE and US stock data. Use it to test different allocation scenarios before committing real capital.' },
+            { type: 'tip', text: 'Gotham\'s Portfolio Optimizer (under the Portfolio tab) calculates efficient allocations based on historical JSE and US stock data. Use it to test different allocation scenarios before committing real capital.' },
           ],
         },
       },
@@ -728,7 +728,7 @@ const COURSES: Course[] = [
               },
               {
                 instruction: 'Step 3 — You want 20% of your total portfolio in USD assets as a JMD hedge. How much is that, and what instrument would you use?',
-                answer: '20% of J$500,000 = J$100,000. At a rate of J$157/USD, this equals approximately US$637. Suitable instruments: a USD money market fund (offered by NCB Capital Markets, JMMB, or Sagicor), or directly purchasing US ETFs through Alpaca on the Oros platform. The USD money market option is lower risk; the US ETF option (e.g. SPY, QQQ) offers growth potential but more volatility.',
+                answer: '20% of J$500,000 = J$100,000. At a rate of J$157/USD, this equals approximately US$637. Suitable instruments: a USD money market fund (offered by NCB Capital Markets, JMMB, or Sagicor), or directly purchasing US ETFs through Alpaca on the Gotham platform. The USD money market option is lower risk; the US ETF option (e.g. SPY, QQQ) offers growth potential but more volatility.',
               },
               {
                 instruction: 'Step 4 — What is the single biggest risk in this portfolio and how would you monitor it?',

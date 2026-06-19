@@ -13,24 +13,25 @@ interface Holding { symbol: string; shares?: number; avgCost?: number; market?: 
 /* ─── allocation donut (SVG) ─── */
 function Donut({ slices }: { slices: { label: string; value: number; color: string }[] }) {
   const total = slices.reduce((s, x) => s + x.value, 0) || 1;
-  let acc = 0;
   const R = 54, C = 2 * Math.PI * R;
+  // Cumulative start fraction per slice, precomputed so we never mutate during render.
+  const starts = slices.reduce<number[]>((acc, _s, i) => {
+    acc.push(i === 0 ? 0 : acc[i - 1] + slices[i - 1].value / total);
+    return acc;
+  }, []);
   return (
     <svg viewBox="0 0 140 140" style={{ width: 140, height: 140, flexShrink: 0 }}>
       <circle cx="70" cy="70" r={R} fill="none" stroke="rgba(var(--fg),.05)" strokeWidth="16" />
       {slices.map((s, i) => {
-        const frac = s.value / total;
-        const dash = frac * C;
-        const el = (
+        const dash = (s.value / total) * C;
+        return (
           <circle key={i} cx="70" cy="70" r={R} fill="none" stroke={s.color} strokeWidth="16"
-            strokeDasharray={`${dash} ${C - dash}`} strokeDashoffset={-acc * C} transform="rotate(-90 70 70)"
+            strokeDasharray={`${dash} ${C - dash}`} strokeDashoffset={-starts[i] * C} transform="rotate(-90 70 70)"
             strokeLinecap="butt" />
         );
-        acc += frac;
-        return el;
       })}
-      <text x="70" y="66" textAnchor="middle" fontSize="11" fill="rgba(var(--fg),.4)" fontFamily="'JetBrains Mono'">HOLDINGS</text>
-      <text x="70" y="84" textAnchor="middle" fontSize="20" fontWeight="800" fill="#fff" fontFamily="'JetBrains Mono'">{slices.length}</text>
+      <text x="70" y="66" textAnchor="middle" fontSize="11" fill="rgba(var(--fg),.4)" fontFamily="'DM Sans', system-ui, sans-serif">HOLDINGS</text>
+      <text x="70" y="84" textAnchor="middle" fontSize="20" fontWeight="800" fill="rgba(var(--fg),1)" fontFamily="'DM Sans', system-ui, sans-serif">{slices.length}</text>
     </svg>
   );
 }

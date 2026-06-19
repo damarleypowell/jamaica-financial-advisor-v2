@@ -41,7 +41,7 @@ const STEPS: Step[] = [
     target: '[data-tour="floating-ai"]',
     label: 'AI Advisor',
     title: 'Your Personal Advisor',
-    body: 'Tap the button at any moment to consult Oros AI. Ask about stocks, chart patterns, market conditions, or any financial concept.',
+    body: 'Tap the button at any moment to consult Gotham AI. Ask about stocks, chart patterns, market conditions, or any financial concept.',
   },
   {
     target: null,

@@ -185,7 +185,7 @@ function BrandPanel() {
               <polyline points="15,7 21,7 21,13" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.22em', color: GREEN, fontFamily: HEAD, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>OROS FINANCIAL</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.22em', color: GREEN, fontFamily: HEAD, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>GOTHAM FINANCIAL</span>
         </div>
 
         <h1 style={{ fontFamily: HEAD, fontSize: 24, fontWeight: 700, color: '#F0F6F1', lineHeight: 1.16, margin: '0 0 12px', letterSpacing: '-0.005em', WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', textRendering: 'optimizeLegibility' }}>
@@ -437,7 +437,7 @@ function LoginForm() {
     <form onSubmit={submit} style={S.stack}>
       <div>
         <h2 style={S.h2}>Welcome back</h2>
-        <p style={S.sub}>Sign in to your Oros account</p>
+        <p style={S.sub}>Sign in to your Gotham account</p>
       </div>
 
       <OAuthSection onSuccess={onOk} onError={onErr} />
@@ -465,7 +465,7 @@ function LoginForm() {
       >{isLoading ? 'Signing in…' : 'Sign In'}</button>
 
       <p style={S.mutedText}>
-        New to Oros?{' '}
+        New to Gotham?{' '}
         <button type="button" onClick={() => setAuthModalView('signup')} style={S.link}>Create a free account</button>
       </p>
     </form>
@@ -514,7 +514,7 @@ function VerifyCodeForm({ email, onDone }: { email: string; onDone: () => void }
   };
 
   if (verified) return (
-    <Done icon="check" title="Email verified!" body="You're all set — welcome to Oros." cta="Continue" onCta={onDone} />
+    <Done icon="check" title="Email verified!" body="You're all set — welcome to Gotham." cta="Continue" onCta={onDone} />
   );
 
   return (

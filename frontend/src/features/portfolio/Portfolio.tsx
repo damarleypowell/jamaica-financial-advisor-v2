@@ -218,7 +218,7 @@ export default function Portfolio() {
             {[
               { label: 'Live Prices', sub: 'Dashboard', icon: 'fa-solid fa-chart-line', to: '/' },
               { label: 'Charts', sub: 'Technical view', icon: 'fa-solid fa-chart-area', to: '/technicals' },
-              { label: 'AI Analysis', sub: 'Ask Oros AI', icon: 'fa-solid fa-robot', to: '/analysis' },
+              { label: 'AI Analysis', sub: 'Ask Gotham AI', icon: 'fa-solid fa-robot', to: '/analysis' },
             ].map(card => (
               <button key={card.label} onClick={() => navigate(card.to)}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, padding: '10px 12px', borderRadius: 11, background: 'rgba(var(--fg),.03)', border: '1px solid rgba(var(--fg),.08)', cursor: 'pointer', transition: 'all .15s', textAlign: 'left', fontFamily: INTER }}

@@ -330,7 +330,7 @@ function NewUserWelcome({ firstName, navigate }: { firstName: string; navigate: 
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ fontSize: 36, marginBottom: 12, animation: 'popIn .5s ease-out' }}>🌱</div>
         <p style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 900, color: 'rgba(var(--fg),1)', letterSpacing: '-0.02em' }}>
-          Welcome to Oros, {firstName}.
+          Welcome to Gotham, {firstName}.
         </p>
         <p style={{ margin: '0 0 28px', fontSize: 13, color: 'rgba(var(--fg),.45)', lineHeight: 1.6, maxWidth: 400 }}>
           You're starting as a <strong style={{ color: '#78909c' }}>🌱 Seed</strong>. Complete your first 3 missions to reach <strong style={{ color: '#66bb6a' }}>🌿 Sapling</strong> and start building real wealth.

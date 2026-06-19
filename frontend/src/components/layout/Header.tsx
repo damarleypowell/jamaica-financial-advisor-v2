@@ -71,7 +71,7 @@ const PAGE_META: Record<string, { title: string; sub?: string }> = {
   '/global-markets':   { title: 'Global Markets',   sub: 'World Indices' },
   '/planner':          { title: 'Financial Planner', sub: 'Plan Your Future' },
   '/leaderboard':      { title: 'Leaderboard',       sub: 'Top Traders' },
-  '/chat':             { title: 'AI Chat',           sub: 'Ask Oros AI' },
+  '/chat':             { title: 'AI Chat',           sub: 'Ask Gotham AI' },
   '/analysis':         { title: 'AI Analysis',       sub: 'Deep Insights' },
   '/learn':            { title: 'Learn',             sub: 'Education Centre' },
   '/settings':         { title: 'Settings',          sub: 'Preferences' },
@@ -194,7 +194,7 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
   const mRef = useRef<HTMLDivElement>(null);
 
   const base = '/' + (location.pathname.split('/')[1] ?? '');
-  const page = PAGE_META[base] ?? { title: 'Oros' };
+  const page = PAGE_META[base] ?? { title: 'Gotham' };
 
   const tier    = user?.subscriptionTier ?? 'FREE';
   const tb      = TIER_BADGE[tier] ?? TIER_BADGE.FREE;
@@ -243,7 +243,7 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
 
         {/* Center: wordmark */}
         <Link to="/" className="gf-wordmark" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, letterSpacing: '.14em', color: 'var(--color-green)', lineHeight: 1 }}>OROS</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, letterSpacing: '.14em', color: 'var(--color-green)', lineHeight: 1 }}>GOTHAM</span>
           <span style={{ fontSize: 7.5, fontWeight: 600, letterSpacing: '.34em', color: 'var(--color-muted)', lineHeight: 1, paddingLeft: '.34em' }}>FINANCIAL</span>
         </Link>
 
@@ -318,12 +318,12 @@ export default function Header({ onToggleSidebar, sidebarOpen }: { onToggleSideb
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', flexShrink: 0 }}>
           <div style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg viewBox="0 0 24 24" fill="none" style={{ width: 18, height: 18 }}>
-              <circle cx="12" cy="12" r="8" stroke="#00e676" strokeWidth="2.4"/>
-              <path d="M8.5 14L12 10L15.5 14" stroke="#00e676" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3 17L7 12L11 14.5L16 9L21 5" stroke="#00e676" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="21" cy="5" r="2.2" fill="#00e676"/>
             </svg>
           </div>
           <div className="gf-wordmark">
-            <p style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: '.14em', color: '#00e676', lineHeight: 1, margin: 0 }}>OROS</p>
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: '.14em', color: '#00e676', lineHeight: 1, margin: 0 }}>GOTHAM</p>
             <p style={{ fontSize: 7.5, fontWeight: 600, letterSpacing: '.34em', color: 'var(--color-muted)', lineHeight: 1, margin: 0, marginTop: 3, paddingLeft: '.34em' }}>FINANCIAL</p>
           </div>
         </Link>
