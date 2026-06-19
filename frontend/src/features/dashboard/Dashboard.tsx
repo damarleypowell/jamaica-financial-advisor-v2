@@ -631,23 +631,24 @@ function WealthScoreCard({ score, factors, missions, navigate }: {
 
 /* ── Portfolio donut (instant "what do I own / how much did I make") ───── */
 // Vibrant, high-contrast palette — each stock gets its own colour.
+// Brand ramp — green / gold / navy / slate tints only (no rainbow). A holdings
+// chart is a trust object in a money app; keep it on the brand axis.
 const SLICE_COLORS = [
-  '#00e676', // green
-  '#40c4ff', // sky blue
-  '#ffd740', // gold
-  '#ce93d8', // orchid
-  '#ff8a65', // coral
-  '#4dd0e1', // cyan
-  '#f06292', // pink
-  '#aed581', // lime
-  '#ffb74d', // amber
-  '#7e57c2', // violet
-  '#26c6da', // teal
-  '#ff7043', // deep orange
-  '#5c6bc0', // indigo
-  '#9ccc65', // leaf
-  '#ec407a', // magenta
-  '#29b6f6', // light blue
+  '#00b85a', // brand green
+  '#caa20a', // brand gold
+  '#0a2540', // navy
+  '#1f9e6b', // green tint
+  '#5b6b7a', // slate
+  '#b8902a', // gold tint
+  '#2e5c4a', // forest
+  '#46607a', // steel navy
+  '#84a98c', // sage green
+  '#9a7f2e', // olive gold
+  '#6b8f7e', // eucalyptus
+  '#34506a', // deep slate-navy
+  '#a7c0ad', // pale sage
+  '#cbb86a', // soft gold
+  '#3c8f6e', // muted green
 ];
 
 // Stable hash so a given ticker keeps the same colour across renders/sessions.
