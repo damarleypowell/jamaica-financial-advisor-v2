@@ -243,7 +243,7 @@ function KPITile({ label, value, sub, icon, accent, delay = 0 }: {
             <i className={`fa-solid ${icon}`} style={{ fontSize: 11, color: accent }} />
           </div>
         </div>
-        <div style={{ fontSize: 26, fontWeight: 800, fontFamily: INTER, letterSpacing: "-0.025em", lineHeight: 1, color: 'rgba(var(--fg),1)' }}>{value}</div>
+        <div style={{ fontSize: 22, fontWeight: 800, fontFamily: INTER, letterSpacing: "-0.02em", lineHeight: 1.1, color: 'rgba(var(--fg),1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
         {sub && <div style={{ fontSize: 11, color: accent, fontFamily: MONO, marginTop: 6, fontWeight: 600 }}>{sub}</div>}
       </div>
     </div>
@@ -779,7 +779,7 @@ function PortfolioDonut({ positions, portfolioValue, totalGain, totalGainPct, na
                 <div style={{ flex: 1, height: 5, borderRadius: 99, background: 'rgba(var(--fg),.06)', overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: mounted ? `${s.pct}%` : '0%', background: s.color, borderRadius: 99, transition: 'width .8s cubic-bezier(.22,1,.36,1)' }} />
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(var(--fg),.5)', fontFamily: MONO, width: 38, textAlign: 'right' }}>{s.pct.toFixed(0)}%</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(var(--fg),.62)', fontFamily: MONO, width: 38, textAlign: 'right' }}>{s.pct.toFixed(0)}%</span>
                 <span style={{ fontSize: 11, fontWeight: 800, color: sUp ? '#00e676' : '#ff5252', fontFamily: MONO, width: 30, textAlign: 'right' }}>{sUp ? '▲' : '▼'}</span>
               </div>
             );
@@ -865,8 +865,8 @@ function PortfolioPreviewCard({ mode, navigate, openAuthModal }: {
           {arcs.map(s => (
             <div key={s.symbol} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 9, height: 9, borderRadius: 3, background: s.color }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(var(--fg),.55)', fontFamily: MONO }}>{s.symbol}</span>
-              <span style={{ fontSize: 10, color: 'rgba(var(--fg),.3)', fontFamily: MONO }}>{s.pct}%</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(var(--fg),.7)', fontFamily: MONO }}>{s.symbol}</span>
+              <span style={{ fontSize: 10, color: 'rgba(var(--fg),.6)', fontFamily: MONO }}>{s.pct}%</span>
             </div>
           ))}
         </div>
@@ -1337,7 +1337,7 @@ export default function Dashboard() {
       />
 
       {/* ── 2. KPI tiles ────────────────────────────────────────── */}
-      <div className="mobile-hide" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+      <div className="mobile-hide" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(162px, 1fr))', gap: 12 }}>
         {market === 'us' ? (
           <>
             {usStocks.find(s => s.symbol === 'SPY') && <KPITile label="S&P 500 (SPY)" value={`$${(usStocks.find(s => s.symbol === 'SPY')?.price ?? 0).toFixed(2)}`} sub={`${(usStocks.find(s => s.symbol === 'SPY')?.pctChange ?? 0) >= 0 ? '+' : ''}${(usStocks.find(s => s.symbol === 'SPY')?.pctChange ?? 0).toFixed(2)}% today`} icon="fa-chart-line" accent="#40c4ff" delay={0} />}
