@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { useMarketStore } from '../../stores/market';
 import { apiGet } from '../../lib/api';
 
-interface HistoryPoint { time: string | number; value: number; }
+interface HistoryPoint { time: string | number; value: number; volume?: number; }
 interface OHLCPoint   { time: number; open: number; high: number; low: number; close: number; volume?: number; }
 type TF = '1H' | '4H' | '1D' | 'ALL';
 const TFS: TF[] = ['1H', '4H', '1D', 'ALL'];
@@ -51,26 +51,36 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
   const stocks = useMarketStore((s) => s.stocks);
   const live   = stocks.find((s) => s.symbol === symbol);
 
-  /* ── JSE scalar history ── */
-  const { data: jseData } = useQuery<HistoryPoint[]>({
+  /* ── JSE history (daily series anchored to the live price) ── */
+  const { data: jseData } = useQuery<{ points: HistoryPoint[]; source?: string }>({
     queryKey: ['jse-history', symbol, tf],
     queryFn: async () => {
-      const res = await apiGet<HistoryPoint[] | { history?: unknown[]; data?: unknown[] }>(`/api/history/${symbol}?period=${tf}`);
+      const res = await apiGet<{ history?: unknown[]; data?: unknown[]; source?: string } | HistoryPoint[]>(`/api/history/${symbol}?period=${tf}`);
+      const source = Array.isArray(res) ? undefined : res?.source;
       const raw: unknown[] = Array.isArray(res) ? res
         : Array.isArray(res?.history) ? res.history
         : Array.isArray(res?.data) ? res.data : [];
-      if (raw.length === 0) return [];
-      if (raw[0] != null && typeof raw[0] === 'object' && 'time' in (raw[0] as object))
-        return raw as HistoryPoint[];
+      if (raw.length === 0) return { points: [], source };
+      // Objects already carry { time, value/close, volume } — normalize close → value.
+      if (raw[0] != null && typeof raw[0] === 'object' && 'time' in (raw[0] as object)) {
+        const points = (raw as Array<{ time: number | string; value?: number; close?: number; volume?: number }>)
+          .map(p => ({ time: p.time, value: p.value ?? p.close ?? 0, volume: p.volume }))
+          .filter(p => p.value > 0);
+        return { points, source };
+      }
+      // Legacy: bare number array (in-memory live fallback).
       const now = Math.floor(Date.now() / 1000);
-      return (raw as number[])
+      const points = (raw as number[])
         .map((v, i) => ({ time: now - (raw.length - 1 - i) * 30, value: typeof v === 'number' ? v : 0 }))
         .filter(p => p.value > 0);
+      return { points, source };
     },
     enabled: !!symbol && !isUS,
     staleTime: 30_000,
     retry: 0,
   });
+
+  const indicative = !isUS && jseData?.source === 'indicative';
 
   /* ── US OHLCV history (Alpaca/Finnhub) ── */
   const resMap: Record<TF, string> = { '1H': '60', '4H': '60', '1D': 'D', 'ALL': 'D' };
@@ -93,7 +103,7 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
 
   const areaPoints = isUS
     ? ohlcToArea(candles)
-    : toAreaData((jseData ?? []) as HistoryPoint[]);
+    : toAreaData(jseData?.points ?? []);
 
   const hasData = areaPoints.length > 1;
   const pos = isUS
@@ -135,8 +145,10 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
     volRef.current = chart.addSeries(HistogramSeries, {
       priceFormat: { type: 'volume' },
       priceScaleId: 'vol',
+      lastValueVisible: false,
+      priceLineVisible: false,
     });
-    chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+    chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 }, visible: false });
 
     chartRef.current = chart;
 
@@ -165,9 +177,10 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
         candleRef.current.setData(candles.map(c => ({ time: c.time as Time, open: c.open, high: c.high, low: c.low, close: c.close })));
       }
       if (volRef.current) {
-        const vd = isUS ? volData(candles) : areaPoints.map((p, i, arr) => ({
-          time: p.time, value: 0,
-          color: i === 0 || p.value >= arr[i - 1].value ? 'rgba(0,230,118,.3)' : 'rgba(255,82,82,.3)',
+        const jsePts = jseData?.points ?? [];
+        const vd = isUS ? volData(candles) : jsePts.map((p, i, arr) => ({
+          time: p.time as Time, value: p.volume ?? 0,
+          color: i === 0 || p.value >= arr[i - 1].value ? 'rgba(0,230,118,.32)' : 'rgba(255,82,82,.32)',
         }));
         volRef.current.setData(vd as HistogramData<Time>[]);
       }
@@ -296,11 +309,19 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
 
       {/* Footer with Full Chart CTA */}
       {symbol && (
-        <div style={{ padding: '8px 18px', borderTop: '1px solid rgba(var(--fg),.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(var(--fg),.01)' }}>
-          <span style={{ fontSize: 10, color: 'var(--color-muted)', opacity: .5 }}>
-            <i className="fa-solid fa-circle-info" style={{ marginRight: 4 }} />
-            Click <strong style={{ color: 'rgba(var(--fg),.4)' }}>Full Chart</strong> for candlesticks, EMA, RSI, Bollinger Bands &amp; drawing tools
-          </span>
+        <div style={{ padding: '8px 18px', borderTop: '1px solid rgba(var(--fg),.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: 'rgba(var(--fg),.01)' }}>
+          {indicative ? (
+            <span title="Daily history is modeled from the live JSE price. The official JSE historical feed is coming soon."
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--color-muted)', opacity: .65 }}>
+              <i className="fa-solid fa-wave-square" style={{ fontSize: 9, color: '#ffd740' }} />
+              Indicative daily history · anchored to live price
+            </span>
+          ) : (
+            <span style={{ fontSize: 10, color: 'var(--color-muted)', opacity: .5 }}>
+              <i className="fa-solid fa-circle-info" style={{ marginRight: 4 }} />
+              Click <strong style={{ color: 'rgba(var(--fg),.4)' }}>Full Chart</strong> for candlesticks, EMA, RSI, Bollinger Bands &amp; drawing tools
+            </span>
+          )}
           <Link to={`/technicals/${symbol}`}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: '#00e676', textDecoration: 'none', opacity: .8 }}>
             Open Advanced Chart <i className="fa-solid fa-arrow-right" style={{ fontSize: 8 }} />

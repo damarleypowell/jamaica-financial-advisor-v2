@@ -2,6 +2,7 @@ const { Router } = require("express");
 const { fetchAllNews } = require("../../news-scraper");
 const marketService = require("../services/market.service");
 const finnhub = require("../services/finnhub.service");
+const chartData = require("../services/chartData.service");
 
 const router = Router();
 
@@ -89,11 +90,50 @@ router.get("/api/market-overview", (_req, res) => {
   });
 });
 
-router.get("/api/history/:symbol", (req, res) => {
+// In-memory cache so we don't regenerate/refetch a series on every chart paint.
+const histCache = new Map();
+const HIST_TTL = 5 * 60 * 1000; // 5 minutes
+
+router.get("/api/history/:symbol", async (req, res) => {
   const sym = req.params.symbol.toUpperCase();
+  const period = String(req.query.period || "1D").toUpperCase();
+  const days = period === "ALL" ? 180 : period === "1H" ? 45 : period === "4H" ? 60 : 90;
+  const cacheKey = `${sym}:${days}`;
+
+  const cached = histCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < HIST_TTL) return res.json(cached.data);
+
+  const stock = marketService.livePrices.find((s) => s.symbol === sym);
+
+  // JSE stock → deterministic daily series anchored to the real live price.
+  if (stock && stock.price > 0) {
+    const history = chartData.syntheticDailyHistory(sym, stock.price, stock.liveChange || 0, {
+      days,
+      high52: parseFloat(stock.high52) || null,
+      low52: parseFloat(stock.low52) || null,
+    });
+    const payload = { symbol: sym, history, source: "indicative" };
+    histCache.set(cacheKey, { data: payload, ts: Date.now() });
+    return res.json(payload);
+  }
+
+  // Unknown to the JSE feed (e.g. a US ticker opened in the advanced chart) →
+  // real OHLC from Yahoo's v8 chart API.
+  try {
+    const history = await chartData.fetchYahooChart(sym, "D");
+    if (history.length > 0) {
+      const payload = { symbol: sym, history, source: "yahoo" };
+      histCache.set(cacheKey, { data: payload, ts: Date.now() });
+      return res.json(payload);
+    }
+  } catch (err) {
+    console.warn(`[history yahoo] ${sym}:`, err.message?.slice(0, 80));
+  }
+
+  // Last resort: whatever live points we have accumulated in memory.
   const hist = marketService.priceHistory[sym];
-  if (!hist) return res.status(404).json({ error: "Not found" });
-  res.json({ symbol: sym, history: hist });
+  if (hist && hist.length) return res.json({ symbol: sym, history: hist, source: "live" });
+  res.status(404).json({ error: "Not found" });
 });
 
 // ── OHLCV candles: Alpaca → Yahoo Finance → Finnhub ──────────────────────────
@@ -137,27 +177,18 @@ router.get("/api/stocks/:symbol/history", async (req, res) => {
     console.warn(`[alpaca bars] ${sym}:`, err.message?.slice(0, 80));
   }
 
-  // 2) Yahoo Finance fallback — works for US + JSE (.JA suffix) stocks, free, no key
+  // 2) Yahoo Finance v8 chart — reliable, free, no key. Covers US equities, ETFs,
+  //    indices and FX. (We hit v8 directly; the library's historical() uses the
+  //    retired /v7/download endpoint, which now 429s and breaks every chart.)
   try {
-    const yf = require("yahoo-finance2").default;
-    const period1 = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
-    const interval = resolution === "D" ? "1d" : resolution === "W" ? "1wk" : "1d";
-    const historical = await yf.historical(sym, { period1, interval }, { validateResult: false });
-    if (historical && historical.length > 0) {
-      const candles = historical
-        .filter(b => b.open && b.close)
-        .map(b => ({
-          time: Math.floor(new Date(b.date).getTime() / 1000),
-          open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume ?? 0,
-        }));
-      if (candles.length > 0) {
-        const result = { symbol: sym, candles, source: "yahoo" };
-        candleCache.set(cacheKey, { data: result, ts: Date.now() });
-        return res.json(result);
-      }
+    const candles = await chartData.fetchYahooChart(sym, resolution);
+    if (candles.length > 0) {
+      const result = { symbol: sym, candles, source: "yahoo" };
+      candleCache.set(cacheKey, { data: result, ts: Date.now() });
+      return res.json(result);
     }
   } catch (err) {
-    console.warn(`[yahoo bars] ${sym}:`, err.message?.slice(0, 80));
+    console.warn(`[yahoo v8] ${sym}:`, err.message?.slice(0, 80));
   }
 
   // 3) Finnhub fallback
