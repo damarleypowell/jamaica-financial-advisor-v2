@@ -10,8 +10,11 @@ import { apiGet } from '../../lib/api';
 
 interface HistoryPoint { time: string | number; value: number; volume?: number; }
 interface OHLCPoint   { time: number; open: number; high: number; low: number; close: number; volume?: number; }
-type TF = '1H' | '4H' | '1D' | 'ALL';
-const TFS: TF[] = ['1H', '4H', '1D', 'ALL'];
+type TF = string;
+// US has real intraday + daily data; JSE is daily-only, so its buttons are
+// honest range selectors (no fake intraday) — see backend period→days mapping.
+const US_TFS: TF[]  = ['1H', '4H', '1D', 'ALL'];
+const JSE_TFS: TF[] = ['1M', '3M', '6M', '1Y'];
 
 function toAreaData(pts: HistoryPoint[]): { time: Time; value: number }[] {
   const seen = new Set<string>();
@@ -46,16 +49,26 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
 
   const [tf, setTf]     = useState<TF>('1D');
   const [mode, setMode] = useState<'area' | 'candle'>('area');
-  const [showVol] = useState(true);
+  const showVol = true;
+
+  const TFS = isUS ? US_TFS : JSE_TFS;
+  const cur = isUS ? 'US$' : 'J$';
+  const RANGE_LABEL: Record<string, string> = {
+    '1H': 'Intraday', '4H': 'Intraday', '1D': '1-year daily', 'ALL': '1-year daily',
+    '1M': '1-month daily', '3M': '3-month daily', '6M': '6-month daily', '1Y': '1-year daily',
+  };
+  // The two markets expose different button sets — derive a valid timeframe for
+  // the current market rather than resetting state in an effect.
+  const activeTf = TFS.includes(tf) ? tf : (isUS ? '1D' : '6M');
 
   const stocks = useMarketStore((s) => s.stocks);
   const live   = stocks.find((s) => s.symbol === symbol);
 
   /* ── JSE history (daily series anchored to the live price) ── */
   const { data: jseData } = useQuery<{ points: HistoryPoint[]; source?: string }>({
-    queryKey: ['jse-history', symbol, tf],
+    queryKey: ['jse-history', symbol, activeTf],
     queryFn: async () => {
-      const res = await apiGet<{ history?: unknown[]; data?: unknown[]; source?: string } | HistoryPoint[]>(`/api/history/${symbol}?period=${tf}`);
+      const res = await apiGet<{ history?: unknown[]; data?: unknown[]; source?: string } | HistoryPoint[]>(`/api/history/${symbol}?period=${activeTf}`);
       const source = Array.isArray(res) ? undefined : res?.source;
       const raw: unknown[] = Array.isArray(res) ? res
         : Array.isArray(res?.history) ? res.history
@@ -83,10 +96,10 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
   const indicative = !isUS && jseData?.source === 'indicative';
 
   /* ── US OHLCV history (Alpaca/Finnhub) ── */
-  const resMap: Record<TF, string> = { '1H': '60', '4H': '60', '1D': 'D', 'ALL': 'D' };
+  const resMap: Record<string, string> = { '1H': '60', '4H': '60', '1D': 'D', 'ALL': 'D' };
   const { data: usData, isLoading: usLoading } = useQuery<{ candles?: OHLCPoint[]; history?: HistoryPoint[] } | OHLCPoint[]>({
-    queryKey: ['us-history', symbol, tf],
-    queryFn: () => apiGet<{ candles?: OHLCPoint[]; history?: HistoryPoint[] } | OHLCPoint[]>(`/api/stocks/${symbol}/history?resolution=${resMap[tf]}`),
+    queryKey: ['us-history', symbol, activeTf],
+    queryFn: () => apiGet<{ candles?: OHLCPoint[]; history?: HistoryPoint[] } | OHLCPoint[]>(`/api/stocks/${symbol}/history?resolution=${resMap[activeTf]}`),
     enabled: !!symbol && !!isUS,
     staleTime: 60_000,
     retry: 0,
@@ -122,9 +135,12 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
       height: 220,
       layout: { background: { color: 'transparent' }, textColor: 'rgba(180,200,220,0.65)', fontSize: 10 },
       grid: { vertLines: { color: 'rgba(var(--fg),0.025)' }, horzLines: { color: 'rgba(var(--fg),0.025)' } },
+      // Price axis + crosshair labels carry the right currency symbol.
+      localization: { priceFormatter: (p: number) => (isUS ? 'US$' : 'J$') + p.toFixed(2) },
       crosshair: {
         vertLine: { color: 'rgba(0,230,118,0.4)', width: 1, style: 2 },
-        horzLine: { color: 'rgba(0,230,118,0.4)', width: 1, style: 2 },
+        // Dark label bg so the crosshair tag doesn't fight the live-price tag.
+        horzLine: { color: 'rgba(0,230,118,0.4)', width: 1, style: 2, labelBackgroundColor: '#0c1422' },
       },
       rightPriceScale: { borderColor: 'rgba(var(--fg),0.03)', scaleMargins: { top: 0.08, bottom: showVol ? 0.18 : 0.04 } },
       timeScale: { borderColor: 'rgba(var(--fg),0.03)', timeVisible: true, fixLeftEdge: true, rightOffset: 3 },
@@ -159,9 +175,10 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
     return () => { ro.disconnect(); chart.remove(); chartRef.current = null; areaRef.current = null; candleRef.current = null; volRef.current = null; };
   }, []); // eslint-disable-line
 
-  /* ── Clear chart whenever the symbol changes ── */
+  /* ── Clear chart + refresh the currency formatter when the market changes ── */
   useEffect(() => {
     try {
+      chartRef.current?.applyOptions({ localization: { priceFormatter: (p: number) => (isUS ? 'US$' : 'J$') + p.toFixed(2) } });
       areaRef.current?.setData([]);
       candleRef.current?.setData([]);
       volRef.current?.setData([]);
@@ -186,7 +203,7 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
       }
       chartRef.current?.timeScale().fitContent();
     } catch (e) { console.warn('[MainChart]', e); }
-  }, [areaPoints, candles, isUS]);
+  }, [areaPoints, candles, isUS, jseData]);
 
   /* ── Toggle area ↔ candle ── */
   useEffect(() => {
@@ -211,8 +228,8 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
               </div>
               {livePrice > 0 && (
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--color-text)', fontFamily: 'var(--font-mono)', letterSpacing: '-.02em' }}>
-                    ${livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--color-text)', fontFamily: 'var(--font-mono)', letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text2)', marginRight: 1 }}>{cur}</span>{livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                   {!isUS && (
                     <span style={{ fontSize: 13, fontWeight: 700, color: pos ? '#00e676' : '#ff5252', fontFamily: 'var(--font-mono)' }}>
@@ -233,20 +250,21 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
             {isUS && candles.length > 0 && (
               <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(var(--fg),.08)' }}>
                 {(['area', 'candle'] as const).map(m => (
-                  <button key={m} onClick={() => setMode(m)}
-                    style={{ padding: '5px 10px', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, transition: 'all .15s', background: mode === m ? '#00c853' : 'transparent', color: mode === m ? 'var(--color-bg)' : 'rgba(var(--fg),.4)' }}>
+                  <button key={m} onClick={() => setMode(m)} aria-pressed={mode === m} aria-label={m === 'area' ? 'Area chart' : 'Candlestick chart'}
+                    style={{ padding: '5px 10px', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, transition: 'background .15s, color .15s', background: mode === m ? 'rgba(0,230,118,.16)' : 'transparent', color: mode === m ? '#00e676' : 'rgba(var(--fg),.4)' }}>
                     <i className={`fa-solid ${m === 'area' ? 'fa-chart-area' : 'fa-chart-candlestick'}`} />
                   </button>
                 ))}
               </div>
             )}
-            {/* Timeframe */}
-            <div style={{ display: 'flex', borderRadius: 10, padding: 2, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.07)' }}>
+            {/* Timeframe — quiet "selected" state so it doesn't outshout the price */}
+            <div role="group" aria-label="Timeframe" style={{ display: 'flex', borderRadius: 10, padding: 2, background: 'rgba(var(--fg),.04)', border: '1px solid rgba(var(--fg),.07)' }}>
               {TFS.map(t => (
-                <button key={t} onClick={() => setTf(t)}
-                  style={{ padding: '5px 10px', fontSize: 10, fontWeight: 700, borderRadius: 8, border: 'none', cursor: 'pointer', transition: 'all .15s',
-                    background: tf === t ? '#00e676' : 'transparent',
-                    color: tf === t ? 'var(--color-bg)' : 'var(--color-muted)' }}>
+                <button key={t} onClick={() => setTf(t)} aria-pressed={activeTf === t}
+                  style={{ padding: '5px 10px', fontSize: 10, fontWeight: 700, borderRadius: 8, border: '1px solid', cursor: 'pointer', transition: 'background .15s, color .15s, border-color .15s',
+                    background: activeTf === t ? 'rgba(0,230,118,.14)' : 'transparent',
+                    borderColor: activeTf === t ? 'rgba(0,230,118,.32)' : 'transparent',
+                    color: activeTf === t ? '#00e676' : 'var(--color-muted)' }}>
                   {t}
                 </button>
               ))}
@@ -304,28 +322,38 @@ export default function MainChart({ symbol, isUS }: { symbol: string; isUS?: boo
           </div>
         )}
 
+        {/* Canvas overlays: honesty chip travels with the visual; volume legend */}
+        {indicative && hasData && (
+          <span title="Daily history is modeled from the live JSE price. The official JSE historical feed is coming soon."
+            style={{ position: 'absolute', top: 10, left: 12, zIndex: 6, display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 9, fontWeight: 800, letterSpacing: '.1em', color: '#ffd740', background: 'rgba(255,215,64,.12)', border: '1px solid rgba(255,215,64,.28)', padding: '3px 8px', borderRadius: 6, pointerEvents: 'none' }}>
+            <i className="fa-solid fa-wave-square" style={{ fontSize: 8 }} />INDICATIVE
+          </span>
+        )}
+        {hasData && (
+          <span style={{ position: 'absolute', left: 46, bottom: 7, zIndex: 6, fontSize: 9, fontWeight: 700, letterSpacing: '.08em', color: 'var(--color-muted)', opacity: .6, pointerEvents: 'none' }}>VOL</span>
+        )}
+
         <div ref={containerRef} style={{ width: '100%', height: 220 }} />
       </div>
 
-      {/* Footer with Full Chart CTA */}
-      {symbol && (
-        <div style={{ padding: '8px 18px', borderTop: '1px solid rgba(var(--fg),.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: 'rgba(var(--fg),.01)' }}>
+      {/* Footer: honesty note (left) + range / as-of stamp (right) */}
+      {symbol && hasData && (
+        <div style={{ padding: '9px 18px', borderTop: '1px solid rgba(var(--fg),.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: 'rgba(var(--fg),.01)', flexWrap: 'wrap' }}>
           {indicative ? (
             <span title="Daily history is modeled from the live JSE price. The official JSE historical feed is coming soon."
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--color-muted)', opacity: .65 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: 'var(--color-text2)', background: 'rgba(255,215,64,.10)', border: '1px solid rgba(255,215,64,.22)', padding: '3px 10px', borderRadius: 999 }}>
               <i className="fa-solid fa-wave-square" style={{ fontSize: 9, color: '#ffd740' }} />
               Indicative daily history · anchored to live price
             </span>
           ) : (
-            <span style={{ fontSize: 10, color: 'var(--color-muted)', opacity: .5 }}>
-              <i className="fa-solid fa-circle-info" style={{ marginRight: 4 }} />
-              Click <strong style={{ color: 'rgba(var(--fg),.4)' }}>Full Chart</strong> for candlesticks, EMA, RSI, Bollinger Bands &amp; drawing tools
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: 'var(--color-text2)' }}>
+              <i className="fa-solid fa-circle-check" style={{ fontSize: 9, color: '#00e676' }} />
+              Live market data
             </span>
           )}
-          <Link to={`/technicals/${symbol}`}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: '#00e676', textDecoration: 'none', opacity: .8 }}>
-            Open Advanced Chart <i className="fa-solid fa-arrow-right" style={{ fontSize: 8 }} />
-          </Link>
+          <span style={{ fontSize: 10, color: 'var(--color-muted)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+            {RANGE_LABEL[activeTf] ?? 'Daily'} · as of {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
         </div>
       )}
     </div>

@@ -37,8 +37,16 @@ function imgOf(item: NewsItem): string | undefined {
   return u && /^https?:\/\//.test(u) ? u : undefined;
 }
 
-/* Scraped copy frequently arrives with HTML entities / stray tags — tidy it. */
-function clean(s?: string): string {
+/* Only ever follow http(s) links — scraped URLs are untrusted (block javascript:/data:). */
+function safeUrl(u?: string): string | undefined {
+  if (!u) return undefined;
+  try { const p = new URL(u, window.location.origin); return /^https?:$/.test(p.protocol) ? p.href : undefined; }
+  catch { return undefined; }
+}
+
+/* Tidy scraped copy for DISPLAY (entities/tags). Not a security sanitizer — output
+   is rendered as React text children, which React escapes. */
+function tidyText(s?: string): string {
   if (!s) return '';
   return s
     .replace(/<[^>]*>/g, ' ')
@@ -56,7 +64,12 @@ function clean(s?: string): string {
 type Sent = 'bullish' | 'bearish' | 'neutral';
 const SENT_COLOR: Record<Sent, string> = { bullish: '#00e676', bearish: '#ff5252', neutral: '#ffd740' };
 function sentOf(item: NewsItem): Sent {
-  return item.sentiment === 'positive' ? 'bullish' : item.sentiment === 'negative' ? 'bearish' : 'neutral';
+  if (item.sentiment === 'positive') return 'bullish';
+  if (item.sentiment === 'negative') return 'bearish';
+  // Fall back to the backend's numeric score when the label is absent/neutral.
+  const score = item.sentimentScore ?? item.score;
+  if (typeof score === 'number' && score !== 0) return score > 0 ? 'bullish' : 'bearish';
+  return 'neutral';
 }
 
 /* ─── source identity: deterministic brand-palette avatar ─── */
@@ -109,9 +122,10 @@ function Thumb({ item, ratio = '16 / 10', radius = 14, fill = false }: { item: N
       {src && !broken ? (
         <>
           <img src={src} alt="" loading="lazy" onError={() => setBroken(true)}
+            onLoad={e => { const { naturalWidth: w, naturalHeight: h } = e.currentTarget; if (w < 320 || h < 180 || w / h > 3) setBroken(true); }}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: `${c}`, mixBlendMode: 'multiply', opacity: .12 }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(4,6,13,.78) 0%, rgba(4,6,13,.12) 55%, transparent 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(var(--surf),.82) 0%, rgba(var(--surf),.14) 55%, transparent 100%)' }} />
         </>
       ) : (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -132,9 +146,9 @@ const TOPIC_PATTERNS: { topic: string; keywords: string[] }[] = [
   { topic: 'Tourism',      keywords: ['tourism','hotel','resort','visitor','sandals','airlines','travel'] },
 ];
 
-const POSITIVE_WORDS = ['surge','rally','gain','rise','high','record','profit','growth','strong','beat','upgrade','bull','recover','boost','expand','jump','soar','climb','outperform'];
-const NEGATIVE_WORDS = ['fall','drop','crash','slump','loss','deficit','risk','war','sanction','decline','weak','cut','below','miss','debt','default','layoff','bear','plunge','sink','contract'];
-
+// Topic sentiment uses the SAME source of truth as everything else (sentOf →
+// the backend's sentiment/score), so a topic chip can never disagree with the
+// header badge on the same articles.
 function topicSent(news: NewsItem[], keywords: string[]): { count: number; sent: Sent } {
   const matches = news.filter(n => {
     const t = (n.title + ' ' + (n.summary ?? '')).toLowerCase();
@@ -142,17 +156,16 @@ function topicSent(news: NewsItem[], keywords: string[]): { count: number; sent:
   });
   let pos = 0, neg = 0;
   for (const m of matches) {
-    const t = (m.title + ' ' + (m.summary ?? '')).toLowerCase();
-    pos += POSITIVE_WORDS.filter(w => t.includes(w)).length;
-    neg += NEGATIVE_WORDS.filter(w => t.includes(w)).length;
+    const s = sentOf(m);
+    if (s === 'bullish') pos++; else if (s === 'bearish') neg++;
   }
-  return { count: matches.length, sent: pos > neg + 1 ? 'bullish' : neg > pos + 1 ? 'bearish' : 'neutral' };
+  return { count: matches.length, sent: pos > neg * 1.2 ? 'bullish' : neg > pos * 1.2 ? 'bearish' : 'neutral' };
 }
 
 function MoodStrip({ news }: { news: NewsItem[] }) {
   const { posPct, neutPct, negPct, overall, topics } = useMemo(() => {
-    const pos = news.filter(n => n.sentiment === 'positive').length;
-    const neg = news.filter(n => n.sentiment === 'negative').length;
+    const pos = news.filter(n => sentOf(n) === 'bullish').length;
+    const neg = news.filter(n => sentOf(n) === 'bearish').length;
     const total = news.length || 1;
     const posPct = Math.round((pos / total) * 100);
     const negPct = Math.round((neg / total) * 100);
@@ -162,7 +175,7 @@ function MoodStrip({ news }: { news: NewsItem[] }) {
       .filter(t => t.count > 0)
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
-    return { posPct, neutPct: 100 - posPct - negPct, negPct, overall, topics };
+    return { posPct, neutPct: Math.max(0, 100 - posPct - negPct), negPct, overall, topics };
   }, [news]);
 
   const oc = SENT_COLOR[overall];
@@ -177,10 +190,10 @@ function MoodStrip({ news }: { news: NewsItem[] }) {
           <span style={{ width: 5, height: 5, borderRadius: '50%', background: oc, boxShadow: `0 0 6px ${oc}`, animation: 'pulse 2.4s ease-in-out infinite' }} />
           {label}
         </span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 14, fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
-          <span style={{ color: '#00e676' }}>{posPct}%<span style={{ fontWeight: 600, opacity: .5, fontSize: 9, marginLeft: 3 }}>BULL</span></span>
-          <span style={{ color: 'var(--color-muted)' }}>{neutPct}%</span>
-          <span style={{ color: '#ff5252' }}>{negPct}%<span style={{ fontWeight: 600, opacity: .5, fontSize: 9, marginLeft: 3 }}>BEAR</span></span>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 14, fontSize: 12, fontWeight: 800, fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ color: '#00e676' }}><i className="fa-solid fa-caret-up" style={{ marginRight: 4 }} />{posPct}%<span style={{ fontWeight: 700, opacity: .6, fontSize: 9, marginLeft: 3 }}>BULL</span></span>
+          <span style={{ color: 'var(--color-text2)' }}><i className="fa-solid fa-minus" style={{ marginRight: 4, opacity: .6 }} />{neutPct}%<span style={{ fontWeight: 700, opacity: .6, fontSize: 9, marginLeft: 3 }}>FLAT</span></span>
+          <span style={{ color: '#ff5252' }}><i className="fa-solid fa-caret-down" style={{ marginRight: 4 }} />{negPct}%<span style={{ fontWeight: 700, opacity: .6, fontSize: 9, marginLeft: 3 }}>BEAR</span></span>
         </div>
       </div>
       <div style={{ height: 6, borderRadius: 999, overflow: 'hidden', display: 'flex', gap: 2, background: 'rgba(var(--fg),.04)', position: 'relative' }}>
@@ -196,7 +209,7 @@ function MoodStrip({ news }: { news: NewsItem[] }) {
               <span key={t.topic} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: 'var(--color-text2)', padding: '4px 10px', borderRadius: 999, background: 'rgba(var(--fg),.03)', border: '1px solid var(--color-border)' }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: c }} />
                 {t.topic}
-                <span style={{ color: 'var(--color-muted)', fontSize: 10, fontFamily: 'var(--font-mono)' }}>{t.count}</span>
+                <span style={{ color: 'var(--color-muted)', fontSize: 10, fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{t.count}</span>
               </span>
             );
           })}
@@ -235,25 +248,46 @@ const cardHover = {
 
 /* ─── lead story (editorial, image-aware) ─── */
 function LeadStory({ item }: { item: NewsItem }) {
-  const hasImg = !!imgOf(item);
+  const [imgBroken, setImgBroken] = useState(false);
+  const src = imgOf(item);
+  const showImg = !!src && !imgBroken;      // collapse to text-forward if the image fails
+  const c = SENT_COLOR[sentOf(item)];
+  // Text-forward lead gets an intentional tinted wash so the absence of art
+  // reads as design, never as a broken/empty media well.
+  const surface = showImg
+    ? 'var(--color-bg2)'
+    : `linear-gradient(135deg, ${c}0f, transparent 55%), var(--color-bg2)`;
   return (
-    <a href={item.url} target="_blank" rel="noopener noreferrer" className={`news-rise news-lead${hasImg ? '' : ' no-img'}`}
-      style={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 20, textDecoration: 'none',
+    <a href={safeUrl(item.url)} target="_blank" rel="noopener noreferrer" className={`news-rise news-lead${showImg ? '' : ' no-img'}`}
+      style={{ background: surface, border: '1px solid var(--color-border)', borderRadius: 20, textDecoration: 'none',
         overflow: 'hidden', transition: 'border-color .2s, transform .2s, box-shadow .2s' }}
       onMouseEnter={e => cardHover.enter(e)} onMouseLeave={cardHover.leave}>
-      {hasImg && (
-        <div style={{ position: 'relative', minHeight: 250 }}>
-          <Thumb item={item} fill radius={0} />
-          <span style={{ position: 'absolute', top: 16, left: 16, fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: '#04060d', background: '#00e676', padding: '4px 10px', borderRadius: 6, zIndex: 1 }}>Top Story</span>
+      {showImg && (
+        <div style={{ position: 'relative', minHeight: 250, background: `radial-gradient(120% 120% at 20% 0%, ${c}1f, transparent 60%), var(--color-bg3)` }}>
+          <img src={src} alt="" loading="lazy" onError={() => setImgBroken(true)}
+            onLoad={e => {
+              // Source "images" are frequently publisher logos/wide banners — too
+              // small or too wide to work as a hero crop. Fall back to text-forward.
+              const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+              if (w < 480 || h < 260 || w / h > 2.6) setImgBroken(true);
+            }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div style={{ position: 'absolute', inset: 0, background: c, mixBlendMode: 'multiply', opacity: .12 }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(var(--surf),.82) 0%, rgba(var(--surf),.12) 55%, transparent 100%)' }} />
+          <span style={{ position: 'absolute', top: 16, left: 16, fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--color-bg)', background: '#00e676', padding: '4px 10px', borderRadius: 6, zIndex: 1 }}>Top Story</span>
         </div>
       )}
-      <div style={{ padding: hasImg ? '24px 26px' : '26px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>
-        {!hasImg && <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: '#00e676' }}>Top Story</span>}
-        <h2 style={{ margin: 0, fontFamily: HEAD, fontWeight: 700, fontSize: 'clamp(20px, 3.2vw, 28px)', lineHeight: 1.16, letterSpacing: '-.02em', color: 'var(--color-text)', WebkitFontSmoothing: 'antialiased' }}>
-          {clean(item.title)}
+      <div style={{ padding: showImg ? '24px 26px' : '28px 30px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 13 }}>
+        {!showImg && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: '#00e676' }}>
+            <i className="fa-solid fa-bolt" style={{ fontSize: 10 }} />Top Story
+          </span>
+        )}
+        <h2 style={{ margin: 0, fontFamily: HEAD, fontWeight: 700, fontSize: showImg ? 'clamp(20px, 3.2vw, 28px)' : 'clamp(22px, 3.6vw, 32px)', lineHeight: 1.14, letterSpacing: '-.02em', color: 'var(--color-text)', WebkitFontSmoothing: 'antialiased' }}>
+          {tidyText(item.title)}
         </h2>
-        {clean(item.summary) && (
-          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: 'var(--color-text2)', display: '-webkit-box', WebkitLineClamp: hasImg ? 3 : 4, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{clean(item.summary)}</p>
+        {tidyText(item.summary) && (
+          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: 'var(--color-text2)', display: '-webkit-box', WebkitLineClamp: showImg ? 3 : 4, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{tidyText(item.summary)}</p>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
           <SourceAvatar source={item.source} size={30} />
@@ -268,11 +302,11 @@ function LeadStory({ item }: { item: NewsItem }) {
 /* ─── featured card (medium, with thumb) ─── */
 function FeatureCard({ item, i }: { item: NewsItem; i: number }) {
   return (
-    <a href={item.url} target="_blank" rel="noopener noreferrer" className="news-rise"
+    <a href={safeUrl(item.url)} target="_blank" rel="noopener noreferrer" className="news-rise"
       style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 14, background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 16, textDecoration: 'none', height: '100%', boxSizing: 'border-box', transition: 'border-color .18s, transform .18s, box-shadow .18s', animationDelay: `${i * 50}ms` }}
       onMouseEnter={e => cardHover.enter(e)} onMouseLeave={cardHover.leave}>
       <Thumb item={item} ratio="16 / 9" />
-      <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, lineHeight: 1.34, letterSpacing: '-.01em', color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{clean(item.title)}</h3>
+      <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, lineHeight: 1.34, letterSpacing: '-.01em', color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{tidyText(item.title)}</h3>
       <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 9 }}>
         <SourceAvatar source={item.source} size={24} />
         <Meta item={item} />
@@ -284,12 +318,12 @@ function FeatureCard({ item, i }: { item: NewsItem; i: number }) {
 /* ─── compact headline row ─── */
 function HeadlineCard({ item, i }: { item: NewsItem; i: number }) {
   return (
-    <a href={item.url} target="_blank" rel="noopener noreferrer" className="news-rise"
+    <a href={safeUrl(item.url)} target="_blank" rel="noopener noreferrer" className="news-rise"
       style={{ display: 'flex', gap: 13, padding: '14px 15px', background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 14, textDecoration: 'none', height: '100%', boxSizing: 'border-box', transition: 'border-color .15s, transform .15s, box-shadow .15s', animationDelay: `${Math.min(i, 12) * 35}ms` }}
       onMouseEnter={e => cardHover.enter(e, 'rgba(var(--fg),.2)')} onMouseLeave={cardHover.leave}>
       <SourceAvatar source={item.source} size={38} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0, flex: 1 }}>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, lineHeight: 1.4, letterSpacing: '-.005em', color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{clean(item.title)}</p>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, lineHeight: 1.4, letterSpacing: '-.005em', color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{tidyText(item.title)}</p>
         <div style={{ marginTop: 'auto' }}><Meta item={item} /></div>
       </div>
     </a>
@@ -306,15 +340,20 @@ export default function News() {
   const [search, setSearch] = useState('');
   const [stuck, setStuck]   = useState(false);
 
-  const { data: news = [], isLoading, dataUpdatedAt } = useQuery<NewsItem[]>({
+  const { data: news = [], isLoading, isError, refetch, isRefetching, dataUpdatedAt } = useQuery<NewsItem[]>({
     queryKey: ['news'],
     queryFn: () => apiGet('/api/news'),
     refetchInterval: 120_000,
     retry: 1,
   });
 
+  // Only flip `stuck` on the boundary crossing, not on every scroll frame.
   useEffect(() => {
-    const onScroll = () => setStuck(window.scrollY > 8);
+    let on = false;
+    const onScroll = () => {
+      const next = window.scrollY > 8;
+      if (next !== on) { on = next; setStuck(next); }
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -324,10 +363,13 @@ export default function News() {
   const current   = tab === 'caribbean' ? caribbean : intl;
 
   const filtered = useMemo(() => current.filter(n => {
-    if (filter !== 'all' && n.sentiment !== filter) return false;
+    if (filter !== 'all') {
+      const want = filter === 'positive' ? 'bullish' : filter === 'negative' ? 'bearish' : 'neutral';
+      if (sentOf(n) !== want) return false;  // match what the dots actually show
+    }
     if (search) {
       const q = search.toLowerCase();
-      return clean(n.title).toLowerCase().includes(q) || clean(n.summary).toLowerCase().includes(q) || (n.symbol ?? '').toLowerCase().includes(q);
+      return tidyText(n.title).toLowerCase().includes(q) || tidyText(n.summary).toLowerCase().includes(q) || (n.symbol ?? '').toLowerCase().includes(q);
     }
     return true;
   }), [current, filter, search]);
@@ -361,6 +403,9 @@ export default function News() {
         .news-chip:focus-visible, a.news-rise:focus-visible { outline: 2px solid #00e676; outline-offset: 2px; }
         .news-lead { display: grid; grid-template-columns: 1.05fr 1fr; }
         .news-lead.no-img { grid-template-columns: 1fr; }
+        /* Sit just below the fixed app header (desktop ticker+header = 88px, mobile = 56px). */
+        .news-sticky { top: 88px; }
+        @media (max-width: 900px) { .news-sticky { top: 56px; } }
         @media (max-width: 760px) { .news-lead { grid-template-columns: 1fr; } }
         @media (prefers-reduced-motion: reduce) { .news-rise { animation: none; } }
       `}</style>
@@ -371,10 +416,13 @@ export default function News() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <h1 style={{ margin: 0, fontFamily: HEAD, fontSize: 'clamp(24px,5vw,30px)', fontWeight: 700, letterSpacing: '-.02em', color: 'var(--color-text)', WebkitFontSmoothing: 'antialiased' }}>Market News</h1>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: '#00e676', background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.22)', padding: '3px 9px', borderRadius: 999 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#00e676', boxShadow: '0 0 6px #00e676', animation: 'pulse 2s ease-in-out infinite' }} />
-                LIVE
-              </span>
+              <button className="news-chip" onClick={() => refetch()} disabled={isRefetching} title="Refresh headlines"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: '#00e676', background: 'rgba(0,230,118,.1)', border: '1px solid rgba(0,230,118,.22)', padding: '3px 9px', borderRadius: 999, cursor: isRefetching ? 'default' : 'pointer' }}>
+                {isRefetching
+                  ? <i className="fa-solid fa-arrows-rotate" style={{ fontSize: 9, animation: 'spin .8s linear infinite' }} />
+                  : <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#00e676', boxShadow: '0 0 6px #00e676', animation: 'pulse 2s ease-in-out infinite' }} />}
+                {isRefetching ? 'SYNCING' : 'LIVE'}
+              </button>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-muted)' }}>
               {today} · Caribbean &amp; global markets{updatedLabel ? ` · updated ${updatedLabel}` : ''}
@@ -387,7 +435,7 @@ export default function News() {
                   background: tab === t.key ? 'rgba(0,230,118,.12)' : 'transparent',
                   color: tab === t.key ? '#00e676' : 'var(--color-text2)' }}>
                 {t.label}
-                <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '1px 6px', borderRadius: 999, background: tab === t.key ? 'rgba(0,230,118,.16)' : 'rgba(var(--fg),.05)', color: tab === t.key ? '#00e676' : 'var(--color-muted)' }}>{t.count}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', padding: '1px 6px', borderRadius: 999, background: tab === t.key ? 'rgba(0,230,118,.16)' : 'rgba(var(--fg),.05)', color: tab === t.key ? '#00e676' : 'var(--color-muted)' }}>{t.count}</span>
               </button>
             ))}
           </div>
@@ -397,11 +445,11 @@ export default function News() {
       {/* Market mood */}
       {!isLoading && current.length > 0 && <MoodStrip news={current} />}
 
-      {/* Sticky controls */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8,
+      {/* Sticky controls — offset below the fixed app header via .news-sticky */}
+      <div className="news-sticky" style={{ position: 'sticky', zIndex: 20, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8,
         padding: stuck ? '10px 12px' : '2px 0', margin: stuck ? '0 -12px' : 0, borderRadius: 14,
-        background: stuck ? 'rgba(8,13,24,.82)' : 'transparent', backdropFilter: stuck ? 'blur(14px)' : 'none',
-        border: stuck ? '1px solid var(--color-border)' : '1px solid transparent', transition: 'background .2s, padding .2s, border-color .2s' }}>
+        background: stuck ? 'rgba(var(--surf),.92)' : 'transparent', backdropFilter: stuck ? 'blur(14px)' : 'none',
+        border: stuck ? '1px solid var(--color-border)' : '1px solid transparent', boxShadow: stuck ? '0 8px 24px -12px rgba(0,0,0,.5)' : 'none', transition: 'background .2s, padding .2s, border-color .2s' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 170 }}>
           <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--color-muted)', pointerEvents: 'none' }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search headlines or ticker…"
@@ -432,6 +480,19 @@ export default function News() {
             {[1,2,3,4,5,6].map(i => <div key={i} className="skeleton" style={{ height: 130, borderRadius: 14 }} />)}
           </div>
         </div>
+      ) : isError && news.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', gap: 14 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,82,82,.08)', border: '1px solid rgba(255,82,82,.18)' }}>
+            <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 24, color: '#ff5252', opacity: .7 }} />
+          </div>
+          <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: HEAD }}>Couldn’t load the news feed</p>
+          <p style={{ fontSize: 12.5, color: 'var(--color-muted)', margin: 0 }}>Check your connection — the wire will be back shortly.</p>
+          <button className="news-chip" onClick={() => refetch()} disabled={isRefetching}
+            style={{ marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', borderRadius: 10, border: '1px solid rgba(0,230,118,.3)', background: 'rgba(0,230,118,.1)', color: '#00e676', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+            <i className="fa-solid fa-arrows-rotate" style={{ fontSize: 11, animation: isRefetching ? 'spin .8s linear infinite' : 'none' }} />
+            {isRefetching ? 'Retrying…' : 'Try again'}
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', gap: 14 }}>
           <div style={{ width: 64, height: 64, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,230,118,.07)', border: '1px solid rgba(0,230,118,.16)' }}>
@@ -451,10 +512,11 @@ export default function News() {
           {lead && <LeadStory item={lead} />}
 
           {featured.length > 0 && (
-            <div>
+            /* Raised, tinted band breaks the same-tone monotony down the page */
+            <div style={{ background: 'rgba(var(--fg),.02)', border: '1px solid var(--color-border)', borderRadius: 18, padding: '16px 16px 18px', margin: '2px 0' }}>
               <SectionRule label="Featured" />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14, marginTop: 12 }}>
-                {featured.map((n, i) => <FeatureCard key={(n.id ?? n.url) + String(i)} item={n} i={i} />)}
+                {featured.map((n, i) => <FeatureCard key={n.id ?? n.url} item={n} i={i} />)}
               </div>
             </div>
           )}
@@ -463,7 +525,16 @@ export default function News() {
             <div>
               <SectionRule label="Latest headlines" count={rest.length} />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12, marginTop: 12, alignItems: 'stretch' }}>
-                {rest.map((n, i) => <HeadlineCard key={(n.id ?? n.url) + String(i)} item={n} i={i} />)}
+                {rest.slice(0, 9).map((n, i) => <HeadlineCard key={n.id ?? n.url} item={n} i={i} />)}
+              </div>
+            </div>
+          )}
+
+          {rest.length > 9 && (
+            <div>
+              <SectionRule label="Earlier" />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12, marginTop: 12, alignItems: 'stretch' }}>
+                {rest.slice(9).map((n, i) => <HeadlineCard key={n.id ?? n.url} item={n} i={i} />)}
               </div>
             </div>
           )}

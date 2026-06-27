@@ -19,6 +19,8 @@ const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
+const MAX_BYTES = 8 * 1024 * 1024; // hard ceiling so a hostile/huge body can't OOM us
+
 // Minimal JSON GET. Yahoo rejects non-browser User-Agents, so we always send one.
 function getJSON(url, timeoutMs = 9000) {
   return new Promise((resolve, reject) => {
@@ -31,7 +33,12 @@ function getJSON(url, timeoutMs = 9000) {
           return reject(new Error(`HTTP ${res.statusCode}`));
         }
         let data = "";
-        res.on("data", (c) => (data += c));
+        let bytes = 0;
+        res.on("data", (c) => {
+          bytes += c.length;
+          if (bytes > MAX_BYTES) { req.destroy(new Error("response too large")); return; }
+          data += c;
+        });
         res.on("end", () => {
           try {
             resolve(JSON.parse(data));
@@ -109,10 +116,13 @@ function mulberry32(seed) {
   };
 }
 
-// Most-recent `days` weekday timestamps (UTC midnight, seconds), oldest → newest.
+// Most-recent `days` weekday timestamps, oldest → newest. Anchored to the
+// Jamaican trading day (UTC−5, no DST) so the last candle matches the local
+// session the live price came from, then expressed back in UTC-midnight seconds.
+const JM_OFFSET_SEC = 5 * 3600;
 function recentWeekdayStamps(days) {
   const stamps = [];
-  const d = new Date();
+  const d = new Date(Date.now() - JM_OFFSET_SEC * 1000);
   d.setUTCHours(0, 0, 0, 0);
   while (stamps.length < days) {
     const dow = d.getUTCDay();

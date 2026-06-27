@@ -93,15 +93,26 @@ router.get("/api/market-overview", (_req, res) => {
 // In-memory cache so we don't regenerate/refetch a series on every chart paint.
 const histCache = new Map();
 const HIST_TTL = 5 * 60 * 1000; // 5 minutes
+const NEG_TTL = 60 * 1000;      // negative cache — keep junk symbols from re-hitting Yahoo
+
+// Covers US tickers, ^indices, =X FX pairs, and JSE symbols (digits + dots).
+const SYMBOL_RE = /^[A-Z0-9.^=-]{1,16}$/;
+// JSE timeframe buttons are honest daily ranges (no fake intraday).
+const PERIOD_DAYS = { "1M": 22, "3M": 66, "6M": 132, "1Y": 252, ALL: 252, "1D": 90, "1H": 90, "4H": 90 };
 
 router.get("/api/history/:symbol", async (req, res) => {
   const sym = req.params.symbol.toUpperCase();
+  if (!SYMBOL_RE.test(sym)) return res.status(400).json({ error: "Invalid symbol" });
+
   const period = String(req.query.period || "1D").toUpperCase();
-  const days = period === "ALL" ? 180 : period === "1H" ? 45 : period === "4H" ? 60 : 90;
+  const days = PERIOD_DAYS[period] || 90;
   const cacheKey = `${sym}:${days}`;
 
   const cached = histCache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < HIST_TTL) return res.json(cached.data);
+  if (cached && Date.now() - cached.ts < (cached.neg ? NEG_TTL : HIST_TTL)) {
+    if (cached.neg) return res.status(404).json({ error: "No chart data available" });
+    return res.json(cached.data);
+  }
 
   const stock = marketService.livePrices.find((s) => s.symbol === sym);
 
@@ -130,10 +141,10 @@ router.get("/api/history/:symbol", async (req, res) => {
     console.warn(`[history yahoo] ${sym}:`, err.message?.slice(0, 80));
   }
 
-  // Last resort: whatever live points we have accumulated in memory.
-  const hist = marketService.priceHistory[sym];
-  if (hist && hist.length) return res.json({ symbol: sym, history: hist, source: "live" });
-  res.status(404).json({ error: "Not found" });
+  // Nothing real to show — negative-cache so junk symbols can't re-trigger
+  // outbound fetches, and let the client render its "no data" state.
+  histCache.set(cacheKey, { ts: Date.now(), neg: true });
+  res.status(404).json({ error: "No chart data available" });
 });
 
 // ── OHLCV candles: Alpaca → Yahoo Finance → Finnhub ──────────────────────────
@@ -144,12 +155,15 @@ const CANDLE_TTL = 5 * 60 * 1000; // 5 minutes
 
 router.get("/api/stocks/:symbol/history", async (req, res) => {
   const sym = req.params.symbol.toUpperCase();
+  if (!SYMBOL_RE.test(sym)) return res.status(400).json({ error: "Invalid symbol" });
+
   const { resolution = "D" } = req.query;
   const cacheKey = `${sym}:${resolution}`;
 
-  // Serve from cache if fresh
+  // Serve from cache if fresh (incl. negative cache for junk/unknown symbols)
   const cached = candleCache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < CANDLE_TTL) {
+  if (cached && Date.now() - cached.ts < (cached.neg ? NEG_TTL : CANDLE_TTL)) {
+    if (cached.neg) return res.status(502).json({ error: `No chart data available for ${sym}` });
     return res.json(cached.data);
   }
 
@@ -205,6 +219,8 @@ router.get("/api/stocks/:symbol/history", async (req, res) => {
     }
   }
 
+  // Negative-cache so an unknown symbol can't keep re-triggering 3 provider calls.
+  candleCache.set(cacheKey, { ts: Date.now(), neg: true });
   res.status(502).json({ error: `No chart data available for ${sym}` });
 });
 

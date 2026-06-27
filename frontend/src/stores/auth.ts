@@ -38,8 +38,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const user = await apiGet<User>('/api/auth/me');
       set({ user, isAuthenticated: true, token });
-    } catch {
-      localStorage.removeItem('jse_token');
+    } catch (e) {
+      // Only drop the session on a genuine auth rejection. A 429 (rate-limit),
+      // 5xx, or a flaky network must NOT log a signed-in user out.
+      const status = (e as { status?: number })?.status;
+      if (status === 401 || status === 403) {
+        localStorage.removeItem('jse_token');
+        set({ user: null, isAuthenticated: false, token: null });
+      }
     }
   },
 
